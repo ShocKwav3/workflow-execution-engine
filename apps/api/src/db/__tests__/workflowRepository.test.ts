@@ -1,24 +1,26 @@
+import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { UniqueConstraintViolationError } from "../errors.js";
 import { WorkflowRepository } from "../workflowRepository.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
 
-let db: TestDatabase;
-let repo: WorkflowRepository;
-
-beforeAll(async () => {
-  db = await startTestDatabase();
-  repo = new WorkflowRepository(db.pool);
-}, 60_000);
-
-afterAll(async () => {
-  await stopTestDatabase(db);
-});
-
-beforeEach(async () => {
-  await db.pool.query("TRUNCATE workflow CASCADE");
-});
-
 describe("WorkflowRepository", () => {
+  let db: TestDatabase;
+  let repo: WorkflowRepository;
+
+  beforeAll(async () => {
+    db = await startTestDatabase();
+    repo = new WorkflowRepository(db.pool);
+  }, 60_000);
+
+  afterAll(async () => {
+    await stopTestDatabase(db);
+  });
+
+  beforeEach(async () => {
+    await db.pool.query("TRUNCATE workflow CASCADE");
+  });
+
   it("creates and fetches a workflow", async () => {
     const created = await repo.createWorkflow({ name: "Order Fulfillment" });
 
@@ -31,7 +33,7 @@ describe("WorkflowRepository", () => {
   it("rejects creating a workflow with an empty name", async () => {
     const createEmpty = repo.createWorkflow({ name: "  " });
 
-    await expect(createEmpty).rejects.toThrow();
+    await expect(createEmpty).rejects.toThrow(ZodError);
   });
 
   it("returns undefined when fetching a workflow that doesn't exist", async () => {
@@ -43,7 +45,7 @@ describe("WorkflowRepository", () => {
   it("rejects fetching a workflow with a malformed id instead of leaking a raw DB error", async () => {
     const getMalformed = repo.getWorkflowById("not-a-uuid");
 
-    await expect(getMalformed).rejects.toThrow();
+    await expect(getMalformed).rejects.toThrow(ZodError);
   });
 
   it("lists all created workflows", async () => {
@@ -81,7 +83,7 @@ describe("WorkflowRepository", () => {
       definition: [],
     });
 
-    await expect(createInvalid).rejects.toThrow();
+    await expect(createInvalid).rejects.toThrow(ZodError);
   });
 
   it("rejects creating a workflow version with a non-positive version number", async () => {
@@ -93,7 +95,7 @@ describe("WorkflowRepository", () => {
       definition: [],
     });
 
-    await expect(createInvalid).rejects.toThrow();
+    await expect(createInvalid).rejects.toThrow(ZodError);
   });
 
   it("returns undefined when fetching a workflow version that doesn't exist", async () => {
@@ -109,10 +111,10 @@ describe("WorkflowRepository", () => {
 
     const getInvalid = repo.getWorkflowVersion({ workflowId: workflow.id, version: -1 });
 
-    await expect(getInvalid).rejects.toThrow();
+    await expect(getInvalid).rejects.toThrow(ZodError);
   });
 
-  it("rejects a duplicate version number for the same workflow", async () => {
+  it("rejects a duplicate version number for the same workflow with UniqueConstraintViolationError", async () => {
     const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
 
     await repo.createWorkflowVersion({ workflowId: workflow.id, version: 1, definition: [] });
@@ -123,6 +125,6 @@ describe("WorkflowRepository", () => {
       definition: [],
     });
 
-    await expect(createDuplicate).rejects.toThrow();
+    await expect(createDuplicate).rejects.toThrow(UniqueConstraintViolationError);
   });
 });
