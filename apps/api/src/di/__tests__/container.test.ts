@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { Container } from "./container.js";
-import { UnregisteredTokenError } from "./errors.js";
-import { createToken } from "./token.js";
+import { Container } from "../container.js";
+import { UnregisteredTokenError } from "../errors.js";
+import { createToken } from "../token.js";
 
 describe("Container", () => {
   it("resolves a singleton to the same instance every time", () => {
     const container = new Container();
     const token = createToken<{ id: number }>("thing");
+
     container.register(token, () => ({ id: Math.random() }), "singleton");
 
     const first = container.resolve(token);
@@ -18,6 +19,7 @@ describe("Container", () => {
   it("resolves a factory to a new instance every time", () => {
     const container = new Container();
     const token = createToken<{ id: number }>("thing");
+
     container.register(token, () => ({ id: Math.random() }), "factory");
 
     const first = container.resolve(token);
@@ -29,6 +31,7 @@ describe("Container", () => {
   it("defaults to factory lifetime when none is given", () => {
     const container = new Container();
     const token = createToken<{ id: number }>("thing");
+
     container.register(token, () => ({ id: Math.random() }));
 
     const first = container.resolve(token);
@@ -41,6 +44,7 @@ describe("Container", () => {
     const container = new Container();
     const token = createToken<{ id: number }>("config");
     const value = { id: 1 };
+
     container.register(token, () => value, "singleton");
 
     const first = container.resolve(token);
@@ -62,9 +66,11 @@ describe("Container", () => {
   it("lets a test container override a registration without touching the original", () => {
     const container = new Container();
     const token = createToken<string>("greeting");
+
     container.register(token, () => "real", "singleton");
 
     const testContainer = container.createTestContainer();
+
     testContainer.override(token, () => "fake", "singleton");
 
     const overridden = testContainer.resolve(token);
@@ -77,6 +83,7 @@ describe("Container", () => {
   it("falls back to the base container for tokens not overridden", () => {
     const container = new Container();
     const token = createToken<string>("untouched");
+
     container.register(token, () => "original", "singleton");
 
     const testContainer = container.createTestContainer();

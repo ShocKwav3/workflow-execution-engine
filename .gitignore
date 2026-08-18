@@ -7,3 +7,4 @@ dist
 .env
 .env.*
 coverage
+apps/api/db/drivers

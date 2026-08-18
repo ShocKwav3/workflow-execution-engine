@@ -2,9 +2,10 @@ import { UnregisteredTokenError } from "./errors.js";
 import type { Resolver, Token } from "./token.js";
 
 export type Lifetime = "singleton" | "factory";
+export type Factory<T> = (resolver: Resolver) => T;
 
 interface Registration<T> {
-  factory: (resolver: Resolver) => T;
+  factory: Factory<T>;
   lifetime: Lifetime;
 }
 
@@ -12,16 +13,13 @@ export class Container implements Resolver {
   private readonly registrations = new Map<Token<unknown>, Registration<unknown>>();
   private readonly singletons = new Map<Token<unknown>, unknown>();
 
-  register<T>(
-    token: Token<T>,
-    factory: (resolver: Resolver) => T,
-    lifetime: Lifetime = "factory",
-  ): void {
+  register<T>(token: Token<T>, factory: Factory<T>, lifetime: Lifetime = "factory"): void {
     this.registrations.set(token, { factory, lifetime });
   }
 
   resolve<T>(token: Token<T>): T {
     const registration = this.registrations.get(token) as Registration<T> | undefined;
+
     if (!registration) {
       throw new UnregisteredTokenError(token);
     }
@@ -30,6 +28,7 @@ export class Container implements Resolver {
       if (!this.singletons.has(token)) {
         this.singletons.set(token, registration.factory(this));
       }
+
       return this.singletons.get(token) as T;
     }
 
@@ -47,11 +46,7 @@ export class TestContainer implements Resolver {
 
   constructor(private readonly base: Container) {}
 
-  override<T>(
-    token: Token<T>,
-    factory: (resolver: Resolver) => T,
-    lifetime: Lifetime = "factory",
-  ): void {
+  override<T>(token: Token<T>, factory: Factory<T>, lifetime: Lifetime = "factory"): void {
     this.overrides.register(token, factory, lifetime);
     this.overriddenTokens.add(token);
   }
@@ -60,6 +55,7 @@ export class TestContainer implements Resolver {
     if (this.overriddenTokens.has(token)) {
       return this.overrides.resolve(token);
     }
+
     return this.base.resolve(token);
   }
 }
