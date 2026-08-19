@@ -54,10 +54,7 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
 
   await app.register(fastifyHelmet);
 
-  // Swagger UI renders via inline <script>/<style>, which Helmet's default CSP
-  // blocks. @fastify/swagger-ui registers its own routes internally, so there's
-  // no per-route config to pass it — instead, this hook runs after Helmet's own
-  // onSend (registered above) and strips the CSP header just for docs requests.
+  // Helmet's default CSP blocks Swagger UI's inline scripts — stripped for /api/docs only.
   app.addHook("onSend", async (request, reply, payload) => {
     if (request.url.startsWith("/api/docs")) {
       reply.removeHeader("content-security-policy");

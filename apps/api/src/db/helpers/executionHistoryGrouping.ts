@@ -20,10 +20,7 @@ export interface StepHistoryQueryRow {
   error: string | null;
 }
 
-// Pure transformation, no I/O — reshapes flat joined rows (one row per attempt, or
-// one row with null attempt columns if a step has none yet) into nested step/attempts
-// entries. Kept separate from workflowExecutionRepository.ts so it's unit-testable with plain
-// objects, without needing a real database or a repository instance.
+// Pure, no I/O — kept separate so it's unit-testable without a real database.
 export function groupStepHistoryRows(rows: StepHistoryQueryRow[]): StepExecutionHistoryEntry[] {
   const stepsById = new Map<string, StepExecutionHistoryEntry>();
 

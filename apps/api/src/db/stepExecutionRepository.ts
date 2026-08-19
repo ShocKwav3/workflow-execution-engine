@@ -29,9 +29,7 @@ export class StepExecutionRepository {
     }
   }
 
-  // step_execution and step_attempt share several column names (id, status, ...), so
-  // a plain "SELECT *" join would silently collide. Aliasing every column explicitly
-  // keeps the flat query row unambiguous for groupStepHistoryRows() below.
+  // step_execution and step_attempt share column names — aliasing avoids a silent SELECT * collision.
   async getWorkflowExecutionHistory(
     workflowExecutionId: string,
   ): Promise<StepExecutionHistoryEntry[]> {

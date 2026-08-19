@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-// Lookup-key shape check for read methods — same reasoning as workflowIdSchema:
-// fail predictably on a malformed id instead of leaking a raw Postgres type-cast error.
+// Fails predictably on a malformed id instead of leaking a raw Postgres type-cast error.
 export const executionIdSchema = z.uuid();
 
 export const createExecutionInputSchema = z.object({

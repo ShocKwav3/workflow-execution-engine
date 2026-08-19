@@ -35,10 +35,7 @@ export class Container implements Resolver {
     return registration.factory(this);
   }
 
-  // Checks whether a singleton has already been constructed, without
-  // triggering construction. Lets callers (e.g. shutdown paths) act on a
-  // dependency only if it was actually used, rather than forcing it into
-  // existence just to clean it up.
+  // Checks without triggering construction, so a shutdown path can act only on what's already built.
   hasResolved<T>(token: Token<T>): boolean {
     return this.singletons.has(token);
   }

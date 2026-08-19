@@ -1,7 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 
-// Accepted by every repository function so they work identically whether called
-// with the pool directly or with a client borrowed from a transaction (see createExecution).
+// Works with either the pool directly or a client borrowed from a transaction.
 export type Queryable = Pool | PoolClient;
 
 export interface WorkflowRow {

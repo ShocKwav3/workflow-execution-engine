@@ -19,9 +19,7 @@ export const createWorkflowVersionInputSchema = z.object({
 
 export type CreateWorkflowVersionInput = z.infer<typeof createWorkflowVersionInputSchema>;
 
-// Lookup-key shape checks for read methods — not data-integrity validation (nothing
-// is being written), just fail predictably on a malformed key instead of leaking a
-// raw Postgres type-cast error (e.g. "invalid input syntax for type uuid").
+// Fails predictably on a malformed id instead of leaking a raw Postgres type-cast error.
 export const workflowIdSchema = z.uuid();
 
 export const getWorkflowVersionInputSchema = z.object({

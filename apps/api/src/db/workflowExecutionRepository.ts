@@ -15,11 +15,7 @@ export const workflowExecutionRepositoryToken = createToken<WorkflowExecutionRep
 export class WorkflowExecutionRepository {
   constructor(private readonly pool: Pool) {}
 
-  // The one transactional write in this repository: creates the execution row and
-  // its step_execution snapshot atomically (plan §I), and treats a repeated
-  // idempotency key as "return the existing execution," not an error (plan §F).
-  // The step_execution inserts stay in this method (not StepExecutionRepository)
-  // because they must run on the same transaction client as the execution insert.
+  // Only transactional write here — a repeated idempotency key returns the existing execution.
   async createWorkflowExecution(input: CreateExecutionInput): Promise<WorkflowExecutionRow> {
     const { workflowId, workflowVersionId, idempotencyKey } =
       createExecutionInputSchema.parse(input);

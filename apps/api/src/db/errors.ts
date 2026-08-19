@@ -33,10 +33,7 @@ function isPgDriverError(error: unknown): error is PgDriverError {
   return typeof error === "object" && error !== null;
 }
 
-// Translates raw `pg` driver errors into our own typed errors, so callers (Task 4's
-// HTTP handlers) never need to know Postgres SQLSTATE codes or driver-specific
-// message strings. Anything not recognized here is rethrown unchanged — we only
-// translate errors we can confidently classify, never guess.
+// Only translates errors we can confidently classify — everything else is rethrown unchanged.
 export function classifyPgError(error: unknown): Error {
   if (!isPgDriverError(error)) {
     return error as Error;

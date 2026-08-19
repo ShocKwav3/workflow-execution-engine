@@ -13,11 +13,7 @@ export async function buildServer(
 
   await app.register(healthRoutes, { container });
 
-  // Cascades from app.close() — the pool is closed whenever the server shuts
-  // down, however that's triggered (signal handler, tests, etc.), rather than
-  // needing a separate process-level handler tied to the pool specifically.
-  // Only closes it if something actually resolved it first (e.g. a /ready hit)
-  // — shutdown shouldn't force the pool into existence just to close it.
+  // Only closes the pool if something actually resolved it — don't force it into existence.
   app.addHook("onClose", async () => {
     if (container.hasResolved(pgPoolToken)) {
       await closePgPool(container.resolve(pgPoolToken));
