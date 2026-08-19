@@ -6,7 +6,10 @@
   "scripts": {
     "test": "vitest run",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "generate:openapi": "tsc && node dist/api/scripts/generateOpenApiSpec.js",
+    "build": "tsc",
+    "start": "node dist/api/src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +37,10 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/swagger-ui": "^6.1.1",
+    "fastify": "^5.12.0",
+    "fastify-type-provider-zod": "^7.0.0",
     "pg": "^8.23.0",
     "zod": "^4.4.3"
   }

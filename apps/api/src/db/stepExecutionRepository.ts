@@ -1,3 +1,4 @@
+import { createToken } from "../di/token.js";
 import { classifyPgError } from "./errors.js";
 import {
   type StepExecutionHistoryEntry,
@@ -6,6 +7,9 @@ import {
 } from "./helpers/executionHistoryGrouping.js";
 import { workflowExecutionIdSchema } from "./stepExecutionRepository.schemas.js";
 import type { Queryable, StepExecutionRow } from "./types.js";
+
+export const stepExecutionRepositoryToken =
+  createToken<StepExecutionRepository>("stepExecutionRepository");
 
 export class StepExecutionRepository {
   constructor(private readonly db: Queryable) {}

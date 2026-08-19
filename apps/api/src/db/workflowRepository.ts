@@ -1,3 +1,4 @@
+import { createToken } from "../di/token.js";
 import { classifyPgError } from "./errors.js";
 import type { Queryable, WorkflowRow, WorkflowVersionRow } from "./types.js";
 import {
@@ -9,6 +10,8 @@ import {
   getWorkflowVersionInputSchema,
   workflowIdSchema,
 } from "./workflowRepository.schemas.js";
+
+export const workflowRepositoryToken = createToken<WorkflowRepository>("workflowRepository");
 
 export class WorkflowRepository {
   constructor(private readonly db: Queryable) {}

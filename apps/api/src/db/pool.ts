@@ -5,7 +5,7 @@ import type { PgPoolConfig } from "./config.js";
 export const pgPoolToken = createToken<Pool>("pgPool");
 
 export function createPgPool(config: PgPoolConfig): Pool {
-  return new Pool({
+  const pool = new Pool({
     host: config.host,
     port: config.port,
     database: config.database,
@@ -17,6 +17,12 @@ export function createPgPool(config: PgPoolConfig): Pool {
     connectionTimeoutMillis: config.connectionTimeoutMillis,
     maxLifetimeSeconds: config.maxLifetimeSeconds,
   });
+
+  pool.on("error", (err) => {
+    console.error(`Unexpected error on idle PostgreSQL client: ${err.message}`);
+  });
+
+  return pool;
 }
 
 export async function closePgPool(pool: Pool): Promise<void> {
