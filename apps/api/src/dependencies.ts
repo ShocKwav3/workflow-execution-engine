@@ -1,6 +1,6 @@
 import { Container } from "./di/container.js";
 import { loadPgPoolConfig } from "./db/config.js";
-import { createPgPool, pgPoolToken, registerGracefulShutdown } from "./db/pool.js";
+import { createPgPool, pgPoolToken } from "./db/pool.js";
 import { WorkflowRepository, workflowRepositoryToken } from "./db/workflowRepository.js";
 import {
   WorkflowExecutionRepository,
@@ -14,17 +14,7 @@ import {
 export function buildContainer(): Container {
   const container = new Container();
 
-  container.register(
-    pgPoolToken,
-    () => {
-      const pool = createPgPool(loadPgPoolConfig());
-
-      registerGracefulShutdown(pool);
-
-      return pool;
-    },
-    "singleton",
-  );
+  container.register(pgPoolToken, () => createPgPool(loadPgPoolConfig()), "singleton");
 
   container.register(
     workflowRepositoryToken,

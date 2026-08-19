@@ -28,14 +28,3 @@ export function createPgPool(config: PgPoolConfig): Pool {
 export async function closePgPool(pool: Pool): Promise<void> {
   await pool.end();
 }
-
-// Not called automatically on import — the app-shell composition root (Task 3)
-// decides when to wire this up, so importing this module has no process-wide side effects.
-export function registerGracefulShutdown(pool: Pool): void {
-  const shutdown = () => {
-    void closePgPool(pool);
-  };
-
-  process.once("SIGTERM", shutdown);
-  process.once("SIGINT", shutdown);
-}
