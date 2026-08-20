@@ -9,6 +9,7 @@ import fastifyHelmet from "@fastify/helmet";
 import { loadAppConfig, type AppConfig } from "./config.js";
 import { PINO_PRETTY_OPTIONS } from "./config/pinoPretty.js";
 import { errorHandler } from "./errorHandler.js";
+import { createContextLogger } from "./logging/contextLogger.js";
 
 const CORRELATION_ID_HEADER = "x-correlation-id";
 
@@ -28,12 +29,14 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
     reply.header(CORRELATION_ID_HEADER, request.id);
   });
 
+  const lifecycleLogger = createContextLogger(app.log, "Lifecycle");
+
   app.addHook("onReady", async () => {
-    app.log.info("app composed — ready to accept requests");
+    lifecycleLogger.info("app composed — ready to accept requests");
   });
 
   app.addHook("onClose", async () => {
-    app.log.info("shutting down — closing resources");
+    lifecycleLogger.info("shutting down — closing resources");
   });
 
   app.setValidatorCompiler(validatorCompiler);

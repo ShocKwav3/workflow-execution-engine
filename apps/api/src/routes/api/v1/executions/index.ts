@@ -9,6 +9,12 @@ export async function executionRoutes(app: FastifyInstance, options: { container
   const { container } = options;
   const server = app.withTypeProvider<ZodTypeProvider>();
 
+  server.setChildLoggerFactory((logger, bindings, opts) => {
+    bindings.context = "Executions";
+
+    return logger.child(bindings, opts);
+  });
+
   registerGetWorkflowExecution(server, container);
   registerGetWorkflowExecutionSteps(server, container);
   registerGetWorkflowExecutionHistory(server, container);

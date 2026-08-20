@@ -5,6 +5,12 @@ import type { Resolver } from "../di/token.js";
 export async function healthRoutes(app: FastifyInstance, options: { container: Resolver }) {
   const { container } = options;
 
+  app.setChildLoggerFactory((logger, bindings, opts) => {
+    bindings.context = "HealthCheck";
+
+    return logger.child(bindings, opts);
+  });
+
   app.get("/health", async () => {
     return { status: "ok" };
   });

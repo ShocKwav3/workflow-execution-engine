@@ -12,6 +12,12 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
   const { container } = options;
   const server = app.withTypeProvider<ZodTypeProvider>();
 
+  server.setChildLoggerFactory((logger, bindings, opts) => {
+    bindings.context = "Workflows";
+
+    return logger.child(bindings, opts);
+  });
+
   registerCreateWorkflow(server, container);
   registerListWorkflows(server, container);
   registerGetWorkflow(server, container);

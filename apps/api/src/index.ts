@@ -1,17 +1,19 @@
 import { buildServer } from "./server.js";
 import { loadAppConfig } from "./config.js";
+import { createContextLogger } from "./logging/contextLogger.js";
 
 const config = loadAppConfig();
 const app = await buildServer(config);
+const lifecycleLogger = createContextLogger(app.log, "Lifecycle");
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
-  app.log.info(`Received ${signal}, shutting down`);
+  lifecycleLogger.info(`Received ${signal}, shutting down`);
 
   try {
     await app.close();
     process.exit(0);
   } catch (error) {
-    app.log.error({ err: error }, "error during shutdown");
+    lifecycleLogger.error({ err: error }, "error during shutdown");
     process.exit(1);
   }
 }
