@@ -7,13 +7,19 @@ import {
 } from "fastify-type-provider-zod";
 import fastifyHelmet from "@fastify/helmet";
 import { loadAppConfig, type AppConfig } from "./config.js";
+import { PINO_PRETTY_OPTIONS } from "./config/pinoPretty.js";
 import { errorHandler } from "./errorHandler.js";
 
 const CORRELATION_ID_HEADER = "x-correlation-id";
 
 export async function buildApp(config: AppConfig = loadAppConfig()) {
   const app = Fastify({
-    logger: { level: config.logLevel },
+    logger: {
+      level: config.logLevel,
+      ...(config.logPretty
+        ? { transport: { target: "pino-pretty", options: PINO_PRETTY_OPTIONS } }
+        : {}),
+    },
     requestIdHeader: CORRELATION_ID_HEADER,
     genReqId: () => randomUUID(),
   }).withTypeProvider<ZodTypeProvider>();

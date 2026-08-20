@@ -2,8 +2,7 @@ import type { FastifyBaseLogger, FastifyInstance, RawServerDefault } from "fasti
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 
-// The instance type after .withTypeProvider<ZodTypeProvider>() — shared so per-route
-// registration functions can be typed against it without re-deriving it in every file.
+// The instance type after .withTypeProvider<ZodTypeProvider>() — shared across route files.
 export type TypedFastifyInstance = FastifyInstance<
   RawServerDefault,
   IncomingMessage,

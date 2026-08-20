@@ -4,9 +4,7 @@ import type { WorkflowRepository } from "./workflowRepository.js";
 import type { WorkflowExecutionRepository } from "./workflowExecutionRepository.js";
 import type { StepExecutionRepository } from "./stepExecutionRepository.js";
 
-// Ports, not implementations — only type-only imports above (including "pg"), so
-// importing a token never pulls pg (or anything else the implementation needs) into
-// the caller's graph.
+// Ports, not implementations — type-only imports above, so importing a token never pulls pg in.
 export const pgPoolToken = createToken<Pool>("pgPool");
 
 export const workflowRepositoryToken = createToken<WorkflowRepository>("workflowRepository");

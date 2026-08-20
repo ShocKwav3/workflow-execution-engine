@@ -72,7 +72,8 @@ export function errorHandler(
   const appError = toAppError(error);
 
   if (appError.statusCode >= 500) {
-    request.log.error({ err: appError }, "unhandled error");
+    // appError.message is sanitized for the client — log the real cause instead.
+    request.log.error({ err: appError.cause ?? appError }, "unhandled error");
   }
 
   reply.status(appError.statusCode).send({
