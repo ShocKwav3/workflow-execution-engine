@@ -1,8 +1,5 @@
 import { Pool } from "pg";
-import { createToken } from "../di/token.js";
 import type { PgPoolConfig } from "./config.js";
-
-export const pgPoolToken = createToken<Pool>("pgPool");
 
 export function createPgPool(config: PgPoolConfig): Pool {
   const pool = new Pool({

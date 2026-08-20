@@ -2,7 +2,8 @@ import { buildApp } from "./app.js";
 import { loadAppConfig, type AppConfig } from "./config.js";
 import { buildContainer } from "./dependencies.js";
 import type { Container } from "./di/container.js";
-import { closePgPool, pgPoolToken } from "./db/pool.js";
+import { closePgPool } from "./db/pool.js";
+import { pgPoolToken } from "./db/tokens.js";
 import { registerRoutes } from "./routes/index.js";
 
 export async function buildServer(

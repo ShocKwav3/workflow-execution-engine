@@ -1,10 +1,13 @@
-import type { Resolver } from "../../di/token.js";
-import { errorEnvelopeSchema } from "../../errorHandler.js";
-import { NotFoundError } from "../../errors/NotFoundError.js";
-import { workflowExecutionRepositoryToken } from "../../db/tokens.js";
-import type { TypedFastifyInstance } from "../typedFastify.js";
-import { ERROR_RESPONSES } from "../errorResponses.js";
-import { workflowExecutionIdParamsSchema, workflowExecutionResponseSchema } from "./executions.schemas.js";
+import type { Resolver } from "../../../../di/token.js";
+import { errorEnvelopeSchema } from "../../../../errorHandler.js";
+import { NotFoundError } from "../../../../errors/NotFoundError.js";
+import { workflowExecutionRepositoryToken } from "../../../../db/tokens.js";
+import type { TypedFastifyInstance } from "../../../typedFastify.js";
+import { ERROR_RESPONSES } from "../../../errorResponses.js";
+import {
+  workflowExecutionIdParamsSchema,
+  workflowExecutionResponseSchema,
+} from "./executions.schemas.js";
 import { toWorkflowExecutionResponse } from "./executions.serializers.js";
 
 export function registerGetWorkflowExecution(server: TypedFastifyInstance, container: Resolver) {
@@ -13,7 +16,11 @@ export function registerGetWorkflowExecution(server: TypedFastifyInstance, conta
     url: "/executions/:id",
     schema: {
       params: workflowExecutionIdParamsSchema,
-      response: { 200: workflowExecutionResponseSchema, 404: errorEnvelopeSchema, ...ERROR_RESPONSES },
+      response: {
+        200: workflowExecutionResponseSchema,
+        404: errorEnvelopeSchema,
+        ...ERROR_RESPONSES,
+      },
     },
     handler: async (request) => {
       const repository = container.resolve(workflowExecutionRepositoryToken);

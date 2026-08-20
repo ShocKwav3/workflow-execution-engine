@@ -1,11 +1,17 @@
-import type { Resolver } from "../../di/token.js";
-import { stepExecutionRepositoryToken } from "../../db/tokens.js";
-import type { TypedFastifyInstance } from "../typedFastify.js";
-import { ERROR_RESPONSES } from "../errorResponses.js";
-import { workflowExecutionIdParamsSchema, stepExecutionResponseSchema } from "./executions.schemas.js";
+import type { Resolver } from "../../../../di/token.js";
+import { stepExecutionRepositoryToken } from "../../../../db/tokens.js";
+import type { TypedFastifyInstance } from "../../../typedFastify.js";
+import { ERROR_RESPONSES } from "../../../errorResponses.js";
+import {
+  workflowExecutionIdParamsSchema,
+  stepExecutionResponseSchema,
+} from "./executions.schemas.js";
 import { toStepExecutionResponse } from "./executions.serializers.js";
 
-export function registerGetWorkflowExecutionSteps(server: TypedFastifyInstance, container: Resolver) {
+export function registerGetWorkflowExecutionSteps(
+  server: TypedFastifyInstance,
+  container: Resolver,
+) {
   server.route({
     method: "GET",
     url: "/executions/:id/steps",

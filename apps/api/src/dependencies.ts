@@ -1,7 +1,8 @@
 import { Container } from "./di/container.js";
 import { loadPgPoolConfig } from "./db/config.js";
-import { createPgPool, pgPoolToken } from "./db/pool.js";
+import { createPgPool } from "./db/pool.js";
 import {
+  pgPoolToken,
   workflowRepositoryToken,
   workflowExecutionRepositoryToken,
   stepExecutionRepositoryToken,

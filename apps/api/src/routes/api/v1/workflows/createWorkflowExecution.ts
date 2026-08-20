@@ -1,7 +1,7 @@
-import type { Resolver } from "../../di/token.js";
-import { workflowExecutionRepositoryToken } from "../../db/tokens.js";
-import type { TypedFastifyInstance } from "../typedFastify.js";
-import { ERROR_RESPONSES } from "../errorResponses.js";
+import type { Resolver } from "../../../../di/token.js";
+import { workflowExecutionRepositoryToken } from "../../../../db/tokens.js";
+import type { TypedFastifyInstance } from "../../../typedFastify.js";
+import { ERROR_RESPONSES } from "../../../errorResponses.js";
 import {
   createWorkflowExecutionBodySchema,
   createWorkflowExecutionResponseSchema,
@@ -23,8 +23,7 @@ export function registerCreateWorkflowExecution(server: TypedFastifyInstance, co
       const execution = await repository.createWorkflowExecution({
         workflowId: request.params.id,
         workflowVersionId: request.body.workflowVersionId,
-        idempotencyKey:
-          typeof idempotencyKeyHeader === "string" ? idempotencyKeyHeader : undefined,
+        idempotencyKey: typeof idempotencyKeyHeader === "string" ? idempotencyKeyHeader : undefined,
       });
 
       reply.status(201);

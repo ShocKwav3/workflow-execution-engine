@@ -3,11 +3,8 @@ import Fastify from "fastify";
 import {
   serializerCompiler,
   validatorCompiler,
-  jsonSchemaTransform,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import fastifySwagger from "@fastify/swagger";
-import fastifySwaggerUi from "@fastify/swagger-ui";
 import fastifyHelmet from "@fastify/helmet";
 import { loadAppConfig, type AppConfig } from "./config.js";
 import { errorHandler } from "./errorHandler.js";
@@ -37,31 +34,7 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
   app.setSerializerCompiler(serializerCompiler);
   app.setErrorHandler(errorHandler);
 
-  await app.register(fastifySwagger, {
-    openapi: {
-      openapi: "3.0.3",
-      info: {
-        title: "Workflow Execution Engine API",
-        version: "0.1.0",
-      },
-    },
-    transform: jsonSchemaTransform,
-  });
-
-  await app.register(fastifySwaggerUi, {
-    routePrefix: "/api/docs",
-  });
-
   await app.register(fastifyHelmet);
-
-  // Helmet's default CSP blocks Swagger UI's inline scripts — stripped for /api/docs only.
-  app.addHook("onSend", async (request, reply, payload) => {
-    if (request.url.startsWith("/api/docs")) {
-      reply.removeHeader("content-security-policy");
-    }
-
-    return payload;
-  });
 
   return app;
 }

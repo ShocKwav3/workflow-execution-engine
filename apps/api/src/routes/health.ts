@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { pgPoolToken } from "../db/pool.js";
+import { pgPoolToken } from "../db/tokens.js";
 import type { Resolver } from "../di/token.js";
 
 export async function healthRoutes(app: FastifyInstance, options: { container: Resolver }) {

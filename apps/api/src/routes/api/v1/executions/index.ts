@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import type { Resolver } from "../../di/token.js";
+import type { Resolver } from "../../../../di/token.js";
 import { registerGetWorkflowExecution } from "./getWorkflowExecution.js";
 import { registerGetWorkflowExecutionSteps } from "./getWorkflowExecutionSteps.js";
 import { registerGetWorkflowExecutionHistory } from "./getWorkflowExecutionHistory.js";

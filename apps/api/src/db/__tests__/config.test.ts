@@ -20,7 +20,8 @@ afterEach(() => {
 
 describe("loadPgPoolConfig", () => {
   it("throws when a required environment variable is missing", () => {
-    vi.stubEnv("PGHOST", "localhost");
+    stubRequiredEnv();
+    vi.stubEnv("PGDATABASE", undefined);
 
     const load = () => loadPgPoolConfig();
 

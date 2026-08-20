@@ -1,5 +1,9 @@
-import type { StepAttemptRow, StepExecutionRow, WorkflowExecutionRow } from "../../db/types.js";
-import type { StepExecutionHistoryEntry } from "../../db/helpers/executionHistoryGrouping.js";
+import type {
+  StepAttemptRow,
+  StepExecutionRow,
+  WorkflowExecutionRow,
+} from "../../../../db/types.js";
+import type { StepExecutionHistoryEntry } from "../../../../db/helpers/executionHistoryGrouping.js";
 
 export function toWorkflowExecutionResponse(row: WorkflowExecutionRow) {
   return {
