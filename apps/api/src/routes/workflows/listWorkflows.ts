@@ -1,0 +1,22 @@
+import type { Resolver } from "../../di/token.js";
+import { workflowRepositoryToken } from "../../db/workflowRepository.js";
+import type { TypedFastifyInstance } from "../typedFastify.js";
+import { ERROR_RESPONSES } from "../errorResponses.js";
+import { workflowResponseSchema } from "./workflows.schemas.js";
+import { toWorkflowResponse } from "./workflows.serializers.js";
+
+export function registerListWorkflows(server: TypedFastifyInstance, container: Resolver) {
+  server.route({
+    method: "GET",
+    url: "/workflows",
+    schema: {
+      response: { 200: workflowResponseSchema.array(), ...ERROR_RESPONSES },
+    },
+    handler: async () => {
+      const repository = container.resolve(workflowRepositoryToken);
+      const workflows = await repository.listWorkflows();
+
+      return workflows.map(toWorkflowResponse);
+    },
+  });
+}

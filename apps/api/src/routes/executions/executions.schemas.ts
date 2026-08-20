@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-export const executionIdParamsSchema = z.object({
+export const workflowExecutionIdParamsSchema = z.object({
   id: z.uuid(),
 });
 
-export const executionResponseSchema = z.object({
+export const workflowExecutionResponseSchema = z.object({
   id: z.uuid(),
   workflowId: z.uuid(),
   workflowVersionId: z.uuid(),
@@ -34,7 +34,7 @@ export const stepAttemptResponseSchema = z.object({
   error: z.string().nullable(),
 });
 
-export const executionHistoryEntryResponseSchema = z.object({
+export const workflowExecutionHistoryEntryResponseSchema = z.object({
   step: stepExecutionResponseSchema,
   attempts: z.array(stepAttemptResponseSchema),
 });

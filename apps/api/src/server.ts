@@ -3,9 +3,7 @@ import { loadAppConfig, type AppConfig } from "./config.js";
 import { buildContainer } from "./dependencies.js";
 import type { Container } from "./di/container.js";
 import { closePgPool, pgPoolToken } from "./db/pool.js";
-import { healthRoutes } from "./routes/health.js";
-import { workflowRoutes } from "./routes/workflows.js";
-import { executionRoutes } from "./routes/executions.js";
+import { registerRoutes } from "./routes/index.js";
 
 export async function buildServer(
   config: AppConfig = loadAppConfig(),
@@ -13,9 +11,7 @@ export async function buildServer(
 ) {
   const app = await buildApp(config);
 
-  await app.register(healthRoutes, { container });
-  await app.register(workflowRoutes, { container, prefix: "/api" });
-  await app.register(executionRoutes, { container, prefix: "/api" });
+  await app.register(registerRoutes, { container });
 
   // Only closes the pool if something actually resolved it — don't force it into existence.
   app.addHook("onClose", async () => {

@@ -38,10 +38,10 @@ export const workflowVersionParamsSchema = z.object({
   version: z.coerce.number().int().positive(),
 });
 
-export const createExecutionBodySchema = z.object({
+export const createWorkflowExecutionBodySchema = z.object({
   workflowVersionId: z.uuid(),
 });
 
-export const createExecutionResponseSchema = z.object({
+export const createWorkflowExecutionResponseSchema = z.object({
   executionId: z.uuid(),
 });
