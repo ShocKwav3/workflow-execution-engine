@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { UniqueConstraintViolationError } from "../errors.js";
+import { UniqueConstraintViolationError } from "../errors/index.js";
 import { WorkflowRepository } from "../workflowRepository.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
 

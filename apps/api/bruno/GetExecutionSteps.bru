@@ -1,0 +1,15 @@
+meta {
+  name: Get Execution Steps
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/executions/:id/steps
+  body: none
+  auth: none
+}
+
+params:path {
+  id:
+}

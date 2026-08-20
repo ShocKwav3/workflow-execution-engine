@@ -1,0 +1,15 @@
+meta {
+  name: Get Execution History
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/executions/:id/history
+  body: none
+  auth: none
+}
+
+params:path {
+  id:
+}

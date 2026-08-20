@@ -1,5 +1,5 @@
 import { createToken } from "../di/token.js";
-import { classifyPgError } from "./errors.js";
+import { classifyPgError } from "./errors/index.js";
 import type { Queryable, WorkflowRow, WorkflowVersionRow } from "./types.js";
 import {
   type CreateWorkflowInput,

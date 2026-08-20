@@ -18,15 +18,7 @@ export interface TestDatabase {
   pool: Pool;
 }
 
-// Concatenates every changelog file (sorted by filename — relies on numeric-prefix
-// naming discipline, e.g. 0001-, 0002-) and runs it as plain SQL. The Liquibase
-// directives (--liquibase formatted sql, --changeset, --rollback) are plain SQL
-// comments, harmless to execute directly. This does not verify Liquibase's own
-// mechanics (checksums, changelock, apply ordering) — that's covered separately,
-// by actually running Liquibase (done manually so far; plan §K calls out a
-// dedicated broken-changeset test later). This only needs to get a real Postgres
-// into "the current schema" state as fast as possible for repository tests, and
-// stay correct as more changelog files are added without editing every test file.
+// Runs the changelog files as plain SQL — fast schema setup, doesn't verify Liquibase's own mechanics.
 export async function startTestDatabase(): Promise<TestDatabase> {
   const container = await new PostgreSqlContainer("postgres:16").start();
   const pool = new Pool({ connectionString: container.getConnectionUri() });

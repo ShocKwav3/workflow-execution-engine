@@ -1,17 +1,21 @@
+import { z } from "zod";
 import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
 } from "fastify-type-provider-zod";
 
-export interface ErrorEnvelope {
-  error: {
-    code: string;
-    message: string;
-    correlationId: string;
-    details?: unknown;
-  };
-}
+// Zod schema doubles as the ErrorEnvelope TS type and a route response schema.
+export const errorEnvelopeSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    correlationId: z.string(),
+    details: z.unknown().optional(),
+  }),
+});
+
+export type ErrorEnvelope = z.infer<typeof errorEnvelopeSchema>;
 
 export function errorHandler(
   error: FastifyError,

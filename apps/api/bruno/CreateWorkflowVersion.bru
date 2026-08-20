@@ -1,0 +1,25 @@
+meta {
+  name: Create Workflow Version
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/workflows/:id/versions
+  body: json
+  auth: none
+}
+
+params:path {
+  id:
+}
+
+body:json {
+  {
+    "version": 1,
+    "definition": [
+      { "name": "Reserve Inventory", "type": "inventory" },
+      { "name": "Charge Payment", "type": "payment" }
+    ]
+  }
+}

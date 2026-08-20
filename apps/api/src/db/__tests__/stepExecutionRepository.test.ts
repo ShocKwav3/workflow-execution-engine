@@ -3,8 +3,22 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { StepExecutionRepository } from "../stepExecutionRepository.js";
 import { WorkflowExecutionRepository } from "../workflowExecutionRepository.js";
 import { WorkflowRepository } from "../workflowRepository.js";
-import { createWorkflowWithVersion } from "./fixtures.js";
+import type { StepDefinition } from "../types.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
+
+async function createWorkflowWithVersion(
+  workflowRepo: WorkflowRepository,
+  definition: StepDefinition[],
+) {
+  const workflow = await workflowRepo.createWorkflow({ name: "Order Fulfillment" });
+  const version = await workflowRepo.createWorkflowVersion({
+    workflowId: workflow.id,
+    version: 1,
+    definition,
+  });
+
+  return { workflow, version, definition };
+}
 
 describe("StepExecutionRepository", () => {
   let db: TestDatabase;
@@ -27,8 +41,8 @@ describe("StepExecutionRepository", () => {
     await db.pool.query("TRUNCATE workflow CASCADE");
   });
 
-  async function createExecutionWithSteps() {
-    const { workflow, version, definition } = await createWorkflowWithVersion(workflowRepo);
+  async function createExecutionWithSteps(definition: StepDefinition[]) {
+    const { workflow, version } = await createWorkflowWithVersion(workflowRepo, definition);
     const execution = await executionRepo.createWorkflowExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
@@ -38,7 +52,10 @@ describe("StepExecutionRepository", () => {
   }
 
   it("returns the step_execution snapshot in creation order", async () => {
-    const { execution, definition } = await createExecutionWithSteps();
+    const { execution, definition } = await createExecutionWithSteps([
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
 
     const steps = await repo.getStepExecutions(execution.id);
 
@@ -64,7 +81,10 @@ describe("StepExecutionRepository", () => {
   });
 
   it("returns execution history with steps and empty attempts, since nothing has executed yet", async () => {
-    const { execution, definition } = await createExecutionWithSteps();
+    const { execution, definition } = await createExecutionWithSteps([
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
 
     const history = await repo.getWorkflowExecutionHistory(execution.id);
 

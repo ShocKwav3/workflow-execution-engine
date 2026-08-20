@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { createToken } from "../di/token.js";
-import { classifyPgError } from "./errors.js";
+import { classifyPgError } from "./errors/index.js";
 import {
   type CreateExecutionInput,
   createExecutionInputSchema,

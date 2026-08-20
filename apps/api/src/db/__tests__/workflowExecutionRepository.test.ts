@@ -1,11 +1,25 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { StepExecutionRepository } from "../stepExecutionRepository.js";
-import { ForeignKeyViolationError } from "../errors.js";
+import { ForeignKeyViolationError } from "../errors/index.js";
 import { WorkflowExecutionRepository } from "../workflowExecutionRepository.js";
 import { WorkflowRepository } from "../workflowRepository.js";
-import { createWorkflowWithVersion } from "./fixtures.js";
+import type { StepDefinition } from "../types.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
+
+async function createWorkflowWithVersion(
+  workflowRepo: WorkflowRepository,
+  definition: StepDefinition[],
+) {
+  const workflow = await workflowRepo.createWorkflow({ name: "Order Fulfillment" });
+  const version = await workflowRepo.createWorkflowVersion({
+    workflowId: workflow.id,
+    version: 1,
+    definition,
+  });
+
+  return { workflow, version, definition };
+}
 
 describe("WorkflowExecutionRepository", () => {
   let db: TestDatabase;
@@ -29,7 +43,10 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("creates an execution and snapshots one step_execution per defined step", async () => {
-    const { workflow, version, definition } = await createWorkflowWithVersion(workflowRepo);
+    const { workflow, version, definition } = await createWorkflowWithVersion(workflowRepo, [
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
 
     const execution = await repo.createWorkflowExecution({
       workflowId: workflow.id,
@@ -46,7 +63,10 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("returns the existing execution on a repeated idempotency key, without creating a duplicate", async () => {
-    const { workflow, version } = await createWorkflowWithVersion(workflowRepo);
+    const { workflow, version } = await createWorkflowWithVersion(workflowRepo, [
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
 
     const first = await repo.createWorkflowExecution({
       workflowId: workflow.id,
@@ -67,7 +87,10 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("creates a separate execution each time when no idempotency key is given", async () => {
-    const { workflow, version } = await createWorkflowWithVersion(workflowRepo);
+    const { workflow, version } = await createWorkflowWithVersion(workflowRepo, [
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
 
     const first = await repo.createWorkflowExecution({
       workflowId: workflow.id,
@@ -82,7 +105,10 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("rejects an execution whose version belongs to a different workflow", async () => {
-    const { version } = await createWorkflowWithVersion(workflowRepo);
+    const { version } = await createWorkflowWithVersion(workflowRepo, [
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
     const otherWorkflow = await workflowRepo.createWorkflow({ name: "Unrelated Workflow" });
 
     const createMismatched = repo.createWorkflowExecution({
