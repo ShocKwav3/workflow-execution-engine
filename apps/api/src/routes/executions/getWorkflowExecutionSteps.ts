@@ -1,5 +1,5 @@
 import type { Resolver } from "../../di/token.js";
-import { stepExecutionRepositoryToken } from "../../db/stepExecutionRepository.js";
+import { stepExecutionRepositoryToken } from "../../db/tokens.js";
 import type { TypedFastifyInstance } from "../typedFastify.js";
 import { ERROR_RESPONSES } from "../errorResponses.js";
 import { workflowExecutionIdParamsSchema, stepExecutionResponseSchema } from "./executions.schemas.js";

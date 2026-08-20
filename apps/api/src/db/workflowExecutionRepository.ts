@@ -1,5 +1,4 @@
 import type { Pool } from "pg";
-import { createToken } from "../di/token.js";
 import { classifyPgError } from "./errors/index.js";
 import {
   type CreateExecutionInput,
@@ -7,10 +6,6 @@ import {
   executionIdSchema,
 } from "./workflowExecutionRepository.schemas.js";
 import type { StepDefinition, WorkflowExecutionRow } from "./types.js";
-
-export const workflowExecutionRepositoryToken = createToken<WorkflowExecutionRepository>(
-  "workflowExecutionRepository",
-);
 
 export class WorkflowExecutionRepository {
   constructor(private readonly pool: Pool) {}

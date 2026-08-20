@@ -1,15 +1,14 @@
 import { Container } from "./di/container.js";
 import { loadPgPoolConfig } from "./db/config.js";
 import { createPgPool, pgPoolToken } from "./db/pool.js";
-import { WorkflowRepository, workflowRepositoryToken } from "./db/workflowRepository.js";
 import {
-  WorkflowExecutionRepository,
+  workflowRepositoryToken,
   workflowExecutionRepositoryToken,
-} from "./db/workflowExecutionRepository.js";
-import {
-  StepExecutionRepository,
   stepExecutionRepositoryToken,
-} from "./db/stepExecutionRepository.js";
+} from "./db/tokens.js";
+import { WorkflowRepository } from "./db/workflowRepository.js";
+import { WorkflowExecutionRepository } from "./db/workflowExecutionRepository.js";
+import { StepExecutionRepository } from "./db/stepExecutionRepository.js";
 
 export function buildContainer(): Container {
   const container = new Container();

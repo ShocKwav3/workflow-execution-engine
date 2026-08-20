@@ -1,7 +1,7 @@
 import type { Resolver } from "../../di/token.js";
 import { errorEnvelopeSchema } from "../../errorHandler.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
-import { workflowExecutionRepositoryToken } from "../../db/workflowExecutionRepository.js";
+import { workflowExecutionRepositoryToken } from "../../db/tokens.js";
 import type { TypedFastifyInstance } from "../typedFastify.js";
 import { ERROR_RESPONSES } from "../errorResponses.js";
 import { workflowExecutionIdParamsSchema, workflowExecutionResponseSchema } from "./executions.schemas.js";
