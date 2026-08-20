@@ -4,6 +4,8 @@ import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
 } from "fastify-type-provider-zod";
+import { AppError } from "./errors/AppError.js";
+import { errorTranslators } from "./errors/errorTranslators.js";
 
 // Zod schema doubles as the ErrorEnvelope TS type and a route response schema.
 export const errorEnvelopeSchema = z.object({
@@ -16,6 +18,22 @@ export const errorEnvelopeSchema = z.object({
 });
 
 export type ErrorEnvelope = z.infer<typeof errorEnvelopeSchema>;
+
+function toAppError(error: unknown): AppError {
+  if (error instanceof AppError) {
+    return error;
+  }
+
+  for (const translate of errorTranslators) {
+    const translated = translate(error);
+
+    if (translated) {
+      return translated;
+    }
+  }
+
+  return new AppError(500, "INTERNAL_ERROR", "Something went wrong", { cause: error });
+}
 
 export function errorHandler(
   error: FastifyError,
@@ -51,17 +69,18 @@ export function errorHandler(
     return;
   }
 
-  const statusCode = error.statusCode ?? 500;
+  const appError = toAppError(error);
 
-  if (statusCode >= 500) {
-    request.log.error({ err: error }, "unhandled error");
+  if (appError.statusCode >= 500) {
+    request.log.error({ err: appError }, "unhandled error");
   }
 
-  reply.status(statusCode).send({
+  reply.status(appError.statusCode).send({
     error: {
-      code: error.code ?? (statusCode >= 500 ? "INTERNAL_ERROR" : "REQUEST_ERROR"),
-      message: statusCode >= 500 ? "Internal Server Error" : error.message,
+      code: appError.code,
+      message: appError.message,
       correlationId,
+      details: appError.details,
     },
   } satisfies ErrorEnvelope);
 }

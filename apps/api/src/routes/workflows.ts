@@ -2,10 +2,10 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { Resolver } from "../di/token.js";
 import { errorEnvelopeSchema } from "../errorHandler.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 import { workflowRepositoryToken } from "../db/workflowRepository.js";
 import { workflowExecutionRepositoryToken } from "../db/workflowExecutionRepository.js";
 import type { WorkflowRow, WorkflowVersionRow } from "../db/types.js";
-import { replyNotFound, replyWithRepositoryError } from "./httpErrorMapping.js";
 import {
   createExecutionBodySchema,
   createExecutionResponseSchema,
@@ -17,7 +17,7 @@ import {
   workflowVersionResponseSchema,
 } from "./workflows.schemas.js";
 
-// Shape every route below can return via replyWithRepositoryError/replyNotFound.
+// Shape every route below can return via errorHandler.ts's global dispatch.
 const ERROR_RESPONSES = {
   400: errorEnvelopeSchema,
   409: errorEnvelopeSchema,
@@ -57,16 +57,11 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
     },
     async (request, reply) => {
       const repository = container.resolve(workflowRepositoryToken);
+      const workflow = await repository.createWorkflow(request.body);
 
-      try {
-        const workflow = await repository.createWorkflow(request.body);
+      reply.status(201);
 
-        reply.status(201);
-
-        return toWorkflowResponse(workflow);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
-      }
+      return toWorkflowResponse(workflow);
     },
   );
 
@@ -75,14 +70,9 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
     { schema: { response: { 200: workflowResponseSchema.array(), ...ERROR_RESPONSES } } },
     async (request, reply) => {
       const repository = container.resolve(workflowRepositoryToken);
+      const workflows = await repository.listWorkflows();
 
-      try {
-        const workflows = await repository.listWorkflows();
-
-        return workflows.map(toWorkflowResponse);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
-      }
+      return workflows.map(toWorkflowResponse);
     },
   );
 
@@ -96,18 +86,13 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
     },
     async (request, reply) => {
       const repository = container.resolve(workflowRepositoryToken);
+      const workflow = await repository.getWorkflowById(request.params.id);
 
-      try {
-        const workflow = await repository.getWorkflowById(request.params.id);
-
-        if (!workflow) {
-          return replyNotFound(request, reply, "Workflow not found");
-        }
-
-        return toWorkflowResponse(workflow);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
+      if (!workflow) {
+        throw new NotFoundError("Workflow not found");
       }
+
+      return toWorkflowResponse(workflow);
     },
   );
 
@@ -122,20 +107,15 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
     },
     async (request, reply) => {
       const repository = container.resolve(workflowRepositoryToken);
+      const version = await repository.createWorkflowVersion({
+        workflowId: request.params.id,
+        version: request.body.version,
+        definition: request.body.definition,
+      });
 
-      try {
-        const version = await repository.createWorkflowVersion({
-          workflowId: request.params.id,
-          version: request.body.version,
-          definition: request.body.definition,
-        });
+      reply.status(201);
 
-        reply.status(201);
-
-        return toWorkflowVersionResponse(version);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
-      }
+      return toWorkflowVersionResponse(version);
     },
   );
 
@@ -153,21 +133,16 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
     },
     async (request, reply) => {
       const repository = container.resolve(workflowRepositoryToken);
+      const version = await repository.getWorkflowVersion({
+        workflowId: request.params.id,
+        version: request.params.version,
+      });
 
-      try {
-        const version = await repository.getWorkflowVersion({
-          workflowId: request.params.id,
-          version: request.params.version,
-        });
-
-        if (!version) {
-          return replyNotFound(request, reply, "Workflow version not found");
-        }
-
-        return toWorkflowVersionResponse(version);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
+      if (!version) {
+        throw new NotFoundError("Workflow version not found");
       }
+
+      return toWorkflowVersionResponse(version);
     },
   );
 
@@ -183,21 +158,16 @@ export async function workflowRoutes(app: FastifyInstance, options: { container:
     async (request, reply) => {
       const repository = container.resolve(workflowExecutionRepositoryToken);
       const idempotencyKeyHeader = request.headers["idempotency-key"];
+      const execution = await repository.createWorkflowExecution({
+        workflowId: request.params.id,
+        workflowVersionId: request.body.workflowVersionId,
+        idempotencyKey:
+          typeof idempotencyKeyHeader === "string" ? idempotencyKeyHeader : undefined,
+      });
 
-      try {
-        const execution = await repository.createWorkflowExecution({
-          workflowId: request.params.id,
-          workflowVersionId: request.body.workflowVersionId,
-          idempotencyKey:
-            typeof idempotencyKeyHeader === "string" ? idempotencyKeyHeader : undefined,
-        });
+      reply.status(201);
 
-        reply.status(201);
-
-        return { executionId: execution.id };
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
-      }
+      return { executionId: execution.id };
     },
   );
 }

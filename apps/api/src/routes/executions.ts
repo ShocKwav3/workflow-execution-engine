@@ -2,11 +2,11 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { Resolver } from "../di/token.js";
 import { errorEnvelopeSchema } from "../errorHandler.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 import { workflowExecutionRepositoryToken } from "../db/workflowExecutionRepository.js";
 import { stepExecutionRepositoryToken } from "../db/stepExecutionRepository.js";
 import type { StepAttemptRow, StepExecutionRow, WorkflowExecutionRow } from "../db/types.js";
 import type { StepExecutionHistoryEntry } from "../db/helpers/executionHistoryGrouping.js";
-import { replyNotFound, replyWithRepositoryError } from "./httpErrorMapping.js";
 import {
   executionHistoryEntryResponseSchema,
   executionIdParamsSchema,
@@ -14,7 +14,7 @@ import {
   stepExecutionResponseSchema,
 } from "./executions.schemas.js";
 
-// Shape every route below can return via replyWithRepositoryError/replyNotFound.
+// Shape every route below can return via errorHandler.ts's global dispatch.
 const ERROR_RESPONSES = {
   400: errorEnvelopeSchema,
   409: errorEnvelopeSchema,
@@ -78,18 +78,13 @@ export async function executionRoutes(app: FastifyInstance, options: { container
     },
     async (request, reply) => {
       const repository = container.resolve(workflowExecutionRepositoryToken);
+      const execution = await repository.getWorkflowExecutionById(request.params.id);
 
-      try {
-        const execution = await repository.getWorkflowExecutionById(request.params.id);
-
-        if (!execution) {
-          return replyNotFound(request, reply, "Execution not found");
-        }
-
-        return toExecutionResponse(execution);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
+      if (!execution) {
+        throw new NotFoundError("Execution not found");
       }
+
+      return toExecutionResponse(execution);
     },
   );
 
@@ -103,14 +98,9 @@ export async function executionRoutes(app: FastifyInstance, options: { container
     },
     async (request, reply) => {
       const repository = container.resolve(stepExecutionRepositoryToken);
+      const steps = await repository.getStepExecutions(request.params.id);
 
-      try {
-        const steps = await repository.getStepExecutions(request.params.id);
-
-        return steps.map(toStepExecutionResponse);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
-      }
+      return steps.map(toStepExecutionResponse);
     },
   );
 
@@ -124,14 +114,9 @@ export async function executionRoutes(app: FastifyInstance, options: { container
     },
     async (request, reply) => {
       const repository = container.resolve(stepExecutionRepositoryToken);
+      const history = await repository.getWorkflowExecutionHistory(request.params.id);
 
-      try {
-        const history = await repository.getWorkflowExecutionHistory(request.params.id);
-
-        return history.map(toHistoryEntryResponse);
-      } catch (error) {
-        return replyWithRepositoryError(error, request, reply);
-      }
+      return history.map(toHistoryEntryResponse);
     },
   );
 }
