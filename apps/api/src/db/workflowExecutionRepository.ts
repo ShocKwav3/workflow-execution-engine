@@ -5,7 +5,7 @@ import {
   createExecutionInputSchema,
   executionIdSchema,
 } from "./workflowExecutionRepository.schemas.js";
-import type { StepDefinition, WorkflowExecutionRow } from "./types.js";
+import type { NodeRow, WorkflowExecutionRow } from "./types.js";
 
 export class WorkflowExecutionRepository {
   constructor(private readonly pool: Pool) {}
@@ -41,16 +41,15 @@ export class WorkflowExecutionRepository {
 
       const execution = insertResult.rows[0]!;
 
-      const versionResult = await client.query<{ definition: StepDefinition[] }>(
-        `SELECT definition FROM workflow_version WHERE id = $1`,
+      const nodesResult = await client.query<NodeRow>(
+        `SELECT * FROM node WHERE workflow_version_id = $1 ORDER BY sequence`,
         [workflowVersionId],
       );
-      const definition = versionResult.rows[0]!.definition;
 
-      for (const step of definition) {
+      for (const node of nodesResult.rows) {
         await client.query(
-          `INSERT INTO step_execution (workflow_execution_id, step_name) VALUES ($1, $2)`,
-          [execution.id, step.name],
+          `INSERT INTO node_execution (workflow_execution_id, node_id) VALUES ($1, $2)`,
+          [execution.id, node.id],
         );
       }
 

@@ -5,17 +5,17 @@ import { workflowExecutionRepositoryToken } from "../../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../../errorResponses.js";
 import {
-  workflowExecutionIdParamsSchema,
+  workflowExecutionParamsSchema,
   workflowExecutionResponseSchema,
-} from "./executions.schemas.js";
-import { toWorkflowExecutionResponse } from "./executions.serializers.js";
+} from "./workflows.schemas.js";
+import { toWorkflowExecutionResponse } from "./workflows.serializers.js";
 
 export function registerGetWorkflowExecution(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "GET",
-    url: "/executions/:id",
+    url: "/workflows/:workflowId/executions/:executionId",
     schema: {
-      params: workflowExecutionIdParamsSchema,
+      params: workflowExecutionParamsSchema,
       response: {
         200: workflowExecutionResponseSchema,
         404: errorEnvelopeSchema,
@@ -24,7 +24,7 @@ export function registerGetWorkflowExecution(server: TypedFastifyInstance, conta
     },
     handler: async (request) => {
       const repository = container.resolve(workflowExecutionRepositoryToken);
-      const execution = await repository.getWorkflowExecutionById(request.params.id);
+      const execution = await repository.getWorkflowExecutionById(request.params.executionId);
 
       if (!execution) {
         throw new NotFoundError("Execution not found");

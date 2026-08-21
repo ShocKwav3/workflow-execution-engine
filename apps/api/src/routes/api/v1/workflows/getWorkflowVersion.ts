@@ -10,7 +10,7 @@ import { toWorkflowVersionResponse } from "./workflows.serializers.js";
 export function registerGetWorkflowVersion(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "GET",
-    url: "/workflows/:id/versions/:version",
+    url: "/workflows/:workflowId/versions/:version",
     schema: {
       params: workflowVersionParamsSchema,
       response: {
@@ -21,16 +21,16 @@ export function registerGetWorkflowVersion(server: TypedFastifyInstance, contain
     },
     handler: async (request) => {
       const repository = container.resolve(workflowRepositoryToken);
-      const version = await repository.getWorkflowVersion({
-        workflowId: request.params.id,
+      const versionWithNodes = await repository.getWorkflowVersion({
+        workflowId: request.params.workflowId,
         version: request.params.version,
       });
 
-      if (!version) {
+      if (!versionWithNodes) {
         throw new NotFoundError("Workflow version not found");
       }
 
-      return toWorkflowVersionResponse(version);
+      return toWorkflowVersionResponse(versionWithNodes);
     },
   });
 }

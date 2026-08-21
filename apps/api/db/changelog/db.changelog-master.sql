@@ -14,7 +14,6 @@ CREATE TABLE workflow_version (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id UUID NOT NULL,
   version INTEGER NOT NULL,
-  definition JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (workflow_id, version),
   UNIQUE (id, workflow_id),
@@ -22,6 +21,19 @@ CREATE TABLE workflow_version (
 );
 
 CREATE INDEX idx_workflow_version_workflow_id ON workflow_version (workflow_id);
+
+CREATE TABLE node (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_version_id UUID NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  sequence INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (id, workflow_version_id),
+  FOREIGN KEY (workflow_version_id) REFERENCES workflow_version (id)
+);
+
+CREATE INDEX idx_node_workflow_version_id ON node (workflow_version_id);
 
 CREATE TABLE workflow_execution (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -41,33 +53,36 @@ CREATE INDEX idx_workflow_execution_workflow_version_id ON workflow_execution (w
 CREATE UNIQUE INDEX idx_workflow_execution_idempotency ON workflow_execution (workflow_id, idempotency_key)
   WHERE idempotency_key IS NOT NULL;
 
-CREATE TABLE step_execution (
+CREATE TABLE node_execution (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_execution_id UUID NOT NULL,
-  step_name TEXT NOT NULL,
+  node_id UUID NOT NULL,
   status TEXT NOT NULL DEFAULT 'PENDING',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  FOREIGN KEY (workflow_execution_id) REFERENCES workflow_execution (id)
+  FOREIGN KEY (workflow_execution_id) REFERENCES workflow_execution (id),
+  FOREIGN KEY (node_id) REFERENCES node (id)
 );
 
-CREATE INDEX idx_step_execution_workflow_execution_id ON step_execution (workflow_execution_id);
+CREATE INDEX idx_node_execution_workflow_execution_id ON node_execution (workflow_execution_id);
+CREATE INDEX idx_node_execution_node_id ON node_execution (node_id);
 
-CREATE TABLE step_attempt (
+CREATE TABLE node_execution_attempt (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  step_execution_id UUID NOT NULL,
+  node_execution_id UUID NOT NULL,
   attempt_number INTEGER NOT NULL,
   status TEXT NOT NULL,
   started_at TIMESTAMPTZ,
   finished_at TIMESTAMPTZ,
   error TEXT,
-  FOREIGN KEY (step_execution_id) REFERENCES step_execution (id)
+  FOREIGN KEY (node_execution_id) REFERENCES node_execution (id)
 );
 
-CREATE INDEX idx_step_attempt_step_execution_id ON step_attempt (step_execution_id);
+CREATE INDEX idx_node_execution_attempt_node_execution_id ON node_execution_attempt (node_execution_id);
 
---rollback DROP TABLE IF EXISTS step_attempt;
---rollback DROP TABLE IF EXISTS step_execution;
+--rollback DROP TABLE IF EXISTS node_execution_attempt;
+--rollback DROP TABLE IF EXISTS node_execution;
 --rollback DROP TABLE IF EXISTS workflow_execution;
+--rollback DROP TABLE IF EXISTS node;
 --rollback DROP TABLE IF EXISTS workflow_version;
 --rollback DROP TABLE IF EXISTS workflow;

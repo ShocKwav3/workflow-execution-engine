@@ -5,13 +5,13 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/v1/workflows/:id/executions
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/executions
   body: json
   auth: none
 }
 
 params:path {
-  id:
+  workflowId:
 }
 
 headers {

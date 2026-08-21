@@ -10,16 +10,19 @@ export interface WorkflowRow {
   updated_at: Date;
 }
 
-export interface StepDefinition {
-  name: string;
-  type: string;
-}
-
 export interface WorkflowVersionRow {
   id: string;
   workflow_id: string;
   version: number;
-  definition: StepDefinition[];
+  created_at: Date;
+}
+
+export interface NodeRow {
+  id: string;
+  workflow_version_id: string;
+  name: string;
+  type: string;
+  sequence: number;
   created_at: Date;
 }
 
@@ -34,18 +37,18 @@ export interface WorkflowExecutionRow {
   completed_at: Date | null;
 }
 
-export interface StepExecutionRow {
+export interface NodeExecutionRow {
   id: string;
   workflow_execution_id: string;
-  step_name: string;
+  node_id: string;
   status: string;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface StepAttemptRow {
+export interface NodeExecutionAttemptRow {
   id: string;
-  step_execution_id: string;
+  node_execution_id: string;
   attempt_number: number;
   status: string;
   started_at: Date | null;

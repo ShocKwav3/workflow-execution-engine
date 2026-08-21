@@ -5,11 +5,12 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/v1/executions/:id/history
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/executions/:executionId/history
   body: none
   auth: none
 }
 
 params:path {
-  id:
+  workflowId:
+  executionId:
 }

@@ -12,7 +12,7 @@ import { toWorkflowVersionResponse } from "./workflows.serializers.js";
 export function registerCreateWorkflowVersion(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "POST",
-    url: "/workflows/:id/versions",
+    url: "/workflows/:workflowId/versions",
     schema: {
       params: workflowIdParamsSchema,
       body: createWorkflowVersionBodySchema,
@@ -20,15 +20,15 @@ export function registerCreateWorkflowVersion(server: TypedFastifyInstance, cont
     },
     handler: async (request, reply) => {
       const repository = container.resolve(workflowRepositoryToken);
-      const version = await repository.createWorkflowVersion({
-        workflowId: request.params.id,
+      const versionWithNodes = await repository.createWorkflowVersion({
+        workflowId: request.params.workflowId,
         version: request.body.version,
         definition: request.body.definition,
       });
 
       reply.status(201);
 
-      return toWorkflowVersionResponse(version);
+      return toWorkflowVersionResponse(versionWithNodes);
     },
   });
 }

@@ -1,7 +1,8 @@
 import { Pool } from "pg";
+import type { FastifyBaseLogger } from "fastify";
 import type { PgPoolConfig } from "./config.js";
 
-export function createPgPool(config: PgPoolConfig): Pool {
+export function createPgPool(config: PgPoolConfig, logger: FastifyBaseLogger): Pool {
   const pool = new Pool({
     host: config.host,
     port: config.port,
@@ -16,7 +17,7 @@ export function createPgPool(config: PgPoolConfig): Pool {
   });
 
   pool.on("error", (err) => {
-    console.error(`Unexpected error on idle PostgreSQL client: ${err.message}`);
+    logger.error({ err }, "unexpected error on idle PostgreSQL client");
   });
 
   return pool;

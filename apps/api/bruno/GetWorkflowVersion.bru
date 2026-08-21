@@ -5,12 +5,12 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/v1/workflows/:id/versions/:version
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version
   body: none
   auth: none
 }
 
 params:path {
-  id:
+  workflowId:
   version:
 }

@@ -1,17 +1,32 @@
-import type { StepAttemptRow, StepExecutionRow } from "../types.js";
+import type { NodeExecutionAttemptRow } from "../types.js";
 
-export interface StepExecutionHistoryEntry {
-  step: StepExecutionRow;
-  attempts: StepAttemptRow[];
+export interface NodeExecutionWithNode {
+  id: string;
+  workflow_execution_id: string;
+  node_id: string;
+  name: string;
+  type: string;
+  sequence: number;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface StepHistoryQueryRow {
-  step_id: string;
+export interface NodeExecutionHistoryEntry {
+  node: NodeExecutionWithNode;
+  attempts: NodeExecutionAttemptRow[];
+}
+
+export interface NodeHistoryQueryRow {
+  node_execution_id: string;
   workflow_execution_id: string;
-  step_name: string;
-  step_status: string;
-  step_created_at: Date;
-  step_updated_at: Date;
+  node_id: string;
+  node_name: string;
+  node_type: string;
+  node_sequence: number;
+  node_execution_status: string;
+  node_execution_created_at: Date;
+  node_execution_updated_at: Date;
   attempt_id: string | null;
   attempt_number: number | null;
   attempt_status: string | null;
@@ -21,31 +36,34 @@ export interface StepHistoryQueryRow {
 }
 
 // Pure, no I/O — kept separate so it's unit-testable without a real database.
-export function groupStepHistoryRows(rows: StepHistoryQueryRow[]): StepExecutionHistoryEntry[] {
-  const stepsById = new Map<string, StepExecutionHistoryEntry>();
+export function groupNodeHistoryRows(rows: NodeHistoryQueryRow[]): NodeExecutionHistoryEntry[] {
+  const nodesById = new Map<string, NodeExecutionHistoryEntry>();
 
   for (const row of rows) {
-    let entry = stepsById.get(row.step_id);
+    let entry = nodesById.get(row.node_execution_id);
 
     if (!entry) {
       entry = {
-        step: {
-          id: row.step_id,
+        node: {
+          id: row.node_execution_id,
           workflow_execution_id: row.workflow_execution_id,
-          step_name: row.step_name,
-          status: row.step_status,
-          created_at: row.step_created_at,
-          updated_at: row.step_updated_at,
+          node_id: row.node_id,
+          name: row.node_name,
+          type: row.node_type,
+          sequence: row.node_sequence,
+          status: row.node_execution_status,
+          created_at: row.node_execution_created_at,
+          updated_at: row.node_execution_updated_at,
         },
         attempts: [],
       };
-      stepsById.set(row.step_id, entry);
+      nodesById.set(row.node_execution_id, entry);
     }
 
     if (row.attempt_id) {
       entry.attempts.push({
         id: row.attempt_id,
-        step_execution_id: row.step_id,
+        node_execution_id: row.node_execution_id,
         attempt_number: row.attempt_number!,
         status: row.attempt_status!,
         started_at: row.started_at,
@@ -55,5 +73,5 @@ export function groupStepHistoryRows(rows: StepHistoryQueryRow[]): StepExecution
     }
   }
 
-  return [...stepsById.values()];
+  return [...nodesById.values()];
 }

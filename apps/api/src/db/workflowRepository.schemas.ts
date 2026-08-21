@@ -6,7 +6,7 @@ export const createWorkflowInputSchema = z.object({
 
 export type CreateWorkflowInput = z.infer<typeof createWorkflowInputSchema>;
 
-const stepDefinitionSchema = z.object({
+const nodeDefinitionSchema = z.object({
   name: z.string().trim().min(1),
   type: z.string().trim().min(1),
 });
@@ -14,7 +14,7 @@ const stepDefinitionSchema = z.object({
 export const createWorkflowVersionInputSchema = z.object({
   workflowId: z.uuid(),
   version: z.number().int().positive(),
-  definition: z.array(stepDefinitionSchema),
+  definition: z.array(nodeDefinitionSchema),
 });
 
 export type CreateWorkflowVersionInput = z.infer<typeof createWorkflowVersionInputSchema>;

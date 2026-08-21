@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { groupStepHistoryRows, type StepHistoryQueryRow } from "../executionHistoryGrouping.js";
+import { groupNodeHistoryRows, type NodeHistoryQueryRow } from "../executionHistoryGrouping.js";
 
-function row(overrides: Partial<StepHistoryQueryRow>): StepHistoryQueryRow {
+function row(overrides: Partial<NodeHistoryQueryRow>): NodeHistoryQueryRow {
   return {
-    step_id: "step-1",
+    node_execution_id: "node-execution-1",
     workflow_execution_id: "exec-1",
-    step_name: "Reserve Inventory",
-    step_status: "PENDING",
-    step_created_at: new Date("2026-01-01T00:00:00Z"),
-    step_updated_at: new Date("2026-01-01T00:00:00Z"),
+    node_id: "node-1",
+    node_name: "Reserve Inventory",
+    node_type: "inventory",
+    node_sequence: 0,
+    node_execution_status: "PENDING",
+    node_execution_created_at: new Date("2026-01-01T00:00:00Z"),
+    node_execution_updated_at: new Date("2026-01-01T00:00:00Z"),
     attempt_id: null,
     attempt_number: null,
     attempt_status: null,
@@ -19,16 +22,19 @@ function row(overrides: Partial<StepHistoryQueryRow>): StepHistoryQueryRow {
   };
 }
 
-describe("groupStepHistoryRows", () => {
-  it("groups a step with no attempts into an empty attempts array", () => {
-    const result = groupStepHistoryRows([row({})]);
+describe("groupNodeHistoryRows", () => {
+  it("groups a node with no attempts into an empty attempts array", () => {
+    const result = groupNodeHistoryRows([row({})]);
 
     expect(result).toEqual([
       {
-        step: {
-          id: "step-1",
+        node: {
+          id: "node-execution-1",
           workflow_execution_id: "exec-1",
-          step_name: "Reserve Inventory",
+          node_id: "node-1",
+          name: "Reserve Inventory",
+          type: "inventory",
+          sequence: 0,
           status: "PENDING",
           created_at: new Date("2026-01-01T00:00:00Z"),
           updated_at: new Date("2026-01-01T00:00:00Z"),
@@ -38,7 +44,7 @@ describe("groupStepHistoryRows", () => {
     ]);
   });
 
-  it("groups multiple attempt rows under the same step", () => {
+  it("groups multiple attempt rows under the same node", () => {
     const rows = [
       row({
         attempt_id: "attempt-1",
@@ -49,29 +55,26 @@ describe("groupStepHistoryRows", () => {
       row({ attempt_id: "attempt-2", attempt_number: 2, attempt_status: "COMPLETED" }),
     ];
 
-    const result = groupStepHistoryRows(rows);
+    const result = groupNodeHistoryRows(rows);
 
     expect(result).toHaveLength(1);
     expect(result[0]!.attempts).toHaveLength(2);
     expect(result[0]!.attempts.map((a) => a.attempt_number)).toEqual([1, 2]);
   });
 
-  it("keeps separate steps as separate entries", () => {
+  it("keeps separate nodes as separate entries", () => {
     const rows = [
-      row({ step_id: "step-1" }),
-      row({ step_id: "step-2", step_name: "Charge Payment" }),
+      row({ node_execution_id: "node-execution-1" }),
+      row({ node_execution_id: "node-execution-2", node_name: "Charge Payment" }),
     ];
 
-    const result = groupStepHistoryRows(rows);
+    const result = groupNodeHistoryRows(rows);
 
     expect(result).toHaveLength(2);
-    expect(result.map((entry) => entry.step.step_name)).toEqual([
-      "Reserve Inventory",
-      "Charge Payment",
-    ]);
+    expect(result.map((entry) => entry.node.name)).toEqual(["Reserve Inventory", "Charge Payment"]);
   });
 
   it("returns an empty array for no rows", () => {
-    expect(groupStepHistoryRows([])).toEqual([]);
+    expect(groupNodeHistoryRows([])).toEqual([]);
   });
 });

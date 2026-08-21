@@ -58,7 +58,7 @@ describe("WorkflowRepository", () => {
     expect(workflows.map((w) => w.name)).toEqual(["Workflow A", "Workflow B"]);
   });
 
-  it("creates and fetches a workflow version, round-tripping the definition", async () => {
+  it("creates and fetches a workflow version, snapshotting one node per definition entry in order", async () => {
     const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
     const definition = [
       { name: "Reserve Inventory", type: "inventory" },
@@ -72,7 +72,12 @@ describe("WorkflowRepository", () => {
     });
     const fetched = await repo.getWorkflowVersion({ workflowId: workflow.id, version: 1 });
 
-    expect(created.definition).toEqual(definition);
+    expect(
+      created.nodes.map((n) => ({ name: n.name, type: n.type, sequence: n.sequence })),
+    ).toEqual([
+      { name: "Reserve Inventory", type: "inventory", sequence: 0 },
+      { name: "Charge Payment", type: "payment", sequence: 1 },
+    ]);
     expect(fetched).toEqual(created);
   });
 

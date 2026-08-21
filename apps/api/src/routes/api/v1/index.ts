@@ -4,7 +4,7 @@ import fastifySwaggerUi from "@fastify/swagger-ui";
 import { jsonSchemaTransform } from "fastify-type-provider-zod";
 import type { Resolver } from "../../../di/token.js";
 import { workflowRoutes } from "./workflows/index.js";
-import { executionRoutes } from "./executions/index.js";
+import { nodeRoutes } from "./nodes/index.js";
 
 export async function v1Routes(app: FastifyInstance, options: { container: Resolver }) {
   const { container } = options;
@@ -34,5 +34,5 @@ export async function v1Routes(app: FastifyInstance, options: { container: Resol
   });
 
   await app.register(workflowRoutes, { container });
-  await app.register(executionRoutes, { container });
+  await app.register(nodeRoutes, { container });
 }

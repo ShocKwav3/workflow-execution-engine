@@ -1,5 +1,6 @@
+import type { Pool } from "pg";
 import { classifyPgError } from "./errors/index.js";
-import type { Queryable, WorkflowRow, WorkflowVersionRow } from "./types.js";
+import type { NodeRow, WorkflowRow, WorkflowVersionRow } from "./types.js";
 import {
   type CreateWorkflowInput,
   type CreateWorkflowVersionInput,
@@ -10,14 +11,19 @@ import {
   workflowIdSchema,
 } from "./workflowRepository.schemas.js";
 
+export interface WorkflowVersionWithNodes {
+  version: WorkflowVersionRow;
+  nodes: NodeRow[];
+}
+
 export class WorkflowRepository {
-  constructor(private readonly db: Queryable) {}
+  constructor(private readonly pool: Pool) {}
 
   async createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRow> {
     const { name } = createWorkflowInputSchema.parse(input);
 
     try {
-      const result = await this.db.query<WorkflowRow>(
+      const result = await this.pool.query<WorkflowRow>(
         `INSERT INTO workflow (name) VALUES ($1) RETURNING *`,
         [name],
       );
@@ -32,7 +38,7 @@ export class WorkflowRepository {
     const validId = workflowIdSchema.parse(id);
 
     try {
-      const result = await this.db.query<WorkflowRow>(`SELECT * FROM workflow WHERE id = $1`, [
+      const result = await this.pool.query<WorkflowRow>(`SELECT * FROM workflow WHERE id = $1`, [
         validId,
       ]);
 
@@ -44,7 +50,9 @@ export class WorkflowRepository {
 
   async listWorkflows(): Promise<WorkflowRow[]> {
     try {
-      const result = await this.db.query<WorkflowRow>(`SELECT * FROM workflow ORDER BY created_at`);
+      const result = await this.pool.query<WorkflowRow>(
+        `SELECT * FROM workflow ORDER BY created_at`,
+      );
 
       return result.rows;
     } catch (error) {
@@ -52,35 +60,69 @@ export class WorkflowRepository {
     }
   }
 
-  async createWorkflowVersion(input: CreateWorkflowVersionInput): Promise<WorkflowVersionRow> {
+  // Version + its nodes commit atomically — a version is never left with a partial node set.
+  async createWorkflowVersion(
+    input: CreateWorkflowVersionInput,
+  ): Promise<WorkflowVersionWithNodes> {
     const { workflowId, version, definition } = createWorkflowVersionInputSchema.parse(input);
 
-    try {
-      const result = await this.db.query<WorkflowVersionRow>(
-        `INSERT INTO workflow_version (workflow_id, version, definition)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [workflowId, version, JSON.stringify(definition)],
-      );
+    const client = await this.pool.connect();
 
-      return result.rows[0]!;
+    try {
+      await client.query("BEGIN");
+
+      const versionResult = await client.query<WorkflowVersionRow>(
+        `INSERT INTO workflow_version (workflow_id, version) VALUES ($1, $2) RETURNING *`,
+        [workflowId, version],
+      );
+      const workflowVersion = versionResult.rows[0]!;
+
+      const nodes: NodeRow[] = [];
+
+      for (const [sequence, node] of definition.entries()) {
+        const nodeResult = await client.query<NodeRow>(
+          `INSERT INTO node (workflow_version_id, name, type, sequence)
+           VALUES ($1, $2, $3, $4)
+           RETURNING *`,
+          [workflowVersion.id, node.name, node.type, sequence],
+        );
+
+        nodes.push(nodeResult.rows[0]!);
+      }
+
+      await client.query("COMMIT");
+
+      return { version: workflowVersion, nodes };
     } catch (error) {
+      await client.query("ROLLBACK");
       throw classifyPgError(error);
+    } finally {
+      client.release();
     }
   }
 
   async getWorkflowVersion(
     input: GetWorkflowVersionInput,
-  ): Promise<WorkflowVersionRow | undefined> {
+  ): Promise<WorkflowVersionWithNodes | undefined> {
     const { workflowId, version } = getWorkflowVersionInputSchema.parse(input);
 
     try {
-      const result = await this.db.query<WorkflowVersionRow>(
+      const versionResult = await this.pool.query<WorkflowVersionRow>(
         `SELECT * FROM workflow_version WHERE workflow_id = $1 AND version = $2`,
         [workflowId, version],
       );
+      const workflowVersion = versionResult.rows[0];
 
-      return result.rows[0];
+      if (!workflowVersion) {
+        return undefined;
+      }
+
+      const nodesResult = await this.pool.query<NodeRow>(
+        `SELECT * FROM node WHERE workflow_version_id = $1 ORDER BY sequence`,
+        [workflowVersion.id],
+      );
+
+      return { version: workflowVersion, nodes: nodesResult.rows };
     } catch (error) {
       throw classifyPgError(error);
     }

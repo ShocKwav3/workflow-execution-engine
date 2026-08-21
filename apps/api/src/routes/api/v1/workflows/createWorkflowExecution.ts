@@ -11,7 +11,7 @@ import {
 export function registerCreateWorkflowExecution(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "POST",
-    url: "/workflows/:id/executions",
+    url: "/workflows/:workflowId/executions",
     schema: {
       params: workflowIdParamsSchema,
       body: createWorkflowExecutionBodySchema,
@@ -21,7 +21,7 @@ export function registerCreateWorkflowExecution(server: TypedFastifyInstance, co
       const repository = container.resolve(workflowExecutionRepositoryToken);
       const idempotencyKeyHeader = request.headers["idempotency-key"];
       const execution = await repository.createWorkflowExecution({
-        workflowId: request.params.id,
+        workflowId: request.params.workflowId,
         workflowVersionId: request.body.workflowVersionId,
         idempotencyKey: typeof idempotencyKeyHeader === "string" ? idempotencyKeyHeader : undefined,
       });

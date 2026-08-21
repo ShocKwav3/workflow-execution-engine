@@ -10,14 +10,14 @@ import { toWorkflowResponse } from "./workflows.serializers.js";
 export function registerGetWorkflow(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "GET",
-    url: "/workflows/:id",
+    url: "/workflows/:workflowId",
     schema: {
       params: workflowIdParamsSchema,
       response: { 200: workflowResponseSchema, 404: errorEnvelopeSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
       const repository = container.resolve(workflowRepositoryToken);
-      const workflow = await repository.getWorkflowById(request.params.id);
+      const workflow = await repository.getWorkflowById(request.params.workflowId);
 
       if (!workflow) {
         throw new NotFoundError("Workflow not found");
