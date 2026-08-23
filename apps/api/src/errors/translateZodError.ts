@@ -6,8 +6,8 @@ export function translateZodError(error: unknown): AppError | undefined {
     return undefined;
   }
 
-  return new AppError(400, "VALIDATION_ERROR", "Request validation failed", {
+  return new AppError(400, "VALIDATION_ERROR", "Bad Request", "Request validation failed", {
     cause: error,
-    details: error.issues,
+    errors: error.issues,
   });
 }

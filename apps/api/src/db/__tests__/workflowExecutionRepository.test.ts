@@ -1,24 +1,18 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeExecutionRepository } from "../nodeExecutionRepository.js";
-import { ForeignKeyViolationError } from "../errors/index.js";
+import {
+  VersionNotPublishedError,
+  WorkflowVersionMismatchError,
+} from "../../errors/domain/index.js";
 import { WorkflowExecutionRepository } from "../workflowExecutionRepository.js";
 import { WorkflowRepository } from "../workflowRepository.js";
-import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
-
-async function createWorkflowWithVersion(
-  workflowRepo: WorkflowRepository,
-  definition: { name: string; type: string }[],
-) {
-  const workflow = await workflowRepo.createWorkflow({ name: "Order Fulfillment" });
-  const { version, nodes } = await workflowRepo.createWorkflowVersion({
-    workflowId: workflow.id,
-    version: 1,
-    definition,
-  });
-
-  return { workflow, version, nodes };
-}
+import {
+  type TestDatabase,
+  startTestDatabase,
+  stopTestDatabase,
+} from "../../../test/testDatabase.js";
+import { seedDraftVersion, seedPublishedVersion } from "../../../test/fixtures.js";
 
 describe("WorkflowExecutionRepository", () => {
   let db: TestDatabase;
@@ -42,7 +36,7 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("creates an execution and snapshots one node_execution per node", async () => {
-    const { workflow, version, nodes } = await createWorkflowWithVersion(workflowRepo, [
+    const { workflow, version, nodes } = await seedPublishedVersion(db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
@@ -54,9 +48,10 @@ describe("WorkflowExecutionRepository", () => {
 
     expect(execution.status).toBe("PENDING");
 
-    const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution(
-      execution.id,
-    );
+    const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution({
+      workflowId: workflow.id,
+      workflowExecutionId: execution.id,
+    });
 
     expect(nodeExecutions).toHaveLength(nodes.length);
     expect(nodeExecutions.map((ne) => ne.node_id).sort()).toEqual(nodes.map((n) => n.id).sort());
@@ -64,7 +59,7 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("returns the existing execution on a repeated idempotency key, without creating a duplicate", async () => {
-    const { workflow, version } = await createWorkflowWithVersion(workflowRepo, [
+    const { workflow, version } = await seedPublishedVersion(db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
@@ -82,13 +77,16 @@ describe("WorkflowExecutionRepository", () => {
 
     expect(second.id).toBe(first.id);
 
-    const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution(first.id);
+    const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution({
+      workflowId: workflow.id,
+      workflowExecutionId: first.id,
+    });
 
     expect(nodeExecutions).toHaveLength(2);
   });
 
   it("creates a separate execution each time when no idempotency key is given", async () => {
-    const { workflow, version } = await createWorkflowWithVersion(workflowRepo, [
+    const { workflow, version } = await seedPublishedVersion(db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
@@ -106,7 +104,7 @@ describe("WorkflowExecutionRepository", () => {
   });
 
   it("rejects an execution whose version belongs to a different workflow", async () => {
-    const { version } = await createWorkflowWithVersion(workflowRepo, [
+    const { version } = await seedPublishedVersion(db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
@@ -117,7 +115,20 @@ describe("WorkflowExecutionRepository", () => {
       workflowVersionId: version.id,
     });
 
-    await expect(createMismatched).rejects.toThrow(ForeignKeyViolationError);
+    await expect(createMismatched).rejects.toThrow(WorkflowVersionMismatchError);
+  });
+
+  it("refuses to execute a version that is still a draft", async () => {
+    const { workflow, version } = await seedDraftVersion(db.pool, [
+      { name: "Reserve Inventory", type: "inventory" },
+    ]);
+
+    const createOnDraft = repo.createWorkflowExecution({
+      workflowId: workflow.id,
+      workflowVersionId: version.id,
+    });
+
+    await expect(createOnDraft).rejects.toThrow(VersionNotPublishedError);
   });
 
   it("returns undefined when fetching an execution that doesn't exist", async () => {

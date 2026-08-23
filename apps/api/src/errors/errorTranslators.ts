@@ -1,7 +1,7 @@
 import type { AppError } from "./AppError.js";
-import { translateDatabaseError } from "./translateDatabaseError.js";
 import { translateZodError } from "./translateZodError.js";
+import { translateClassifiedError } from "./translateClassifiedError.js";
 
 export type ErrorTranslator = (error: unknown) => AppError | undefined;
 
-export const errorTranslators: ErrorTranslator[] = [translateZodError, translateDatabaseError];
+export const errorTranslators: ErrorTranslator[] = [translateZodError, translateClassifiedError];

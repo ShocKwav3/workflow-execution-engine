@@ -1,0 +1,16 @@
+meta {
+  name: Delete Workflow Version
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version
+  body: none
+  auth: none
+}
+
+params:path {
+  workflowId:
+  version: 1
+}

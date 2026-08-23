@@ -1,0 +1,15 @@
+meta {
+  name: Delete Node
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/nodes/:nodeId
+  body: none
+  auth: none
+}
+
+params:path {
+  nodeId:
+}

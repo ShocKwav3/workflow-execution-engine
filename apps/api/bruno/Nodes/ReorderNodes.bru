@@ -1,0 +1,22 @@
+meta {
+  name: Reorder Nodes
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version/nodes
+  body: json
+  auth: none
+}
+
+params:path {
+  workflowId:
+  version: 1
+}
+
+body:json {
+  {
+    "nodeIds": []
+  }
+}

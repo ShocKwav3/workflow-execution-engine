@@ -63,32 +63,31 @@ describe("Container", () => {
     expect(resolveMissing).toThrow(UnregisteredTokenError);
   });
 
-  it("lets a test container override a registration without touching the original", () => {
+  it("gives a factory a resolver that reaches the container's other registrations", () => {
     const container = new Container();
-    const token = createToken<string>("greeting");
+    const dependencyToken = createToken<string>("dependency");
+    const consumerToken = createToken<{ dependency: string }>("consumer");
 
-    container.register(token, () => "real", "singleton");
+    container.register(dependencyToken, () => "resolved", "singleton");
+    container.register(
+      consumerToken,
+      (resolver) => ({ dependency: resolver.resolve(dependencyToken) }),
+      "singleton",
+    );
 
-    const testContainer = container.createTestContainer();
-
-    testContainer.override(token, () => "fake", "singleton");
-
-    const overridden = testContainer.resolve(token);
-    const original = container.resolve(token);
-
-    expect(overridden).toBe("fake");
-    expect(original).toBe("real");
+    expect(container.resolve(consumerToken).dependency).toBe("resolved");
   });
 
-  it("falls back to the base container for tokens not overridden", () => {
+  it("reports whether a singleton has been constructed without constructing it", () => {
     const container = new Container();
-    const token = createToken<string>("untouched");
+    const token = createToken<string>("thing");
 
-    container.register(token, () => "original", "singleton");
+    container.register(token, () => "value", "singleton");
 
-    const testContainer = container.createTestContainer();
-    const resolved = testContainer.resolve(token);
+    expect(container.hasResolved(token)).toBe(false);
 
-    expect(resolved).toBe("original");
+    container.resolve(token);
+
+    expect(container.hasResolved(token)).toBe(true);
   });
 });

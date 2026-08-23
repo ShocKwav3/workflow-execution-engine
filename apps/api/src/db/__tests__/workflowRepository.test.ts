@@ -1,16 +1,28 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { UniqueConstraintViolationError } from "../errors/index.js";
+import {
+  VersionAlreadyPublishedError,
+  VersionHasNoNodesError,
+  VersionNotDraftError,
+} from "../../errors/domain/index.js";
+import { NodeRepository } from "../nodeRepository.js";
 import { WorkflowRepository } from "../workflowRepository.js";
-import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
+import {
+  type TestDatabase,
+  startTestDatabase,
+  stopTestDatabase,
+} from "../../../test/testDatabase.js";
 
 describe("WorkflowRepository", () => {
   let db: TestDatabase;
   let repo: WorkflowRepository;
+  let nodes: NodeRepository;
 
   beforeAll(async () => {
     db = await startTestDatabase();
     repo = new WorkflowRepository(db.pool);
+    nodes = new NodeRepository(db.pool);
   }, 60_000);
 
   afterAll(async () => {
@@ -20,6 +32,20 @@ describe("WorkflowRepository", () => {
   beforeEach(async () => {
     await db.pool.query("TRUNCATE workflow CASCADE");
   });
+
+  async function draftWithNode(name = "Order Fulfillment") {
+    const workflow = await repo.createWorkflow({ name });
+    const version = await repo.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    await nodes.createNode({
+      workflowId: workflow.id,
+      version: 1,
+      name: "Reserve Inventory",
+      type: "inventory",
+    });
+
+    return { workflow, version };
+  }
 
   it("creates and fetches a workflow", async () => {
     const created = await repo.createWorkflow({ name: "Order Fulfillment" });
@@ -58,35 +84,19 @@ describe("WorkflowRepository", () => {
     expect(workflows.map((w) => w.name)).toEqual(["Workflow A", "Workflow B"]);
   });
 
-  it("creates and fetches a workflow version, snapshotting one node per definition entry in order", async () => {
+  it("creates a workflow version as an empty draft", async () => {
     const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
-    const definition = [
-      { name: "Reserve Inventory", type: "inventory" },
-      { name: "Charge Payment", type: "payment" },
-    ];
 
-    const created = await repo.createWorkflowVersion({
-      workflowId: workflow.id,
-      version: 1,
-      definition,
-    });
+    const created = await repo.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
     const fetched = await repo.getWorkflowVersion({ workflowId: workflow.id, version: 1 });
 
-    expect(
-      created.nodes.map((n) => ({ name: n.name, type: n.type, sequence: n.sequence })),
-    ).toEqual([
-      { name: "Reserve Inventory", type: "inventory", sequence: 0 },
-      { name: "Charge Payment", type: "payment", sequence: 1 },
-    ]);
+    expect(created.status).toBe("DRAFT");
+    expect(created.published_at).toBeNull();
     expect(fetched).toEqual(created);
   });
 
   it("rejects creating a workflow version with an invalid workflowId", async () => {
-    const createInvalid = repo.createWorkflowVersion({
-      workflowId: "not-a-uuid",
-      version: 1,
-      definition: [],
-    });
+    const createInvalid = repo.createWorkflowVersion({ workflowId: "not-a-uuid", version: 1 });
 
     await expect(createInvalid).rejects.toThrow(ZodError);
   });
@@ -94,11 +104,7 @@ describe("WorkflowRepository", () => {
   it("rejects creating a workflow version with a non-positive version number", async () => {
     const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
 
-    const createInvalid = repo.createWorkflowVersion({
-      workflowId: workflow.id,
-      version: 0,
-      definition: [],
-    });
+    const createInvalid = repo.createWorkflowVersion({ workflowId: workflow.id, version: 0 });
 
     await expect(createInvalid).rejects.toThrow(ZodError);
   });
@@ -111,25 +117,97 @@ describe("WorkflowRepository", () => {
     expect(fetched).toBeUndefined();
   });
 
-  it("rejects fetching a workflow version with a non-positive version number", async () => {
+  it("refuses a second open draft for the same workflow", async () => {
     const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
 
-    const getInvalid = repo.getWorkflowVersion({ workflowId: workflow.id, version: -1 });
+    await repo.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
 
-    await expect(getInvalid).rejects.toThrow(ZodError);
+    const createSecondDraft = repo.createWorkflowVersion({ workflowId: workflow.id, version: 2 });
+
+    await expect(createSecondDraft).rejects.toThrow(UniqueConstraintViolationError);
   });
 
-  it("rejects a duplicate version number for the same workflow with UniqueConstraintViolationError", async () => {
-    const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
+  it("rejects a duplicate version number for the same workflow", async () => {
+    const { workflow } = await draftWithNode();
 
-    await repo.createWorkflowVersion({ workflowId: workflow.id, version: 1, definition: [] });
+    await repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
 
-    const createDuplicate = repo.createWorkflowVersion({
-      workflowId: workflow.id,
-      version: 1,
-      definition: [],
-    });
+    const createDuplicate = repo.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
 
     await expect(createDuplicate).rejects.toThrow(UniqueConstraintViolationError);
+  });
+
+  it("allows a second draft only after the first is published", async () => {
+    const { workflow } = await draftWithNode();
+
+    await repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+    const second = await repo.createWorkflowVersion({ workflowId: workflow.id, version: 2 });
+
+    expect(second.status).toBe("DRAFT");
+  });
+
+  it("publishes a draft that has nodes", async () => {
+    const { workflow } = await draftWithNode();
+
+    const published = await repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    expect(published?.status).toBe("PUBLISHED");
+    expect(published?.published_at).toBeInstanceOf(Date);
+  });
+
+  it("refuses to publish a draft with no nodes", async () => {
+    const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
+
+    await repo.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    const publishEmpty = repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    await expect(publishEmpty).rejects.toThrow(VersionHasNoNodesError);
+  });
+
+  it("refuses to publish a version twice", async () => {
+    const { workflow } = await draftWithNode();
+
+    await repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    const publishAgain = repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    await expect(publishAgain).rejects.toThrow(VersionAlreadyPublishedError);
+  });
+
+  it("returns undefined when publishing a version that doesn't exist", async () => {
+    const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
+
+    const published = await repo.publishWorkflowVersion({ workflowId: workflow.id, version: 99 });
+
+    expect(published).toBeUndefined();
+  });
+
+  it("deletes a draft version and its nodes", async () => {
+    const { workflow } = await draftWithNode();
+
+    const deleted = await repo.deleteWorkflowVersion({ workflowId: workflow.id, version: 1 });
+    const fetched = await repo.getWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    expect(deleted).toBe(true);
+    expect(fetched).toBeUndefined();
+  });
+
+  it("refuses to delete a published version", async () => {
+    const { workflow } = await draftWithNode();
+
+    await repo.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    const deletePublished = repo.deleteWorkflowVersion({ workflowId: workflow.id, version: 1 });
+
+    await expect(deletePublished).rejects.toThrow(VersionNotDraftError);
+  });
+
+  it("reports false when deleting a version that doesn't exist", async () => {
+    const workflow = await repo.createWorkflow({ name: "Order Fulfillment" });
+
+    const deleted = await repo.deleteWorkflowVersion({ workflowId: workflow.id, version: 99 });
+
+    expect(deleted).toBe(false);
   });
 });

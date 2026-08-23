@@ -1,5 +1,4 @@
-import type { Resolver } from "../../../../di/token.js";
-import { errorEnvelopeSchema } from "../../../../errorHandler.js";
+import type { Resolver } from "../../../../di/types.js";
 import { NotFoundError } from "../../../../errors/NotFoundError.js";
 import { workflowRepositoryToken } from "../../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../../typedFastify.js";
@@ -13,7 +12,7 @@ export function registerGetWorkflow(server: TypedFastifyInstance, container: Res
     url: "/workflows/:workflowId",
     schema: {
       params: workflowIdParamsSchema,
-      response: { 200: workflowResponseSchema, 404: errorEnvelopeSchema, ...ERROR_RESPONSES },
+      response: { 200: workflowResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
       const repository = container.resolve(workflowRepositoryToken);

@@ -1,0 +1,21 @@
+meta {
+  name: Update Node
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/nodes/:nodeId
+  body: json
+  auth: none
+}
+
+params:path {
+  nodeId:
+}
+
+body:json {
+  {
+    "name": "Reserve Stock"
+  }
+}

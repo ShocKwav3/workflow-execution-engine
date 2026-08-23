@@ -1,4 +1,4 @@
-import type { Resolver } from "../../../../di/token.js";
+import type { Resolver } from "../../../../di/types.js";
 import { workflowRepositoryToken } from "../../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../../errorResponses.js";

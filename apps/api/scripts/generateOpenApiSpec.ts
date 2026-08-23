@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { buildApp } from "../src/app.js";
 import { registerRoutes } from "../src/routes/index.js";
-import type { Resolver } from "../src/di/token.js";
+import type { Resolver } from "../src/di/types.js";
 
 const specDir = path.resolve(process.cwd(), "apps/api/spec");
 
@@ -30,13 +30,13 @@ const app = await buildApp();
 await app.register(registerRoutes, { container: specResolver });
 await app.ready();
 
-await mkdir(specDir, { recursive: true });
-
 for (const version of versions) {
   const response = await app.inject({ method: "GET", url: `/api/${version}/docs/json` });
   const spec = response.json();
-  const outputPath = path.join(specDir, `openapi.${version}.json`);
+  const versionDir = path.join(specDir, version);
+  const outputPath = path.join(versionDir, "openapi.json");
 
+  await mkdir(versionDir, { recursive: true });
   await writeFile(outputPath, JSON.stringify(spec, null, 2) + "\n");
   console.log(`OpenAPI spec written to ${outputPath}`);
 }

@@ -1,0 +1,25 @@
+meta {
+  name: Create Execution
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/executions
+  body: json
+  auth: none
+}
+
+params:path {
+  workflowId:
+}
+
+headers {
+  Idempotency-Key: example-key-123
+}
+
+body:json {
+  {
+    "workflowVersionId": ""
+  }
+}

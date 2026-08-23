@@ -1,0 +1,16 @@
+meta {
+  name: Get Execution
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/executions/:executionId
+  body: none
+  auth: none
+}
+
+params:path {
+  workflowId:
+  executionId:
+}

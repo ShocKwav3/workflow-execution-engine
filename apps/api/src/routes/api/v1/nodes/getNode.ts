@@ -1,5 +1,4 @@
-import type { Resolver } from "../../../../di/token.js";
-import { errorEnvelopeSchema } from "../../../../errorHandler.js";
+import type { Resolver } from "../../../../di/types.js";
 import { NotFoundError } from "../../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../../typedFastify.js";
@@ -13,7 +12,7 @@ export function registerGetNode(server: TypedFastifyInstance, container: Resolve
     url: "/nodes/:nodeId",
     schema: {
       params: nodeIdParamsSchema,
-      response: { 200: nodeResponseSchema, 404: errorEnvelopeSchema, ...ERROR_RESPONSES },
+      response: { 200: nodeResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
       const repository = container.resolve(nodeRepositoryToken);

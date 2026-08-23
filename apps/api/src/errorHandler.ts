@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,
@@ -6,18 +5,7 @@ import {
 } from "fastify-type-provider-zod";
 import { AppError } from "./errors/AppError.js";
 import { errorTranslators } from "./errors/errorTranslators.js";
-
-// Zod schema doubles as the ErrorEnvelope TS type and a route response schema.
-export const errorEnvelopeSchema = z.object({
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-    correlationId: z.string(),
-    details: z.unknown().optional(),
-  }),
-});
-
-export type ErrorEnvelope = z.infer<typeof errorEnvelopeSchema>;
+import { PROBLEM_DETAILS_CONTENT_TYPE, type ProblemDetails } from "./errors/problemDetails.js";
 
 function toAppError(error: unknown): AppError {
   if (error instanceof AppError) {
@@ -32,7 +20,23 @@ function toAppError(error: unknown): AppError {
     }
   }
 
-  return new AppError(500, "INTERNAL_ERROR", "Something went wrong", { cause: error });
+  return new AppError(500, "INTERNAL_ERROR", "Internal Server Error", "Something went wrong", {
+    cause: error,
+  });
+}
+
+function send(reply: FastifyReply, request: FastifyRequest, appError: AppError): void {
+  const problem: ProblemDetails = {
+    type: "about:blank",
+    title: appError.title,
+    status: appError.statusCode,
+    detail: appError.detail,
+    instance: request.url,
+    code: appError.code,
+    ...(appError.errors === undefined ? {} : { errors: appError.errors as unknown[] }),
+  };
+
+  reply.status(appError.statusCode).type(PROBLEM_DETAILS_CONTENT_TYPE).send(problem);
 }
 
 export function errorHandler(
@@ -40,31 +44,27 @@ export function errorHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): void {
-  const correlationId = request.id;
-
   if (hasZodFastifySchemaValidationErrors(error)) {
-    reply.status(400).send({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Request validation failed",
-        correlationId,
-        details: error.validation,
-      },
-    } satisfies ErrorEnvelope);
+    send(
+      reply,
+      request,
+      new AppError(400, "VALIDATION_ERROR", "Bad Request", "Request validation failed", {
+        errors: error.validation,
+      }),
+    );
 
     return;
   }
 
   if (isResponseSerializationError(error)) {
     request.log.error({ err: error }, "response serialization failed");
-
-    reply.status(500).send({
-      error: {
-        code: "INTERNAL_ERROR",
-        message: "Internal Server Error",
-        correlationId,
-      },
-    } satisfies ErrorEnvelope);
+    send(
+      reply,
+      request,
+      new AppError(500, "INTERNAL_ERROR", "Internal Server Error", "Something went wrong", {
+        cause: error,
+      }),
+    );
 
     return;
   }
@@ -72,16 +72,11 @@ export function errorHandler(
   const appError = toAppError(error);
 
   if (appError.statusCode >= 500) {
-    // appError.message is sanitized for the client — log the real cause instead.
-    request.log.error({ err: appError.cause ?? appError }, "unhandled error");
+    // appError.detail is sanitized for the client — log the real cause instead.
+    request.log.error({ err: appError.cause ?? appError, ...appError.context }, "unhandled error");
+  } else {
+    request.log.warn({ err: appError, ...appError.context }, "request failed");
   }
 
-  reply.status(appError.statusCode).send({
-    error: {
-      code: appError.code,
-      message: appError.message,
-      correlationId,
-      details: appError.details,
-    },
-  } satisfies ErrorEnvelope);
+  send(reply, request, appError);
 }

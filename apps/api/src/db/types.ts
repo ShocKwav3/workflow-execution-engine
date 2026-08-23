@@ -10,11 +10,15 @@ export interface WorkflowRow {
   updated_at: Date;
 }
 
+export type WorkflowVersionStatus = "DRAFT" | "PUBLISHED";
+
 export interface WorkflowVersionRow {
   id: string;
   workflow_id: string;
   version: number;
+  status: WorkflowVersionStatus;
   created_at: Date;
+  published_at: Date | null;
 }
 
 export interface NodeRow {

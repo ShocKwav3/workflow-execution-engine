@@ -1,0 +1,15 @@
+meta {
+  name: Get Node
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/nodes/:nodeId
+  body: none
+  auth: none
+}
+
+params:path {
+  nodeId:
+}

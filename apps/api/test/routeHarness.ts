@@ -1,0 +1,24 @@
+import type { FastifyInstance } from "fastify";
+import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
+import { buildTestApp } from "./testApp.js";
+
+export interface RouteHarness {
+  db: TestDatabase;
+  app: FastifyInstance;
+}
+
+export async function startRouteHarness(): Promise<RouteHarness> {
+  const db = await startTestDatabase();
+  const app = await buildTestApp(db);
+
+  return { db, app };
+}
+
+export async function stopRouteHarness(harness: RouteHarness): Promise<void> {
+  await harness.app.close();
+  await stopTestDatabase(harness.db);
+}
+
+export async function resetRouteHarness(harness: RouteHarness): Promise<void> {
+  await harness.db.pool.query("TRUNCATE workflow CASCADE");
+}

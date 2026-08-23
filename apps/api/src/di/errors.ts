@@ -1,4 +1,4 @@
-import type { Token } from "./token.js";
+import type { Token } from "./types.js";
 
 export class UnregisteredTokenError extends Error {
   constructor(token: Token<unknown>) {

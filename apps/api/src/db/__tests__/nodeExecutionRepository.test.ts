@@ -2,34 +2,22 @@ import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeExecutionRepository } from "../nodeExecutionRepository.js";
 import { WorkflowExecutionRepository } from "../workflowExecutionRepository.js";
-import { WorkflowRepository } from "../workflowRepository.js";
-import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
-
-async function createWorkflowWithVersion(
-  workflowRepo: WorkflowRepository,
-  definition: { name: string; type: string }[],
-) {
-  const workflow = await workflowRepo.createWorkflow({ name: "Order Fulfillment" });
-  const { version, nodes } = await workflowRepo.createWorkflowVersion({
-    workflowId: workflow.id,
-    version: 1,
-    definition,
-  });
-
-  return { workflow, version, nodes };
-}
+import {
+  type TestDatabase,
+  startTestDatabase,
+  stopTestDatabase,
+} from "../../../test/testDatabase.js";
+import { seedPublishedVersion } from "../../../test/fixtures.js";
 
 describe("NodeExecutionRepository", () => {
   let db: TestDatabase;
   let repo: NodeExecutionRepository;
   let executionRepo: WorkflowExecutionRepository;
-  let workflowRepo: WorkflowRepository;
 
   beforeAll(async () => {
     db = await startTestDatabase();
     repo = new NodeExecutionRepository(db.pool);
     executionRepo = new WorkflowExecutionRepository(db.pool);
-    workflowRepo = new WorkflowRepository(db.pool);
   }, 60_000);
 
   afterAll(async () => {
@@ -41,51 +29,57 @@ describe("NodeExecutionRepository", () => {
   });
 
   async function createExecutionWithNodes(definition: { name: string; type: string }[]) {
-    const { workflow, version, nodes } = await createWorkflowWithVersion(workflowRepo, definition);
+    const { workflow, version, nodes } = await seedPublishedVersion(db.pool, definition);
     const execution = await executionRepo.createWorkflowExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
     });
 
-    return { execution, nodes };
+    return { workflow, execution, nodes };
   }
 
   it("returns the node_execution snapshot in creation order", async () => {
-    const { execution, nodes } = await createExecutionWithNodes([
+    const { workflow, execution, nodes } = await createExecutionWithNodes([
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution(execution.id);
+    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution({
+      workflowId: workflow.id,
+      workflowExecutionId: execution.id,
+    });
 
     expect(nodeExecutions.map((ne) => ne.node_id)).toEqual(nodes.map((n) => n.id));
   });
 
-  it("returns an empty array for an execution with no nodes", async () => {
-    const { workflow, version } = await createWorkflowWithVersion(workflowRepo, []);
-    const execution = await executionRepo.createWorkflowExecution({
-      workflowId: workflow.id,
-      workflowVersionId: version.id,
+  it("returns an empty array for an execution that doesn't exist", async () => {
+    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution({
+      workflowId: "00000000-0000-0000-0000-000000000000",
+      workflowExecutionId: "00000000-0000-0000-0000-000000000000",
     });
-
-    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution(execution.id);
 
     expect(nodeExecutions).toEqual([]);
   });
 
   it("rejects fetching node executions with a malformed workflowExecutionId", async () => {
-    const getMalformed = repo.getNodeExecutionsForWorkflowExecution("not-a-uuid");
+    const getMalformed = repo.getNodeExecutionsForWorkflowExecution({
+      workflowId: "not-a-uuid",
+      workflowExecutionId: "not-a-uuid",
+    });
 
     await expect(getMalformed).rejects.toThrow(ZodError);
   });
 
   it("returns execution history with nodes and empty attempts, since nothing has executed yet", async () => {
-    const { execution, nodes } = await createExecutionWithNodes([
+    const { workflow, execution, nodes } = await createExecutionWithNodes([
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const history = await repo.getWorkflowExecutionHistory(execution.id);
+    const history = await repo.getWorkflowExecutionHistory({
+      workflowId: workflow.id,
+      workflowExecutionId: execution.id,
+    });
 
     expect(history).toHaveLength(nodes.length);
     expect(history.every((entry) => entry.attempts.length === 0)).toBe(true);
@@ -93,9 +87,30 @@ describe("NodeExecutionRepository", () => {
   });
 
   it("rejects fetching history with a malformed workflowExecutionId", async () => {
-    const getMalformed = repo.getWorkflowExecutionHistory("not-a-uuid");
+    const getMalformed = repo.getWorkflowExecutionHistory({
+      workflowId: "not-a-uuid",
+      workflowExecutionId: "not-a-uuid",
+    });
 
     await expect(getMalformed).rejects.toThrow(ZodError);
+  });
+
+  it("does not return node executions under a workflow they don't belong to", async () => {
+    const { execution } = await createExecutionWithNodes([
+      { name: "Reserve Inventory", type: "inventory" },
+    ]);
+    const other = await seedPublishedVersion(
+      db.pool,
+      [{ name: "Unrelated", type: "inventory" }],
+      "Unrelated Workflow",
+    );
+
+    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution({
+      workflowId: other.workflow.id,
+      workflowExecutionId: execution.id,
+    });
+
+    expect(nodeExecutions).toEqual([]);
   });
 
   it("fetches a single node's execution within a specific workflow execution", async () => {
@@ -115,7 +130,9 @@ describe("NodeExecutionRepository", () => {
   });
 
   it("returns undefined for a node/execution pair that doesn't exist", async () => {
-    const { execution } = await createExecutionWithNodes([]);
+    const { execution } = await createExecutionWithNodes([
+      { name: "Reserve Inventory", type: "inventory" },
+    ]);
 
     const entry = await repo.getNodeExecutionByNodeAndExecution({
       nodeId: "00000000-0000-0000-0000-000000000000",

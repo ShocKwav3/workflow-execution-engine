@@ -1,0 +1,17 @@
+meta {
+  name: Create Workflow
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/workflows
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Order Fulfillment"
+  }
+}

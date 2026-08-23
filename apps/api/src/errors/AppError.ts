@@ -1,18 +1,32 @@
+import type { ErrorContext } from "./ClassifiedError.js";
+
 export class AppError extends Error {
   readonly statusCode: number;
   readonly code: string;
-  readonly details?: unknown;
+  readonly title: string;
+  readonly detail: string;
+  readonly context: ErrorContext;
+  readonly errors?: unknown;
 
   constructor(
     statusCode: number,
     code: string,
-    message: string,
-    options?: { cause?: unknown; details?: unknown },
+    title: string,
+    detail: string,
+    options?: { cause?: unknown; context?: ErrorContext; errors?: unknown },
   ) {
-    super(message, { cause: options?.cause });
+    super(detail, { cause: options?.cause });
     this.name = "AppError";
     this.statusCode = statusCode;
     this.code = code;
-    this.details = options?.details;
+    this.title = title;
+    this.detail = detail;
+    this.context = options?.context ?? {};
+
+    if (options?.errors !== undefined) {
+      this.errors = options.errors;
+    }
+
+    Error.captureStackTrace(this, this.constructor);
   }
 }

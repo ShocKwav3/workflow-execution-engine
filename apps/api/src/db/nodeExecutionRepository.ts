@@ -6,8 +6,9 @@ import {
 } from "./helpers/executionHistoryGrouping.js";
 import {
   type GetNodeExecutionInput,
+  type WorkflowExecutionRef,
   getNodeExecutionInputSchema,
-  workflowExecutionIdSchema,
+  workflowExecutionRefSchema,
 } from "./nodeExecutionRepository.schemas.js";
 import type { Queryable, NodeExecutionRow } from "./types.js";
 
@@ -37,14 +38,18 @@ export class NodeExecutionRepository {
   constructor(private readonly db: Queryable) {}
 
   async getNodeExecutionsForWorkflowExecution(
-    workflowExecutionId: string,
+    input: WorkflowExecutionRef,
   ): Promise<NodeExecutionRow[]> {
-    const validId = workflowExecutionIdSchema.parse(workflowExecutionId);
+    const { workflowId, workflowExecutionId } = workflowExecutionRefSchema.parse(input);
 
     try {
       const result = await this.db.query<NodeExecutionRow>(
-        `SELECT * FROM node_execution WHERE workflow_execution_id = $1 ORDER BY created_at`,
-        [validId],
+        `SELECT ne.*
+         FROM node_execution ne
+         JOIN workflow_execution we ON we.id = ne.workflow_execution_id
+         WHERE ne.workflow_execution_id = $1 AND we.workflow_id = $2
+         ORDER BY ne.created_at`,
+        [workflowExecutionId, workflowId],
       );
 
       return result.rows;
@@ -54,16 +59,17 @@ export class NodeExecutionRepository {
   }
 
   async getWorkflowExecutionHistory(
-    workflowExecutionId: string,
+    input: WorkflowExecutionRef,
   ): Promise<NodeExecutionHistoryEntry[]> {
-    const validId = workflowExecutionIdSchema.parse(workflowExecutionId);
+    const { workflowId, workflowExecutionId } = workflowExecutionRefSchema.parse(input);
 
     try {
       const result = await this.db.query<NodeHistoryQueryRow>(
         `${NODE_EXECUTION_HISTORY_QUERY}
-         WHERE ne.workflow_execution_id = $1
+         JOIN workflow_execution we ON we.id = ne.workflow_execution_id
+         WHERE ne.workflow_execution_id = $1 AND we.workflow_id = $2
          ORDER BY n.sequence, nea.attempt_number`,
-        [validId],
+        [workflowExecutionId, workflowId],
       );
 
       return groupNodeHistoryRows(result.rows);

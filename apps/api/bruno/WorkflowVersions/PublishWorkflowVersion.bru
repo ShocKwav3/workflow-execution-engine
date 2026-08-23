@@ -1,0 +1,16 @@
+meta {
+  name: Publish Workflow Version
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version/publish
+  body: none
+  auth: none
+}
+
+params:path {
+  workflowId:
+  version: 1
+}

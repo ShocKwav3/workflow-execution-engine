@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { Resolver } from "../di/token.js";
+import type { Resolver } from "../di/types.js";
 import { healthRoutes } from "./health.js";
 import { v1Routes } from "./api/v1/index.js";
 

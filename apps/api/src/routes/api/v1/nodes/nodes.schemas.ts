@@ -1,35 +1,32 @@
 import { z } from "zod";
 
-export { nodeResponseSchema } from "../workflows/workflows.schemas.js";
+export const nodeResponseSchema = z.object({
+  id: z.uuid(),
+  workflowVersionId: z.uuid(),
+  name: z.string(),
+  type: z.string(),
+  sequence: z.number().int(),
+  createdAt: z.iso.datetime(),
+});
 
 export const nodeIdParamsSchema = z.object({
   nodeId: z.uuid(),
 });
 
-export const nodeExecutionParamsSchema = z.object({
-  nodeId: z.uuid(),
-  executionId: z.uuid(),
+export const createNodeBodySchema = z.object({
+  name: z.string().trim().min(1),
+  type: z.string().trim().min(1),
 });
 
-const nodeExecutionAttemptResponseSchema = z.object({
-  id: z.uuid(),
-  nodeExecutionId: z.uuid(),
-  attemptNumber: z.number().int(),
-  status: z.string(),
-  startedAt: z.iso.datetime().nullable(),
-  finishedAt: z.iso.datetime().nullable(),
-  error: z.string().nullable(),
-});
+export const updateNodeBodySchema = z
+  .object({
+    name: z.string().trim().min(1).optional(),
+    type: z.string().trim().min(1).optional(),
+  })
+  .refine((body) => body.name !== undefined || body.type !== undefined, {
+    message: "At least one of name or type must be provided",
+  });
 
-export const nodeExecutionDetailResponseSchema = z.object({
-  id: z.uuid(),
-  workflowExecutionId: z.uuid(),
-  nodeId: z.uuid(),
-  name: z.string(),
-  type: z.string(),
-  sequence: z.number().int(),
-  status: z.string(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
-  attempts: z.array(nodeExecutionAttemptResponseSchema),
+export const reorderNodesBodySchema = z.object({
+  nodeIds: z.array(z.uuid()).min(1),
 });

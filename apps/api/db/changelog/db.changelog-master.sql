@@ -14,13 +14,17 @@ CREATE TABLE workflow_version (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id UUID NOT NULL,
   version INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'DRAFT',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  published_at TIMESTAMPTZ,
   UNIQUE (workflow_id, version),
   UNIQUE (id, workflow_id),
   FOREIGN KEY (workflow_id) REFERENCES workflow (id)
 );
 
 CREATE INDEX idx_workflow_version_workflow_id ON workflow_version (workflow_id);
+CREATE UNIQUE INDEX idx_workflow_version_single_draft ON workflow_version (workflow_id)
+  WHERE status = 'DRAFT';
 
 CREATE TABLE node (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,6 +34,7 @@ CREATE TABLE node (
   sequence INTEGER NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (id, workflow_version_id),
+  UNIQUE (workflow_version_id, sequence),
   FOREIGN KEY (workflow_version_id) REFERENCES workflow_version (id)
 );
 

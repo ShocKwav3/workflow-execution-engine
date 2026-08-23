@@ -1,11 +1,13 @@
 import type { Pool } from "pg";
+import { VersionNotPublishedError, WorkflowVersionMismatchError } from "../errors/domain/index.js";
+import { ClassifiedError } from "../errors/index.js";
 import { classifyPgError } from "./errors/index.js";
 import {
   type CreateExecutionInput,
   createExecutionInputSchema,
   executionIdSchema,
 } from "./workflowExecutionRepository.schemas.js";
-import type { NodeRow, WorkflowExecutionRow } from "./types.js";
+import type { NodeRow, WorkflowExecutionRow, WorkflowVersionRow } from "./types.js";
 
 export class WorkflowExecutionRepository {
   constructor(private readonly pool: Pool) {}
@@ -19,6 +21,24 @@ export class WorkflowExecutionRepository {
 
     try {
       await client.query("BEGIN");
+
+      // FOR SHARE blocks a concurrent publish/node write without blocking other executions.
+      const versionResult = await client.query<WorkflowVersionRow>(
+        `SELECT * FROM workflow_version WHERE id = $1 AND workflow_id = $2 FOR SHARE`,
+        [workflowVersionId, workflowId],
+      );
+      const workflowVersion = versionResult.rows[0];
+
+      if (!workflowVersion) {
+        throw new WorkflowVersionMismatchError({ workflowId, workflowVersionId });
+      }
+
+      if (workflowVersion.status !== "PUBLISHED") {
+        throw new VersionNotPublishedError(workflowVersion.version, {
+          workflowId,
+          workflowVersionId,
+        });
+      }
 
       const insertResult = await client.query<WorkflowExecutionRow>(
         `INSERT INTO workflow_execution (workflow_id, workflow_version_id, idempotency_key)
@@ -58,6 +78,11 @@ export class WorkflowExecutionRepository {
       return execution;
     } catch (error) {
       await client.query("ROLLBACK");
+
+      if (error instanceof ClassifiedError) {
+        throw error;
+      }
+
       throw classifyPgError(error);
     } finally {
       client.release();
