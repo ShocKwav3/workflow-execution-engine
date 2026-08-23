@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { workflowRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../errorResponses.js";
@@ -14,6 +15,11 @@ export function registerCreateWorkflowVersion(server: TypedFastifyInstance, cont
     method: "POST",
     url: "/workflows/:workflowId/versions",
     schema: {
+      tags: [TAGS.WORKFLOW_VERSIONS.name],
+      summary: "Create a draft workflow version",
+      description:
+        "Creates a new draft version for the workflow. Nodes can be added, edited, reordered, " +
+        "and removed while it remains a draft. A workflow can have at most one draft at a time.",
       params: workflowIdParamsSchema,
       body: createWorkflowVersionBodySchema,
       response: { 201: workflowVersionResponseSchema, ...ERROR_RESPONSES },

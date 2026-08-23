@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -13,6 +14,9 @@ export function registerListNodes(server: TypedFastifyInstance, container: Resol
     url: "/workflows/:workflowId/versions/:version/nodes",
     schema: {
       params: workflowVersionParamsSchema,
+      tags: [TAGS.NODES.name],
+      summary: "List nodes in a workflow version",
+      description: "Returns all nodes belonging to the given workflow version, in execution order.",
       response: { 200: nodeResponseSchema.array(), ...ERROR_RESPONSES },
     },
     handler: async (request) => {

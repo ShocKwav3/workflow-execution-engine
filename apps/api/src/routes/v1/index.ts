@@ -3,6 +3,7 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import { jsonSchemaTransform } from "fastify-type-provider-zod";
 import type { Resolver } from "../../di/types.js";
+import { TAGS, V1_PREFIX } from "./config.js";
 import { workflowRoutes } from "./workflows/index.js";
 import { workflowVersionRoutes } from "./workflowVersions/index.js";
 import { nodeRoutes } from "./nodes/index.js";
@@ -19,12 +20,18 @@ export async function v1Routes(app: FastifyInstance, options: { container: Resol
         title: "Workflow Execution Engine API",
         version: "1.0.0",
       },
+      tags: Object.values(TAGS),
     },
     transform: jsonSchemaTransform,
   });
 
   await app.register(fastifySwaggerUi, {
     routePrefix: "/docs",
+    // Without this, swagger-ui's generated HTML links assets at "/docs/static/..."
+    // instead of "/api/v1/docs/static/...", since it has no way to see the outer
+    // prefix this plugin is nested under — @fastify/swagger-ui's documented escape
+    // hatch for exactly this ("server behind path based routing").
+    indexPrefix: V1_PREFIX,
   });
 
   // Helmet's default CSP blocks Swagger UI's inline scripts — stripped for this version's docs only.

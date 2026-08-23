@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { workflowRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -11,6 +12,9 @@ export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, cont
     method: "DELETE",
     url: "/workflows/:workflowId/versions/:version",
     schema: {
+      tags: [TAGS.WORKFLOW_VERSIONS.name],
+      summary: "Delete a draft workflow version",
+      description: "Deletes a draft version and its nodes. Published versions cannot be deleted.",
       params: workflowVersionParamsSchema,
       response: { 204: z.null(), ...ERROR_RESPONSES },
     },

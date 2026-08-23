@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -11,6 +12,10 @@ export function registerDeleteNode(server: TypedFastifyInstance, container: Reso
     method: "DELETE",
     url: "/nodes/:nodeId",
     schema: {
+      tags: [TAGS.NODES.name],
+      summary: "Delete a node",
+      description:
+        "Removes a node from its draft version. Fails if the parent version is already published.",
       params: nodeIdParamsSchema,
       response: { 204: z.null(), ...ERROR_RESPONSES },
     },

@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { nodeExecutionRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../errorResponses.js";
@@ -14,6 +15,10 @@ export function registerGetWorkflowExecutionHistory(
     method: "GET",
     url: "/workflows/:workflowId/executions/:executionId/history",
     schema: {
+      tags: [TAGS.NODE_EXECUTIONS.name],
+      summary: "Get workflow execution history",
+      description:
+        "Returns every node execution and attempt for the given workflow execution, in order.",
       params: workflowExecutionParamsSchema,
       response: { 200: nodeExecutionDetailResponseSchema.array(), ...ERROR_RESPONSES },
     },

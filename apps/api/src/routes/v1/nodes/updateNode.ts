@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -12,6 +13,9 @@ export function registerUpdateNode(server: TypedFastifyInstance, container: Reso
     url: "/nodes/:nodeId",
     schema: {
       params: nodeIdParamsSchema,
+      tags: [TAGS.NODES.name],
+      summary: "Update a node",
+      description: "Updates a node's fields. Fails if the parent version is already published.",
       body: updateNodeBodySchema,
       response: { 200: nodeResponseSchema, ...ERROR_RESPONSES },
     },

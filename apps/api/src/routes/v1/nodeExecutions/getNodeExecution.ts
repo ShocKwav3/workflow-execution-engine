@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeExecutionRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -14,6 +15,10 @@ export function registerGetNodeExecution(server: TypedFastifyInstance, container
     method: "GET",
     url: "/nodes/:nodeId/executions/:executionId",
     schema: {
+      tags: [TAGS.NODE_EXECUTIONS.name],
+      summary: "Get a node execution",
+      description:
+        "Returns the node-level execution record for a specific node within a specific workflow execution.",
       params: nodeExecutionParamsSchema,
       response: { 200: nodeExecutionDetailResponseSchema, ...ERROR_RESPONSES },
     },

@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { workflowExecutionRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../errorResponses.js";
@@ -13,6 +14,12 @@ export function registerCreateWorkflowExecution(server: TypedFastifyInstance, co
     method: "POST",
     url: "/workflows/:workflowId/executions",
     schema: {
+      tags: [TAGS.WORKFLOW_EXECUTIONS.name],
+      summary: "Start a workflow execution",
+      description:
+        "Starts one execution of a published workflow version and returns immediately with an " +
+        "execution ID — the run itself happens asynchronously. Supports the Idempotency-Key " +
+        "header to avoid creating duplicate executions on retry.",
       params: workflowIdParamsSchema,
       body: createWorkflowExecutionBodySchema,
       response: { 201: createWorkflowExecutionResponseSchema, ...ERROR_RESPONSES },

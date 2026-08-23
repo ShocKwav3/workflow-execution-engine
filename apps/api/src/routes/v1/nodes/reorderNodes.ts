@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -13,6 +14,11 @@ export function registerReorderNodes(server: TypedFastifyInstance, container: Re
     url: "/workflows/:workflowId/versions/:version/nodes",
     schema: {
       params: workflowVersionParamsSchema,
+      tags: [TAGS.NODES.name],
+      summary: "Reorder nodes in a draft version",
+      description:
+        "Replaces the execution order of all nodes in the draft version. Fails if the version " +
+        "is not a draft or the given node ID set doesn't exactly match the version's nodes.",
       body: reorderNodesBodySchema,
       response: { 200: nodeResponseSchema.array(), ...ERROR_RESPONSES },
     },

@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { nodeExecutionRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../errorResponses.js";
@@ -14,6 +15,10 @@ export function registerGetWorkflowExecutionNodes(
     method: "GET",
     url: "/workflows/:workflowId/executions/:executionId/nodes",
     schema: {
+      tags: [TAGS.NODE_EXECUTIONS.name],
+      summary: "List node executions for a workflow execution",
+      description:
+        "Returns one node execution entry per node belonging to the given workflow execution.",
       params: workflowExecutionParamsSchema,
       response: { 200: nodeExecutionListItemResponseSchema.array(), ...ERROR_RESPONSES },
     },

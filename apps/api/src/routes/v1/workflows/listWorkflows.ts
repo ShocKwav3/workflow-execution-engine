@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { workflowRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../errorResponses.js";
@@ -10,6 +11,9 @@ export function registerListWorkflows(server: TypedFastifyInstance, container: R
     method: "GET",
     url: "/workflows",
     schema: {
+      tags: [TAGS.WORKFLOWS.name],
+      summary: "List workflows",
+      description: "Returns all workflows.",
       response: { 200: workflowResponseSchema.array(), ...ERROR_RESPONSES },
     },
     handler: async () => {

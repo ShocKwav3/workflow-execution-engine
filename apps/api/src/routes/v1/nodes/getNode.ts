@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -12,6 +13,9 @@ export function registerGetNode(server: TypedFastifyInstance, container: Resolve
     url: "/nodes/:nodeId",
     schema: {
       params: nodeIdParamsSchema,
+      tags: [TAGS.NODES.name],
+      summary: "Get a node",
+      description: "Returns a single node by its globally unique ID.",
       response: { 200: nodeResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {

@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { nodeRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -12,6 +13,10 @@ export function registerCreateNode(server: TypedFastifyInstance, container: Reso
     method: "POST",
     url: "/workflows/:workflowId/versions/:version/nodes",
     schema: {
+      tags: [TAGS.NODES.name],
+      summary: "Add a node to a draft version",
+      description:
+        "Appends a new node to the draft version's node sequence. Fails if the version is not a draft.",
       params: workflowVersionParamsSchema,
       body: createNodeBodySchema,
       response: { 201: nodeResponseSchema, ...ERROR_RESPONSES },

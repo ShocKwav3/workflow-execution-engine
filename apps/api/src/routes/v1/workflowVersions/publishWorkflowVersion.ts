@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { workflowRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -14,6 +15,11 @@ export function registerPublishWorkflowVersion(server: TypedFastifyInstance, con
     method: "POST",
     url: "/workflows/:workflowId/versions/:version/publish",
     schema: {
+      tags: [TAGS.WORKFLOW_VERSIONS.name],
+      summary: "Publish a workflow version",
+      description:
+        "Freezes the version's node set permanently and makes it executable. Requires at least " +
+        "one node. A published version can never be edited or deleted again.",
       params: workflowVersionParamsSchema,
       response: { 200: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },

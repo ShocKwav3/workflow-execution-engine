@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { NotFoundError } from "../../../errors/NotFoundError.js";
 import { workflowRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
@@ -15,6 +16,9 @@ export function registerGetWorkflowVersion(server: TypedFastifyInstance, contain
     url: "/workflows/:workflowId/versions/:version",
     schema: {
       params: workflowVersionParamsSchema,
+      tags: [TAGS.WORKFLOW_VERSIONS.name],
+      summary: "Get a workflow version",
+      description: "Returns a single workflow version by workflow ID and version number.",
       response: { 200: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {

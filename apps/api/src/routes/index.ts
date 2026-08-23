@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Resolver } from "../di/types.js";
+import { V1_PREFIX } from "./v1/config.js";
 import { healthRoutes } from "./health.js";
 import { v1Routes } from "./v1/index.js";
 
@@ -8,5 +9,5 @@ export async function registerRoutes(app: FastifyInstance, options: { container:
   const { container } = options;
 
   await app.register(healthRoutes, { container });
-  await app.register(v1Routes, { container, prefix: "/api/v1" });
+  await app.register(v1Routes, { container, prefix: V1_PREFIX });
 }

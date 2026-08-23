@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { buildApp } from "../src/app.js";
+import { loadAppConfig } from "../src/config.js";
 import { registerRoutes } from "../src/routes/index.js";
 import type { Resolver } from "../src/di/types.js";
 
@@ -25,19 +26,18 @@ const specResolver: Resolver = {
   },
 };
 
-const app = await buildApp();
+const app = await buildApp({ ...loadAppConfig(), logLevel: "silent" });
 
 await app.register(registerRoutes, { container: specResolver });
 await app.ready();
 
 for (const version of versions) {
-  const response = await app.inject({ method: "GET", url: `/api/${version}/docs/json` });
-  const spec = response.json();
+  const response = await app.inject({ method: "GET", url: `/api/${version}/docs/yaml` });
   const versionDir = path.join(specDir, version);
-  const outputPath = path.join(versionDir, "openapi.json");
+  const outputPath = path.join(versionDir, "openapi.yaml");
 
   await mkdir(versionDir, { recursive: true });
-  await writeFile(outputPath, JSON.stringify(spec, null, 2) + "\n");
+  await writeFile(outputPath, response.body);
   console.log(`OpenAPI spec written to ${outputPath}`);
 }
 

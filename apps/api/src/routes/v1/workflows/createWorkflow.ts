@@ -1,4 +1,5 @@
 import type { Resolver } from "../../../di/types.js";
+import { TAGS } from "../config.js";
 import { workflowRepositoryToken } from "../../../db/tokens.js";
 import type { TypedFastifyInstance } from "../../typedFastify.js";
 import { ERROR_RESPONSES } from "../../errorResponses.js";
@@ -10,6 +11,10 @@ export function registerCreateWorkflow(server: TypedFastifyInstance, container: 
     method: "POST",
     url: "/workflows",
     schema: {
+      tags: [TAGS.WORKFLOWS.name],
+      summary: "Create a workflow",
+      description:
+        "Creates a new workflow definition. Does not create a version or execute anything.",
       body: createWorkflowBodySchema,
       response: { 201: workflowResponseSchema, ...ERROR_RESPONSES },
     },
