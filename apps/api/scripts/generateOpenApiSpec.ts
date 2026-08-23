@@ -8,9 +8,9 @@ import type { Resolver } from "../src/di/types.js";
 const specDir = path.resolve(process.cwd(), "apps/api/spec");
 
 // Mirrors dist/'s compiled layout (same "../src/..." pattern as the imports above) —
-// discovering versions from the filesystem means adding routes/api/v2/ later needs
+// discovering versions from the filesystem means adding routes/v2/ later needs
 // no change here.
-const apiVersionsDir = path.resolve(import.meta.dirname, "../src/routes/api");
+const apiVersionsDir = path.resolve(import.meta.dirname, "../src/routes");
 const versions = readdirSync(apiVersionsDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);

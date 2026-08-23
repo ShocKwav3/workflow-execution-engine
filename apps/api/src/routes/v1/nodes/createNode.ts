@@ -1,0 +1,37 @@
+import type { Resolver } from "../../../di/types.js";
+import { NotFoundError } from "../../../errors/NotFoundError.js";
+import { nodeRepositoryToken } from "../../../db/tokens.js";
+import type { TypedFastifyInstance } from "../../typedFastify.js";
+import { ERROR_RESPONSES } from "../../errorResponses.js";
+import { workflowVersionParamsSchema } from "../workflowVersions/workflowVersions.schemas.js";
+import { createNodeBodySchema, nodeResponseSchema } from "./nodes.schemas.js";
+import { toNodeResponse } from "./nodes.serializers.js";
+
+export function registerCreateNode(server: TypedFastifyInstance, container: Resolver) {
+  server.route({
+    method: "POST",
+    url: "/workflows/:workflowId/versions/:version/nodes",
+    schema: {
+      params: workflowVersionParamsSchema,
+      body: createNodeBodySchema,
+      response: { 201: nodeResponseSchema, ...ERROR_RESPONSES },
+    },
+    handler: async (request, reply) => {
+      const repository = container.resolve(nodeRepositoryToken);
+      const node = await repository.createNode({
+        workflowId: request.params.workflowId,
+        version: request.params.version,
+        name: request.body.name,
+        type: request.body.type,
+      });
+
+      if (!node) {
+        throw new NotFoundError("Workflow version not found");
+      }
+
+      reply.status(201).header("location", `/api/v1/nodes/${node.id}`);
+
+      return toNodeResponse(node);
+    },
+  });
+}

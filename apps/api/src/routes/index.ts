@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import type { Resolver } from "../di/types.js";
 import { healthRoutes } from "./health.js";
-import { v1Routes } from "./api/v1/index.js";
+import { v1Routes } from "./v1/index.js";
 
-// New route context (e.g. routes/api/v2/): add its import + one register call here, not in server.ts.
+// New route context (e.g. routes/v2/): add its import + one register call here, not in server.ts.
 export async function registerRoutes(app: FastifyInstance, options: { container: Resolver }) {
   const { container } = options;
 
