@@ -12,7 +12,7 @@ const DEFINITION = [
   { name: "Charge Payment", type: "payment" },
 ];
 
-describe("workflow execution routes", () => {
+describe("POST /workflows/{workflowId}/executions", () => {
   let harness: RouteHarness;
 
   beforeAll(async () => {
@@ -72,39 +72,5 @@ describe("workflow execution routes", () => {
     });
 
     expect(second.json().executionId).toBe(first.json().executionId);
-  });
-
-  it("fetches an execution under its own workflow", async () => {
-    const { workflow, version } = await seedPublishedVersion(harness.db.pool, DEFINITION);
-    const created = await harness.app.inject({
-      method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/executions`,
-      payload: { workflowVersionId: version.id },
-    });
-
-    const response = await harness.app.inject({
-      method: "GET",
-      url: `/api/v1/workflows/${workflow.id}/executions/${created.json().executionId}`,
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json().status).toBe("PENDING");
-  });
-
-  it("does not expose an execution under a workflow it doesn't belong to", async () => {
-    const { workflow, version } = await seedPublishedVersion(harness.db.pool, DEFINITION);
-    const other = await seedPublishedVersion(harness.db.pool, DEFINITION, "Unrelated Workflow");
-    const created = await harness.app.inject({
-      method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/executions`,
-      payload: { workflowVersionId: version.id },
-    });
-
-    const response = await harness.app.inject({
-      method: "GET",
-      url: `/api/v1/workflows/${other.workflow.id}/executions/${created.json().executionId}`,
-    });
-
-    expect(response.statusCode).toBe(404);
   });
 });
