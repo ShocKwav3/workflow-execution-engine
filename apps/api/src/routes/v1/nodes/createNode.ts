@@ -15,6 +15,7 @@ export function registerCreateNode(server: TypedFastifyInstance, container: Reso
     schema: {
       tags: [TAGS.NODES.name],
       summary: "Add a node to a draft version",
+      operationId: "createNode",
       description:
         "Appends a new node to the draft version's node sequence. Fails if the version is not a draft.",
       params: workflowVersionParamsSchema,

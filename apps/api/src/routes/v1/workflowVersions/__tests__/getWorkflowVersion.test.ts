@@ -23,13 +23,13 @@ describe("GET /workflows/{workflowId}/versions/{version}", () => {
   });
 
   it("fetches a version without embedding its nodes", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, [
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
     const response = await harness.app.inject({
       method: "GET",
-      url: `/api/v1/workflows/${workflow.id}/versions/1`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -41,7 +41,8 @@ describe("GET /workflows/{workflowId}/versions/{version}", () => {
 
     const response = await harness.app.inject({
       method: "GET",
-      url: `/api/v1/workflows/${workflow.id}/versions/99`,
+      // Nil UUID: valid shape, guaranteed not to exist.
+      url: `/api/v1/workflows/${workflow.id}/versions/00000000-0000-0000-0000-000000000000`,
     });
 
     expect(response.statusCode).toBe(404);

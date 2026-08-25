@@ -15,6 +15,7 @@ export function registerGetNode(server: TypedFastifyInstance, container: Resolve
       params: nodeIdParamsSchema,
       tags: [TAGS.NODES.name],
       summary: "Get a node",
+      operationId: "getNode",
       description: "Returns a single node by its globally unique ID.",
       response: { 200: nodeResponseSchema, ...ERROR_RESPONSES },
     },

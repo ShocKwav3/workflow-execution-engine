@@ -14,6 +14,7 @@ export function registerDeleteNode(server: TypedFastifyInstance, container: Reso
     schema: {
       tags: [TAGS.NODES.name],
       summary: "Delete a node",
+      operationId: "deleteNode",
       description:
         "Removes a node from its draft version. Fails if the parent version is already published.",
       params: nodeIdParamsSchema,

@@ -23,26 +23,26 @@ describe("DELETE /workflows/{workflowId}/versions/{version}", () => {
   });
 
   it("deletes a draft version", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, [
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
     const response = await harness.app.inject({
       method: "DELETE",
-      url: `/api/v1/workflows/${workflow.id}/versions/1`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}`,
     });
 
     expect(response.statusCode).toBe(204);
   });
 
   it("refuses to delete a published version with VERSION_NOT_DRAFT", async () => {
-    const { workflow } = await seedPublishedVersion(harness.db.pool, [
+    const { workflow, version } = await seedPublishedVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
     const response = await harness.app.inject({
       method: "DELETE",
-      url: `/api/v1/workflows/${workflow.id}/versions/1`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}`,
     });
 
     expect(response.statusCode).toBe(409);

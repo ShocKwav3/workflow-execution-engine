@@ -16,6 +16,7 @@ export function registerCreateWorkflowExecution(server: TypedFastifyInstance, co
     schema: {
       tags: [TAGS.WORKFLOW_EXECUTIONS.name],
       summary: "Start a workflow execution",
+      operationId: "createWorkflowExecution",
       description:
         "Starts one execution of a published workflow version and returns immediately with an " +
         "execution ID — the run itself happens asynchronously. Supports the Idempotency-Key " +

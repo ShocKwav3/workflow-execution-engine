@@ -25,10 +25,10 @@ export async function seedDraftVersion(
   const version = await workflows.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
 
   for (const node of definition) {
-    await nodes.createNode({ workflowId: workflow.id, version: 1, ...node });
+    await nodes.createNode({ workflowId: workflow.id, version: version.id, ...node });
   }
 
-  const created = await nodes.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+  const created = await nodes.listNodesForVersion({ workflowId: workflow.id, version: version.id });
 
   return { workflow, version, nodes: created ?? [] };
 }
@@ -42,7 +42,7 @@ export async function seedPublishedVersion(
   const seeded = await seedDraftVersion(pool, definition, workflowName);
   const published = await workflows.publishWorkflowVersion({
     workflowId: seeded.workflow.id,
-    version: 1,
+    version: seeded.version.id,
   });
 
   return { ...seeded, version: published! };

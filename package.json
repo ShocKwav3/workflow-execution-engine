@@ -6,8 +6,9 @@
   "scripts": {
     "test": "vitest run",
     "lint": "eslint .",
-    "format": "prettier --write .",
+    "format": "prettier --write . --log-level warn",
     "generate:openapi": "tsc && node dist/api/scripts/generateOpenApiSpec.js",
+    "lint:spec": "spectral lint apps/api/spec/*/openapi.yaml",
     "build": "tsc",
     "start": "node dist/api/src/index.js",
     "dev": "LOG_PRETTY=true node dist/api/src/index.js"
@@ -25,6 +26,8 @@
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@stoplight/spectral-cli": "^6.16.3",
+    "@stoplight/spectral-owasp-ruleset": "^2.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@testcontainers/postgresql": "^12.1.0",
     "@types/node": "^26.2.0",

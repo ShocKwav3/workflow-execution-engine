@@ -23,11 +23,11 @@ describe("POST /workflows/{workflowId}/versions/{version}/nodes", () => {
   });
 
   it("creates a node and points Location at its flat address", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, []);
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, []);
 
     const response = await harness.app.inject({
       method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/nodes`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
       payload: { name: "Reserve Inventory", type: "inventory" },
     });
 
@@ -37,13 +37,13 @@ describe("POST /workflows/{workflowId}/versions/{version}/nodes", () => {
   });
 
   it("refuses to add a node once the version is published, with VERSION_NOT_DRAFT", async () => {
-    const { workflow } = await seedPublishedVersion(harness.db.pool, [
+    const { workflow, version } = await seedPublishedVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
     const response = await harness.app.inject({
       method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/nodes`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
       payload: { name: "Charge Payment", type: "payment" },
     });
 

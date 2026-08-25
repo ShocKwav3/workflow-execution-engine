@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeOrderingMismatchError, VersionNotDraftError } from "../../errors/domain/index.js";
 import { NodeRepository } from "../nodeRepository.js";
 import { WorkflowRepository } from "../workflowRepository.js";
-import type { WorkflowRow } from "../types.js";
+import type { WorkflowRow, WorkflowVersionRow } from "../types.js";
 import {
   type TestDatabase,
   startTestDatabase,
@@ -15,6 +15,7 @@ describe("NodeRepository", () => {
   let repo: NodeRepository;
   let workflows: WorkflowRepository;
   let workflow: WorkflowRow;
+  let version: WorkflowVersionRow;
 
   beforeAll(async () => {
     db = await startTestDatabase();
@@ -29,11 +30,11 @@ describe("NodeRepository", () => {
   beforeEach(async () => {
     await db.pool.query("TRUNCATE workflow CASCADE");
     workflow = await workflows.createWorkflow({ name: "Order Fulfillment" });
-    await workflows.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
+    version = await workflows.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
   });
 
   function addNode(name: string, type = "inventory") {
-    return repo.createNode({ workflowId: workflow.id, version: 1, name, type });
+    return repo.createNode({ workflowId: workflow.id, version: version.id, name, type });
   }
 
   it("assigns sequences in insertion order, starting at zero", async () => {
@@ -41,7 +42,7 @@ describe("NodeRepository", () => {
     await addNode("Charge Payment", "payment");
     await addNode("Ship Order", "shipping");
 
-    const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+    const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: version.id });
 
     expect(listed?.map((node) => [node.name, node.sequence])).toEqual([
       ["Reserve Inventory", 0],
@@ -65,7 +66,7 @@ describe("NodeRepository", () => {
   it("rejects creating a node with an empty name", async () => {
     const createEmpty = repo.createNode({
       workflowId: workflow.id,
-      version: 1,
+      version: version.id,
       name: "   ",
       type: "inventory",
     });
@@ -76,7 +77,7 @@ describe("NodeRepository", () => {
   it("returns undefined when creating a node on a version that doesn't exist", async () => {
     const created = await repo.createNode({
       workflowId: workflow.id,
-      version: 99,
+      version: "00000000-0000-0000-0000-000000000000",
       name: "Reserve Inventory",
       type: "inventory",
     });
@@ -129,7 +130,7 @@ describe("NodeRepository", () => {
 
     const reordered = await repo.reorderNodes({
       workflowId: workflow.id,
-      version: 1,
+      version: version.id,
       nodeIds: [third!.id, first!.id, second!.id],
     });
 
@@ -146,7 +147,7 @@ describe("NodeRepository", () => {
 
     const reordered = await repo.reorderNodes({
       workflowId: workflow.id,
-      version: 1,
+      version: version.id,
       nodeIds: [second!.id, first!.id],
     });
 
@@ -160,7 +161,7 @@ describe("NodeRepository", () => {
 
     const reorder = repo.reorderNodes({
       workflowId: workflow.id,
-      version: 1,
+      version: version.id,
       nodeIds: [first!.id],
     });
 
@@ -174,7 +175,7 @@ describe("NodeRepository", () => {
 
     const reorder = repo.reorderNodes({
       workflowId: workflow.id,
-      version: 1,
+      version: version.id,
       nodeIds: [first!.id, first!.id],
     });
 
@@ -187,10 +188,10 @@ describe("NodeRepository", () => {
     await addNode("Charge Payment", "payment");
 
     await expect(
-      repo.reorderNodes({ workflowId: workflow.id, version: 1, nodeIds: [first!.id] }),
+      repo.reorderNodes({ workflowId: workflow.id, version: version.id, nodeIds: [first!.id] }),
     ).rejects.toThrow(NodeOrderingMismatchError);
 
-    const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+    const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: version.id });
 
     expect(listed?.map((node) => node.sequence)).toEqual([0, 1]);
   });
@@ -198,7 +199,7 @@ describe("NodeRepository", () => {
   describe("once the version is published", () => {
     beforeEach(async () => {
       await addNode("Reserve Inventory");
-      await workflows.publishWorkflowVersion({ workflowId: workflow.id, version: 1 });
+      await workflows.publishWorkflowVersion({ workflowId: workflow.id, version: version.id });
     });
 
     it("refuses to create a node", async () => {
@@ -206,7 +207,10 @@ describe("NodeRepository", () => {
     });
 
     it("refuses to update a node", async () => {
-      const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+      const listed = await repo.listNodesForVersion({
+        workflowId: workflow.id,
+        version: version.id,
+      });
 
       await expect(repo.updateNode(listed![0]!.id, { name: "Renamed" })).rejects.toThrow(
         VersionNotDraftError,
@@ -214,16 +218,26 @@ describe("NodeRepository", () => {
     });
 
     it("refuses to delete a node", async () => {
-      const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+      const listed = await repo.listNodesForVersion({
+        workflowId: workflow.id,
+        version: version.id,
+      });
 
       await expect(repo.deleteNode(listed![0]!.id)).rejects.toThrow(VersionNotDraftError);
     });
 
     it("refuses to reorder nodes", async () => {
-      const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+      const listed = await repo.listNodesForVersion({
+        workflowId: workflow.id,
+        version: version.id,
+      });
 
       await expect(
-        repo.reorderNodes({ workflowId: workflow.id, version: 1, nodeIds: [listed![0]!.id] }),
+        repo.reorderNodes({
+          workflowId: workflow.id,
+          version: version.id,
+          nodeIds: [listed![0]!.id],
+        }),
       ).rejects.toThrow(VersionNotDraftError);
     });
   });
@@ -249,7 +263,7 @@ describe("NodeRepository", () => {
 
       const create = repo.createNode({
         workflowId: workflow.id,
-        version: 1,
+        version: version.id,
         name: "Charge Payment",
         type: "payment",
       });
@@ -261,7 +275,7 @@ describe("NodeRepository", () => {
       publisher.release();
     }
 
-    const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: 1 });
+    const listed = await repo.listNodesForVersion({ workflowId: workflow.id, version: version.id });
 
     expect(listed).toHaveLength(1);
   });

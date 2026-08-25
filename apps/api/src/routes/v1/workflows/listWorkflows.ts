@@ -13,6 +13,7 @@ export function registerListWorkflows(server: TypedFastifyInstance, container: R
     schema: {
       tags: [TAGS.WORKFLOWS.name],
       summary: "List workflows",
+      operationId: "listWorkflows",
       description: "Returns all workflows.",
       response: { 200: workflowResponseSchema.array(), ...ERROR_RESPONSES },
     },

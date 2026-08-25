@@ -23,14 +23,14 @@ describe("GET /workflows/{workflowId}/versions/{version}/nodes", () => {
   });
 
   it("lists a version's nodes in sequence order", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, [
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
 
     const response = await harness.app.inject({
       method: "GET",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/nodes`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
     });
 
     expect(response.statusCode).toBe(200);

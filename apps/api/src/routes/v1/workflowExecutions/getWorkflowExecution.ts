@@ -17,6 +17,7 @@ export function registerGetWorkflowExecution(server: TypedFastifyInstance, conta
     schema: {
       tags: [TAGS.WORKFLOW_EXECUTIONS.name],
       summary: "Get a workflow execution",
+      operationId: "getWorkflowExecution",
       description: "Returns the current state of a single workflow execution.",
       params: workflowExecutionParamsSchema,
       response: { 200: workflowExecutionResponseSchema, ...ERROR_RESPONSES },

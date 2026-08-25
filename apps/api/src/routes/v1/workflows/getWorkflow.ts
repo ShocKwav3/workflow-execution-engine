@@ -14,6 +14,7 @@ export function registerGetWorkflow(server: TypedFastifyInstance, container: Res
     schema: {
       tags: [TAGS.WORKFLOWS.name],
       summary: "Get a workflow",
+      operationId: "getWorkflow",
       description: "Returns a single workflow by ID.",
       params: workflowIdParamsSchema,
       response: { 200: workflowResponseSchema, ...ERROR_RESPONSES },

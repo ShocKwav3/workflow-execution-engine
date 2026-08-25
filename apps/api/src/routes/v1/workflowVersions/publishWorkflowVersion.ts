@@ -17,6 +17,7 @@ export function registerPublishWorkflowVersion(server: TypedFastifyInstance, con
     schema: {
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Publish a workflow version",
+      operationId: "publishWorkflowVersion",
       description:
         "Freezes the version's node set permanently and makes it executable. Requires at least " +
         "one node. A published version can never be edited or deleted again.",

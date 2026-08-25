@@ -2,11 +2,676 @@ openapi: 3.0.3
 info:
   title: Workflow Execution Engine API
   version: 1.0.0
+  description: Workflow definitions, versions, nodes, and their executions. See
+    milestones.md for the full system this API is the first slice of.
 components:
-  schemas: {}
+  schemas:
+    ProblemDetailsInput:
+      type: object
+      properties:
+        type:
+          type: string
+          maxLength: 2000
+        title:
+          type: string
+          maxLength: 255
+        status:
+          type: integer
+          minimum: -2147483648
+          maximum: 2147483647
+          format: int32
+        detail:
+          type: string
+          maxLength: 2000
+        instance:
+          type: string
+          maxLength: 2000
+        code:
+          type: string
+          maxLength: 100
+        errors:
+          maxItems: 100
+          type: array
+          items: {}
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+        - code
+    WorkflowInput:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+          maxLength: 255
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - name
+        - createdAt
+        - updatedAt
+    WorkflowVersionInput:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        version:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 2147483647
+          format: int32
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - PUBLISHED
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        publishedAt:
+          nullable: true
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowId
+        - version
+        - status
+        - createdAt
+        - publishedAt
+    NodeInput:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowVersionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+          maxLength: 255
+        type:
+          type: string
+          maxLength: 100
+        sequence:
+          type: integer
+          minimum: -2147483648
+          maximum: 2147483647
+          format: int32
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowVersionId
+        - name
+        - type
+        - sequence
+        - createdAt
+    WorkflowExecutionInput:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowVersionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        status:
+          type: string
+          maxLength: 50
+        idempotencyKey:
+          nullable: true
+          type: string
+          maxLength: 255
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        completedAt:
+          nullable: true
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowId
+        - workflowVersionId
+        - status
+        - idempotencyKey
+        - createdAt
+        - updatedAt
+        - completedAt
+    NodeExecutionListItemInput:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowExecutionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        nodeId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        status:
+          type: string
+          maxLength: 50
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowExecutionId
+        - nodeId
+        - status
+        - createdAt
+        - updatedAt
+    NodeExecutionDetailInput:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowExecutionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        nodeId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+          maxLength: 255
+        type:
+          type: string
+          maxLength: 100
+        sequence:
+          type: integer
+          minimum: -2147483648
+          maximum: 2147483647
+          format: int32
+        status:
+          type: string
+          maxLength: 50
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        attempts:
+          maxItems: 50
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                maxLength: 36
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              nodeExecutionId:
+                type: string
+                maxLength: 36
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              attemptNumber:
+                type: integer
+                minimum: -2147483648
+                maximum: 2147483647
+                format: int32
+              status:
+                type: string
+                maxLength: 50
+              startedAt:
+                nullable: true
+                type: string
+                maxLength: 35
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+              finishedAt:
+                nullable: true
+                type: string
+                maxLength: 35
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+              error:
+                nullable: true
+                type: string
+                maxLength: 2000
+            required:
+              - id
+              - nodeExecutionId
+              - attemptNumber
+              - status
+              - startedAt
+              - finishedAt
+              - error
+      required:
+        - id
+        - workflowExecutionId
+        - nodeId
+        - name
+        - type
+        - sequence
+        - status
+        - createdAt
+        - updatedAt
+        - attempts
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          maxLength: 2000
+        title:
+          type: string
+          maxLength: 255
+        status:
+          type: integer
+          minimum: -2147483648
+          maximum: 2147483647
+          format: int32
+        detail:
+          type: string
+          maxLength: 2000
+        instance:
+          type: string
+          maxLength: 2000
+        code:
+          type: string
+          maxLength: 100
+        errors:
+          maxItems: 100
+          type: array
+          items: {}
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+        - code
+      additionalProperties: false
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+          maxLength: 255
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - name
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+    WorkflowVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        version:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 2147483647
+          format: int32
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - PUBLISHED
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        publishedAt:
+          nullable: true
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowId
+        - version
+        - status
+        - createdAt
+        - publishedAt
+      additionalProperties: false
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowVersionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+          maxLength: 255
+        type:
+          type: string
+          maxLength: 100
+        sequence:
+          type: integer
+          minimum: -2147483648
+          maximum: 2147483647
+          format: int32
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowVersionId
+        - name
+        - type
+        - sequence
+        - createdAt
+      additionalProperties: false
+    WorkflowExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowVersionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        status:
+          type: string
+          maxLength: 50
+        idempotencyKey:
+          nullable: true
+          type: string
+          maxLength: 255
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        completedAt:
+          nullable: true
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowId
+        - workflowVersionId
+        - status
+        - idempotencyKey
+        - createdAt
+        - updatedAt
+        - completedAt
+      additionalProperties: false
+    NodeExecutionListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowExecutionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        nodeId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        status:
+          type: string
+          maxLength: 50
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+      required:
+        - id
+        - workflowExecutionId
+        - nodeId
+        - status
+        - createdAt
+        - updatedAt
+      additionalProperties: false
+    NodeExecutionDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        workflowExecutionId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        nodeId:
+          type: string
+          maxLength: 36
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+          maxLength: 255
+        type:
+          type: string
+          maxLength: 100
+        sequence:
+          type: integer
+          minimum: -2147483648
+          maximum: 2147483647
+          format: int32
+        status:
+          type: string
+          maxLength: 50
+        createdAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        updatedAt:
+          type: string
+          maxLength: 35
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+        attempts:
+          maxItems: 50
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                maxLength: 36
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              nodeExecutionId:
+                type: string
+                maxLength: 36
+                format: uuid
+                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              attemptNumber:
+                type: integer
+                minimum: -2147483648
+                maximum: 2147483647
+                format: int32
+              status:
+                type: string
+                maxLength: 50
+              startedAt:
+                nullable: true
+                type: string
+                maxLength: 35
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+              finishedAt:
+                nullable: true
+                type: string
+                maxLength: 35
+                format: date-time
+                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+              error:
+                nullable: true
+                type: string
+                maxLength: 2000
+            required:
+              - id
+              - nodeExecutionId
+              - attemptNumber
+              - status
+              - startedAt
+              - finishedAt
+              - error
+            additionalProperties: false
+      required:
+        - id
+        - workflowExecutionId
+        - nodeId
+        - name
+        - type
+        - sequence
+        - status
+        - createdAt
+        - updatedAt
+        - attempts
+      additionalProperties: false
 paths:
   /api/v1/workflows:
     post:
+      operationId: createWorkflow
       summary: Create a workflow
       tags:
         - Workflows
@@ -22,7 +687,7 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  description: Human-readable workflow name.
+                  maxLength: 255
               required:
                 - name
       responses:
@@ -31,161 +696,33 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Workflow ID.
-                  name:
-                    type: string
-                    description: Workflow name.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the workflow was created.
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the workflow was last updated.
-                required:
-                  - id
-                  - name
-                  - createdAt
-                  - updatedAt
-                additionalProperties: false
+                $ref: "#/components/schemas/Workflow"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
     get:
+      operationId: listWorkflows
       summary: List workflows
       tags:
         - Workflows
@@ -198,162 +735,34 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: Workflow ID.
-                    name:
-                      type: string
-                      description: Workflow name.
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the workflow was created.
-                    updatedAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the workflow was last updated.
-                  required:
-                    - id
-                    - name
-                    - createdAt
-                    - updatedAt
-                  additionalProperties: false
+                  $ref: "#/components/schemas/Workflow"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}:
     get:
+      operationId: getWorkflow
       summary: Get a workflow
       tags:
         - Workflows
@@ -361,174 +770,46 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: Workflow ID.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Workflow ID.
-                  name:
-                    type: string
-                    description: Workflow name.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the workflow was created.
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the workflow was last updated.
-                required:
-                  - id
-                  - name
-                  - createdAt
-                  - updatedAt
-                additionalProperties: false
+                $ref: "#/components/schemas/Workflow"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/versions:
     post:
+      operationId: createWorkflowVersion
       summary: Create a draft workflow version
       tags:
         - WorkflowVersions
@@ -546,198 +827,53 @@ paths:
                   type: integer
                   minimum: 0
                   exclusiveMinimum: true
-                  maximum: 9007199254740991
-                  description: Version number to create.
+                  maximum: 2147483647
+                  format: int32
               required:
                 - version
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: Workflow ID.
       responses:
         "201":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Workflow version ID.
-                  workflowId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the workflow this version belongs to.
-                  version:
-                    type: integer
-                    minimum: 0
-                    exclusiveMinimum: true
-                    maximum: 9007199254740991
-                    description: Version number, unique within the workflow.
-                  status:
-                    type: string
-                    enum:
-                      - DRAFT
-                      - PUBLISHED
-                    description: DRAFT is editable; PUBLISHED is executable and frozen.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the version was created.
-                  publishedAt:
-                    nullable: true
-                    description: When the version was published, or null while still a draft.
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                required:
-                  - id
-                  - workflowId
-                  - version
-                  - status
-                  - createdAt
-                  - publishedAt
-                additionalProperties: false
+                $ref: "#/components/schemas/WorkflowVersion"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/versions/{version}:
     get:
+      operationId: getWorkflowVersion
       summary: Get a workflow version
       tags:
         - WorkflowVersions
@@ -745,199 +881,53 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
-            type: integer
-            minimum: 0
-            exclusiveMinimum: true
-            maximum: 9007199254740991
+            type: string
+            maxLength: 36
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: version
           required: true
-          description: Version number.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Workflow version ID.
-                  workflowId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the workflow this version belongs to.
-                  version:
-                    type: integer
-                    minimum: 0
-                    exclusiveMinimum: true
-                    maximum: 9007199254740991
-                    description: Version number, unique within the workflow.
-                  status:
-                    type: string
-                    enum:
-                      - DRAFT
-                      - PUBLISHED
-                    description: DRAFT is editable; PUBLISHED is executable and frozen.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the version was created.
-                  publishedAt:
-                    nullable: true
-                    description: When the version was published, or null while still a draft.
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                required:
-                  - id
-                  - workflowId
-                  - version
-                  - status
-                  - createdAt
-                  - publishedAt
-                additionalProperties: false
+                $ref: "#/components/schemas/WorkflowVersion"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
     delete:
+      operationId: deleteWorkflowVersion
       summary: Delete a draft workflow version
       tags:
         - WorkflowVersions
@@ -946,21 +936,20 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
-            type: integer
-            minimum: 0
-            exclusiveMinimum: true
-            maximum: 9007199254740991
+            type: string
+            maxLength: 36
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: version
           required: true
-          description: Version number.
       responses:
         "204":
           description: Default Response
@@ -974,133 +963,30 @@ paths:
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/versions/{version}/publish:
     post:
+      operationId: publishWorkflowVersion
       summary: Publish a workflow version
       tags:
         - WorkflowVersions
@@ -1110,200 +996,54 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
-            type: integer
-            minimum: 0
-            exclusiveMinimum: true
-            maximum: 9007199254740991
+            type: string
+            maxLength: 36
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: version
           required: true
-          description: Version number.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Workflow version ID.
-                  workflowId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the workflow this version belongs to.
-                  version:
-                    type: integer
-                    minimum: 0
-                    exclusiveMinimum: true
-                    maximum: 9007199254740991
-                    description: Version number, unique within the workflow.
-                  status:
-                    type: string
-                    enum:
-                      - DRAFT
-                      - PUBLISHED
-                    description: DRAFT is editable; PUBLISHED is executable and frozen.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the version was created.
-                  publishedAt:
-                    nullable: true
-                    description: When the version was published, or null while still a draft.
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                required:
-                  - id
-                  - workflowId
-                  - version
-                  - status
-                  - createdAt
-                  - publishedAt
-                additionalProperties: false
+                $ref: "#/components/schemas/WorkflowVersion"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/versions/{version}/nodes:
     post:
+      operationId: createNode
       summary: Add a node to a draft version
       tags:
         - Nodes
@@ -1319,203 +1059,64 @@ paths:
                 name:
                   type: string
                   minLength: 1
-                  description: Node name.
+                  maxLength: 255
                 type:
                   type: string
                   minLength: 1
-                  description: Node type — determines what the node does when executed.
+                  maxLength: 100
               required:
                 - name
                 - type
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
-            type: integer
-            minimum: 0
-            exclusiveMinimum: true
-            maximum: 9007199254740991
+            type: string
+            maxLength: 36
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: version
           required: true
-          description: Version number.
       responses:
         "201":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Node ID, globally unique.
-                  workflowVersionId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the workflow version this node belongs to.
-                  name:
-                    type: string
-                    description: Node name.
-                  type:
-                    type: string
-                    description: Node type — determines what the node does when executed.
-                  sequence:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                    description: Execution order within the workflow version, starting at 0.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the node was created.
-                required:
-                  - id
-                  - workflowVersionId
-                  - name
-                  - type
-                  - sequence
-                  - createdAt
-                additionalProperties: false
+                $ref: "#/components/schemas/Node"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
     get:
+      operationId: listNodes
       summary: List nodes in a workflow version
       tags:
         - Nodes
@@ -1524,21 +1125,20 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
-            type: integer
-            minimum: 0
-            exclusiveMinimum: true
-            maximum: 9007199254740991
+            type: string
+            maxLength: 36
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: version
           required: true
-          description: Version number.
       responses:
         "200":
           description: Default Response
@@ -1547,171 +1147,33 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: Node ID, globally unique.
-                    workflowVersionId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: ID of the workflow version this node belongs to.
-                    name:
-                      type: string
-                      description: Node name.
-                    type:
-                      type: string
-                      description: Node type — determines what the node does when executed.
-                    sequence:
-                      type: integer
-                      minimum: -9007199254740991
-                      maximum: 9007199254740991
-                      description: Execution order within the workflow version, starting at 0.
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the node was created.
-                  required:
-                    - id
-                    - workflowVersionId
-                    - name
-                    - type
-                    - sequence
-                    - createdAt
-                  additionalProperties: false
+                  $ref: "#/components/schemas/Node"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
     put:
+      operationId: reorderNodes
       summary: Reorder nodes in a draft version
       tags:
         - Nodes
@@ -1727,32 +1189,32 @@ paths:
               properties:
                 nodeIds:
                   minItems: 1
+                  maxItems: 1000
                   type: array
                   items:
                     type: string
+                    maxLength: 36
                     format: uuid
                     pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                  description: All node IDs of the version, in the desired execution order.
               required:
                 - nodeIds
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
-            type: integer
-            minimum: 0
-            exclusiveMinimum: true
-            maximum: 9007199254740991
+            type: string
+            maxLength: 36
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: version
           required: true
-          description: Version number.
       responses:
         "200":
           description: Default Response
@@ -1761,172 +1223,34 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: Node ID, globally unique.
-                    workflowVersionId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: ID of the workflow version this node belongs to.
-                    name:
-                      type: string
-                      description: Node name.
-                    type:
-                      type: string
-                      description: Node type — determines what the node does when executed.
-                    sequence:
-                      type: integer
-                      minimum: -9007199254740991
-                      maximum: 9007199254740991
-                      description: Execution order within the workflow version, starting at 0.
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the node was created.
-                  required:
-                    - id
-                    - workflowVersionId
-                    - name
-                    - type
-                    - sequence
-                    - createdAt
-                  additionalProperties: false
+                  $ref: "#/components/schemas/Node"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/nodes/{nodeId}:
     get:
+      operationId: getNode
       summary: Get a node
       tags:
         - Nodes
@@ -1934,183 +1258,45 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: nodeId
           required: true
-          description: Node ID.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Node ID, globally unique.
-                  workflowVersionId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the workflow version this node belongs to.
-                  name:
-                    type: string
-                    description: Node name.
-                  type:
-                    type: string
-                    description: Node type — determines what the node does when executed.
-                  sequence:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                    description: Execution order within the workflow version, starting at 0.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the node was created.
-                required:
-                  - id
-                  - workflowVersionId
-                  - name
-                  - type
-                  - sequence
-                  - createdAt
-                additionalProperties: false
+                $ref: "#/components/schemas/Node"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
     patch:
+      operationId: updateNode
       summary: Update a node
       tags:
         - Nodes
@@ -2124,193 +1310,55 @@ paths:
               type: object
               properties:
                 name:
-                  description: New node name.
                   type: string
                   minLength: 1
+                  maxLength: 255
                 type:
-                  description: New node type.
                   type: string
                   minLength: 1
+                  maxLength: 100
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: nodeId
           required: true
-          description: Node ID.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Node ID, globally unique.
-                  workflowVersionId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the workflow version this node belongs to.
-                  name:
-                    type: string
-                    description: Node name.
-                  type:
-                    type: string
-                    description: Node type — determines what the node does when executed.
-                  sequence:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                    description: Execution order within the workflow version, starting at 0.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the node was created.
-                required:
-                  - id
-                  - workflowVersionId
-                  - name
-                  - type
-                  - sequence
-                  - createdAt
-                additionalProperties: false
+                $ref: "#/components/schemas/Node"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
     delete:
+      operationId: deleteNode
       summary: Delete a node
       tags:
         - Nodes
@@ -2319,12 +1367,12 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: nodeId
           required: true
-          description: Node ID.
       responses:
         "204":
           description: Default Response
@@ -2338,133 +1386,30 @@ paths:
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/executions:
     post:
+      operationId: createWorkflowExecution
       summary: Start a workflow execution
       tags:
         - WorkflowExecutions
@@ -2481,20 +1426,20 @@ paths:
               properties:
                 workflowVersionId:
                   type: string
+                  maxLength: 36
                   format: uuid
                   pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                  description: ID of the published workflow version to execute.
               required:
                 - workflowVersionId
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: Workflow ID.
       responses:
         "201":
           description: Default Response
@@ -2505,142 +1450,39 @@ paths:
                 properties:
                   executionId:
                     type: string
+                    maxLength: 36
                     format: uuid
                     pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the created execution.
                 required:
                   - executionId
                 additionalProperties: false
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/executions/{executionId}:
     get:
+      operationId: getWorkflowExecution
       summary: Get a workflow execution
       tags:
         - WorkflowExecutions
@@ -2648,206 +1490,54 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: executionId
           required: true
-          description: Workflow execution ID.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Workflow execution ID.
-                  workflowId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the executed workflow.
-                  workflowVersionId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the executed workflow version.
-                  status:
-                    type: string
-                    description: Current execution status.
-                  idempotencyKey:
-                    nullable: true
-                    description: Idempotency key the execution was created with, if any.
-                    type: string
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the execution was created.
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the execution was last updated.
-                  completedAt:
-                    nullable: true
-                    description: When the execution completed, or null while still running.
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                required:
-                  - id
-                  - workflowId
-                  - workflowVersionId
-                  - status
-                  - idempotencyKey
-                  - createdAt
-                  - updatedAt
-                  - completedAt
-                additionalProperties: false
+                $ref: "#/components/schemas/WorkflowExecution"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/executions/{executionId}/nodes:
     get:
+      operationId: getWorkflowExecutionNodes
       summary: List node executions for a workflow execution
       tags:
         - NodeExecutions
@@ -2856,20 +1546,20 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: executionId
           required: true
-          description: Workflow execution ID.
       responses:
         "200":
           description: Default Response
@@ -2878,174 +1568,34 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: Node execution ID.
-                    workflowExecutionId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: ID of the parent workflow execution.
-                    nodeId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: ID of the executed node.
-                    status:
-                      type: string
-                      description: Current node execution status.
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the node execution was created.
-                    updatedAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the node execution was last updated.
-                  required:
-                    - id
-                    - workflowExecutionId
-                    - nodeId
-                    - status
-                    - createdAt
-                    - updatedAt
-                  additionalProperties: false
+                  $ref: "#/components/schemas/NodeExecutionListItem"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/workflows/{workflowId}/executions/{executionId}/history:
     get:
+      operationId: getWorkflowExecutionHistory
       summary: Get workflow execution history
       tags:
         - NodeExecutions
@@ -3054,20 +1604,20 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: workflowId
           required: true
-          description: ID of the parent workflow.
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: executionId
           required: true
-          description: Workflow execution ID.
       responses:
         "200":
           description: Default Response
@@ -3076,238 +1626,34 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: Node execution ID.
-                    workflowExecutionId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: ID of the parent workflow execution.
-                    nodeId:
-                      type: string
-                      format: uuid
-                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                      description: ID of the executed node.
-                    name:
-                      type: string
-                      description: Node name, snapshotted at execution time.
-                    type:
-                      type: string
-                      description: Node type, snapshotted at execution time.
-                    sequence:
-                      type: integer
-                      minimum: -9007199254740991
-                      maximum: 9007199254740991
-                      description: Execution order within the workflow version.
-                    status:
-                      type: string
-                      description: Current node execution status.
-                    createdAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the node execution was created.
-                    updatedAt:
-                      type: string
-                      format: date-time
-                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                      description: When the node execution was last updated.
-                    attempts:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            format: uuid
-                            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            description: Attempt ID.
-                          nodeExecutionId:
-                            type: string
-                            format: uuid
-                            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            description: ID of the parent node execution.
-                          attemptNumber:
-                            type: integer
-                            minimum: -9007199254740991
-                            maximum: 9007199254740991
-                            description: Attempt number, starting at 1.
-                          status:
-                            type: string
-                            description: Outcome of this attempt.
-                          startedAt:
-                            nullable: true
-                            description: When the attempt started, or null if not yet started.
-                            type: string
-                            format: date-time
-                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                          finishedAt:
-                            nullable: true
-                            description: When the attempt finished, or null if still running.
-                            type: string
-                            format: date-time
-                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                          error:
-                            nullable: true
-                            description: Error message if the attempt failed, otherwise null.
-                            type: string
-                        required:
-                          - id
-                          - nodeExecutionId
-                          - attemptNumber
-                          - status
-                          - startedAt
-                          - finishedAt
-                          - error
-                        additionalProperties: false
-                      description: Every attempt made for this node execution, in order.
-                  required:
-                    - id
-                    - workflowExecutionId
-                    - nodeId
-                    - name
-                    - type
-                    - sequence
-                    - status
-                    - createdAt
-                    - updatedAt
-                    - attempts
-                  additionalProperties: false
+                  $ref: "#/components/schemas/NodeExecutionDetail"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
   /api/v1/nodes/{nodeId}/executions/{executionId}:
     get:
+      operationId: getNodeExecution
       summary: Get a node execution
       tags:
         - NodeExecutions
@@ -3316,256 +1662,55 @@ paths:
       parameters:
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: nodeId
           required: true
-          description: ID of the node.
         - schema:
             type: string
+            maxLength: 36
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
           name: executionId
           required: true
-          description: ID of the workflow execution.
       responses:
         "200":
           description: Default Response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: Node execution ID.
-                  workflowExecutionId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the parent workflow execution.
-                  nodeId:
-                    type: string
-                    format: uuid
-                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                    description: ID of the executed node.
-                  name:
-                    type: string
-                    description: Node name, snapshotted at execution time.
-                  type:
-                    type: string
-                    description: Node type, snapshotted at execution time.
-                  sequence:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                    description: Execution order within the workflow version.
-                  status:
-                    type: string
-                    description: Current node execution status.
-                  createdAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the node execution was created.
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                    description: When the node execution was last updated.
-                  attempts:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          format: uuid
-                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                          description: Attempt ID.
-                        nodeExecutionId:
-                          type: string
-                          format: uuid
-                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                          description: ID of the parent node execution.
-                        attemptNumber:
-                          type: integer
-                          minimum: -9007199254740991
-                          maximum: 9007199254740991
-                          description: Attempt number, starting at 1.
-                        status:
-                          type: string
-                          description: Outcome of this attempt.
-                        startedAt:
-                          nullable: true
-                          description: When the attempt started, or null if not yet started.
-                          type: string
-                          format: date-time
-                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                        finishedAt:
-                          nullable: true
-                          description: When the attempt finished, or null if still running.
-                          type: string
-                          format: date-time
-                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
-                        error:
-                          nullable: true
-                          description: Error message if the attempt failed, otherwise null.
-                          type: string
-                      required:
-                        - id
-                        - nodeExecutionId
-                        - attemptNumber
-                        - status
-                        - startedAt
-                        - finishedAt
-                        - error
-                      additionalProperties: false
-                    description: Every attempt made for this node execution, in order.
-                required:
-                  - id
-                  - workflowExecutionId
-                  - nodeId
-                  - name
-                  - type
-                  - sequence
-                  - status
-                  - createdAt
-                  - updatedAt
-                  - attempts
-                additionalProperties: false
+                $ref: "#/components/schemas/NodeExecutionDetail"
         "400":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "404":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "409":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
-            application/json:
+            application/problem+json:
               schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    minimum: -9007199254740991
-                    maximum: 9007199254740991
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                  code:
-                    type: string
-                  errors:
-                    type: array
-                    items: {}
-                required:
-                  - type
-                  - title
-                  - status
-                  - detail
-                  - instance
-                  - code
-                additionalProperties: false
+                $ref: "#/components/schemas/ProblemDetails"
+servers:
+  - url: http://localhost:3000
+    description: Local development
+    x-internal: true
 tags:
   - name: Workflows
     description: Workflow definitions.

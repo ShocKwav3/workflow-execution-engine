@@ -4,7 +4,7 @@ export const nodeIdSchema = z.uuid();
 
 export const createNodeInputSchema = z.object({
   workflowId: z.uuid(),
-  version: z.number().int().positive(),
+  version: z.uuid(),
   name: z.string().trim().min(1),
   type: z.string().trim().min(1),
 });
@@ -24,7 +24,7 @@ export type UpdateNodeInput = z.infer<typeof updateNodeInputSchema>;
 
 export const reorderNodesInputSchema = z.object({
   workflowId: z.uuid(),
-  version: z.number().int().positive(),
+  version: z.uuid(),
   nodeIds: z.array(z.uuid()).min(1),
 });
 

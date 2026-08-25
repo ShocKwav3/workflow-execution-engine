@@ -17,6 +17,7 @@ export function registerGetWorkflowExecutionNodes(
     schema: {
       tags: [TAGS.NODE_EXECUTIONS.name],
       summary: "List node executions for a workflow execution",
+      operationId: "getWorkflowExecutionNodes",
       description:
         "Returns one node execution entry per node belonging to the given workflow execution.",
       params: workflowExecutionParamsSchema,

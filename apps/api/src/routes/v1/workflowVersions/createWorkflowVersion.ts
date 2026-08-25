@@ -17,6 +17,7 @@ export function registerCreateWorkflowVersion(server: TypedFastifyInstance, cont
     schema: {
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Create a draft workflow version",
+      operationId: "createWorkflowVersion",
       description:
         "Creates a new draft version for the workflow. Nodes can be added, edited, reordered, " +
         "and removed while it remains a draft. A workflow can have at most one draft at a time.",

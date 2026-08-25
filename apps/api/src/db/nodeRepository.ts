@@ -17,11 +17,11 @@ import { type WorkflowVersionRef, workflowVersionRefSchema } from "./workflowRep
 async function lockVersionByRef(
   client: PoolClient,
   workflowId: string,
-  version: number,
+  versionId: string,
 ): Promise<WorkflowVersionRow | undefined> {
   const result = await client.query<WorkflowVersionRow>(
-    `SELECT * FROM workflow_version WHERE workflow_id = $1 AND version = $2 FOR UPDATE`,
-    [workflowId, version],
+    `SELECT * FROM workflow_version WHERE workflow_id = $1 AND id = $2 FOR UPDATE`,
+    [workflowId, versionId],
   );
 
   return result.rows[0];
@@ -75,7 +75,7 @@ export class NodeRepository {
         `SELECT node.*
          FROM node
          JOIN workflow_version ON workflow_version.id = node.workflow_version_id
-         WHERE workflow_version.workflow_id = $1 AND workflow_version.version = $2
+         WHERE workflow_version.workflow_id = $1 AND workflow_version.id = $2
          ORDER BY node.sequence`,
         [workflowId, version],
       );
@@ -165,7 +165,7 @@ export class NodeRepository {
         ) {
           throw new NodeOrderingMismatchError({
             workflowId,
-            version,
+            version: workflowVersion.version,
             workflowVersionId: workflowVersion.id,
             submitted: nodeIds.length,
             expected: existingIds.size,

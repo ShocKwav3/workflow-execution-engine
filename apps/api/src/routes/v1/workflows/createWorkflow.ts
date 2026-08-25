@@ -13,6 +13,7 @@ export function registerCreateWorkflow(server: TypedFastifyInstance, container: 
     schema: {
       tags: [TAGS.WORKFLOWS.name],
       summary: "Create a workflow",
+      operationId: "createWorkflow",
       description:
         "Creates a new workflow definition. Does not create a version or execute anything.",
       body: createWorkflowBodySchema,

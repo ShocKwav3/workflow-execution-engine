@@ -1,0 +1,74 @@
+extends:
+  - spectral:oas
+  - "@stoplight/spectral-owasp-ruleset"
+
+rules:
+  # No security scheme or rate limiting exists anywhere in the app yet (no auth at
+  # all in M1; brief puts security/observability hardening at Milestone 10). Revisit
+  # once those features actually exist — see implementationChangelog.md.
+  owasp:api2:2023-read-restricted: off
+  owasp:api2:2023-write-restricted: off
+  owasp:api4:2023-rate-limit: off
+  owasp:api4:2023-rate-limit-responses-429: off
+
+  # List-response arrays (listWorkflows, listNodes, execution nodes/history) have no
+  # pagination yet, so there's no real bound to pick — an arbitrary .max() would be an
+  # actual runtime constraint (response schemas are enforced by the Zod serializer) with
+  # no design behind the number. Revisit when pagination is introduced — see
+  # implementationChangelog.md.
+  owasp:api4:2023-array-limit: off
+
+  # No auth exists anywhere yet (same reasoning as the api2/api4 rules above) — no 401 is
+  # ever actually returned. A 500 means something unclassified happened; Task 5 deliberately
+  # keeps that undeclared rather than part of the documented contract (see
+  # implementationChangelog.md, "never catch programmer errors" — a 409 that's really a typo
+  # is worse than a 500, and a 500 that's genuinely unclassified isn't a modeled response).
+  owasp:api8:2023-define-error-responses-401: off
+  owasp:api8:2023-define-error-responses-500: off
+
+  # Local dev genuinely serves plain HTTP (no TLS setup exists). Revisit once a real,
+  # deployed server entry with TLS exists.
+  owasp:api8:2023-no-server-http: off
+
+  # No real public contact exists for this solo learning project — not fabricating one.
+  info-contact: off
+
+  # Every genuinely free-text field (name, type, status, idempotencyKey, ProblemDetails'
+  # RFC 9457 fields) already has maxLength but no meaningful format/pattern/enum to add
+  # beyond that — reviewed field-by-field, not a blanket skip. Trade-off: this also
+  # silences the rule for any *new* string field added later that should have had a
+  # real format/enum (e.g. an email field with no validation) — re-check new fields by
+  # eye rather than relying on Spectral to catch it.
+  owasp:api4:2023-string-restricted: off
+
+  # Project-specific: every error response must use the shared RFC 9457 envelope,
+  # not an ad-hoc inline error shape (see globalAgentInstructions.md Task 5 notes).
+  error-response-uses-problem-details:
+    description: Every 4xx/5xx response schema must reference the shared ProblemDetails component.
+    message: "{{property}} must $ref '#/components/schemas/ProblemDetails', found an inline or different schema."
+    severity: error
+    given: "$.paths[*][*].responses[?(@property >= 400 && @property < 600)].content[*].schema"
+    then:
+      field: $ref
+      function: pattern
+      functionOptions:
+        match: "ProblemDetails$"
+
+# oas3-unused-component stays ON generally — a genuinely forgotten/orphaned schema should
+# still be caught. These 7 are the one known, structural exception: fastify-type-provider-
+# zod always generates an "...Input" variant alongside "...Output" for every registered
+# schema (see routes/v1/registry.ts), and every schema here is response-only, so the Input
+# copy is permanently unused by design, not by accident. No wildcard support in Spectral's
+# override pointers (exact JSON Pointer only) — add a new line here if a future entity's
+# response schema gets registered.
+overrides:
+  - files:
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/ProblemDetailsInput"
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/WorkflowInput"
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/WorkflowVersionInput"
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/NodeInput"
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/WorkflowExecutionInput"
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/NodeExecutionListItemInput"
+      - "apps/api/spec/v1/openapi.yaml#/components/schemas/NodeExecutionDetailInput"
+    rules:
+      oas3-unused-component: off

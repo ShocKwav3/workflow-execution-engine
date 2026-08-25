@@ -16,6 +16,7 @@ export function registerListNodes(server: TypedFastifyInstance, container: Resol
       params: workflowVersionParamsSchema,
       tags: [TAGS.NODES.name],
       summary: "List nodes in a workflow version",
+      operationId: "listNodes",
       description: "Returns all nodes belonging to the given workflow version, in execution order.",
       response: { 200: nodeResponseSchema.array(), ...ERROR_RESPONSES },
     },

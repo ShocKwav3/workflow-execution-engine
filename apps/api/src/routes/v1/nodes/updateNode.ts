@@ -15,6 +15,7 @@ export function registerUpdateNode(server: TypedFastifyInstance, container: Reso
       params: nodeIdParamsSchema,
       tags: [TAGS.NODES.name],
       summary: "Update a node",
+      operationId: "updateNode",
       description: "Updates a node's fields. Fails if the parent version is already published.",
       body: updateNodeBodySchema,
       response: { 200: nodeResponseSchema, ...ERROR_RESPONSES },

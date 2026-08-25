@@ -17,6 +17,7 @@ export function registerGetNodeExecution(server: TypedFastifyInstance, container
     schema: {
       tags: [TAGS.NODE_EXECUTIONS.name],
       summary: "Get a node execution",
+      operationId: "getNodeExecution",
       description:
         "Returns the node-level execution record for a specific node within a specific workflow execution.",
       params: nodeExecutionParamsSchema,

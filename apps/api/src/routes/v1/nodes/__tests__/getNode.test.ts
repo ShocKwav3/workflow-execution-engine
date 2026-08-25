@@ -23,10 +23,10 @@ describe("GET /nodes/{nodeId}", () => {
   });
 
   it("addresses a created node at the URL its Location header gave", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, []);
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, []);
     const created = await harness.app.inject({
       method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/nodes`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
       payload: { name: "Reserve Inventory", type: "inventory" },
     });
 

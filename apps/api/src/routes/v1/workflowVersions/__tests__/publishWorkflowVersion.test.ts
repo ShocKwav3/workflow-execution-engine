@@ -23,13 +23,13 @@ describe("POST /workflows/{workflowId}/versions/{version}/publish", () => {
   });
 
   it("publishes a draft that has nodes", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, [
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
     const response = await harness.app.inject({
       method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/publish`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/publish`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -38,11 +38,11 @@ describe("POST /workflows/{workflowId}/versions/{version}/publish", () => {
   });
 
   it("refuses to publish an empty draft with VERSION_HAS_NO_NODES", async () => {
-    const { workflow } = await seedDraftVersion(harness.db.pool, []);
+    const { workflow, version } = await seedDraftVersion(harness.db.pool, []);
 
     const response = await harness.app.inject({
       method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/publish`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/publish`,
     });
 
     expect(response.statusCode).toBe(409);
@@ -50,13 +50,13 @@ describe("POST /workflows/{workflowId}/versions/{version}/publish", () => {
   });
 
   it("refuses to publish twice with VERSION_ALREADY_PUBLISHED", async () => {
-    const { workflow } = await seedPublishedVersion(harness.db.pool, [
+    const { workflow, version } = await seedPublishedVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
     const response = await harness.app.inject({
       method: "POST",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/publish`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/publish`,
     });
 
     expect(response.statusCode).toBe(409);

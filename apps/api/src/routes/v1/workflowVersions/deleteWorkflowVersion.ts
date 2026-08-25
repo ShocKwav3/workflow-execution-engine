@@ -14,6 +14,7 @@ export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, cont
     schema: {
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Delete a draft workflow version",
+      operationId: "deleteWorkflowVersion",
       description: "Deletes a draft version and its nodes. Published versions cannot be deleted.",
       params: workflowVersionParamsSchema,
       response: { 204: z.null(), ...ERROR_RESPONSES },

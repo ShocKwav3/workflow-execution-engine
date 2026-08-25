@@ -9,8 +9,10 @@ import { classifyPgError } from "./errors/index.js";
 import type { WorkflowRow, WorkflowVersionRow } from "./types.js";
 import {
   type CreateWorkflowInput,
+  type CreateWorkflowVersionInput,
   type WorkflowVersionRef,
   createWorkflowInputSchema,
+  createWorkflowVersionInputSchema,
   workflowIdSchema,
   workflowVersionRefSchema,
 } from "./workflowRepository.schemas.js";
@@ -59,8 +61,8 @@ export class WorkflowRepository {
     }
   }
 
-  async createWorkflowVersion(input: WorkflowVersionRef): Promise<WorkflowVersionRow> {
-    const { workflowId, version } = workflowVersionRefSchema.parse(input);
+  async createWorkflowVersion(input: CreateWorkflowVersionInput): Promise<WorkflowVersionRow> {
+    const { workflowId, version } = createWorkflowVersionInputSchema.parse(input);
 
     try {
       const result = await this.pool.query<WorkflowVersionRow>(
@@ -75,7 +77,7 @@ export class WorkflowRepository {
   }
 
   async publishWorkflowVersion(input: WorkflowVersionRef): Promise<WorkflowVersionRow | undefined> {
-    const { workflowId, version } = workflowVersionRefSchema.parse(input);
+    const { workflowId, version: versionId } = workflowVersionRefSchema.parse(input);
 
     const client = await this.pool.connect();
 
@@ -83,8 +85,8 @@ export class WorkflowRepository {
       await client.query("BEGIN");
 
       const locked = await client.query<WorkflowVersionRow>(
-        `SELECT * FROM workflow_version WHERE workflow_id = $1 AND version = $2 FOR UPDATE`,
-        [workflowId, version],
+        `SELECT * FROM workflow_version WHERE workflow_id = $1 AND id = $2 FOR UPDATE`,
+        [workflowId, versionId],
       );
       const workflowVersion = locked.rows[0];
 
@@ -95,7 +97,7 @@ export class WorkflowRepository {
       }
 
       if (workflowVersion.status !== "DRAFT") {
-        throw new VersionAlreadyPublishedError(version, {
+        throw new VersionAlreadyPublishedError(workflowVersion.version, {
           workflowId,
           workflowVersionId: workflowVersion.id,
         });
@@ -107,7 +109,7 @@ export class WorkflowRepository {
       );
 
       if (Number(nodeCount.rows[0]!.count) === 0) {
-        throw new VersionHasNoNodesError(version, {
+        throw new VersionHasNoNodesError(workflowVersion.version, {
           workflowId,
           workflowVersionId: workflowVersion.id,
         });
@@ -137,7 +139,7 @@ export class WorkflowRepository {
   }
 
   async deleteWorkflowVersion(input: WorkflowVersionRef): Promise<boolean> {
-    const { workflowId, version } = workflowVersionRefSchema.parse(input);
+    const { workflowId, version: versionId } = workflowVersionRefSchema.parse(input);
 
     const client = await this.pool.connect();
 
@@ -145,8 +147,8 @@ export class WorkflowRepository {
       await client.query("BEGIN");
 
       const locked = await client.query<WorkflowVersionRow>(
-        `SELECT * FROM workflow_version WHERE workflow_id = $1 AND version = $2 FOR UPDATE`,
-        [workflowId, version],
+        `SELECT * FROM workflow_version WHERE workflow_id = $1 AND id = $2 FOR UPDATE`,
+        [workflowId, versionId],
       );
       const workflowVersion = locked.rows[0];
 
@@ -157,7 +159,7 @@ export class WorkflowRepository {
       }
 
       if (workflowVersion.status !== "DRAFT") {
-        throw new VersionNotDraftError(version, {
+        throw new VersionNotDraftError(workflowVersion.version, {
           workflowId,
           workflowVersionId: workflowVersion.id,
         });
@@ -182,12 +184,12 @@ export class WorkflowRepository {
   }
 
   async getWorkflowVersion(input: WorkflowVersionRef): Promise<WorkflowVersionRow | undefined> {
-    const { workflowId, version } = workflowVersionRefSchema.parse(input);
+    const { workflowId, version: versionId } = workflowVersionRefSchema.parse(input);
 
     try {
       const result = await this.pool.query<WorkflowVersionRow>(
-        `SELECT * FROM workflow_version WHERE workflow_id = $1 AND version = $2`,
-        [workflowId, version],
+        `SELECT * FROM workflow_version WHERE workflow_id = $1 AND id = $2`,
+        [workflowId, versionId],
       );
 
       return result.rows[0];

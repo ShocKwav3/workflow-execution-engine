@@ -18,6 +18,7 @@ export function registerGetWorkflowVersion(server: TypedFastifyInstance, contain
       params: workflowVersionParamsSchema,
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Get a workflow version",
+      operationId: "getWorkflowVersion",
       description: "Returns a single workflow version by workflow ID and version number.",
       response: { 200: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },

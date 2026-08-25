@@ -23,14 +23,14 @@ describe("PUT /workflows/{workflowId}/versions/{version}/nodes", () => {
   });
 
   it("reorders the collection", async () => {
-    const { workflow, nodes } = await seedDraftVersion(harness.db.pool, [
+    const { workflow, version, nodes } = await seedDraftVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
 
     const response = await harness.app.inject({
       method: "PUT",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/nodes`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
       payload: { nodeIds: [nodes[1]!.id, nodes[0]!.id] },
     });
 
@@ -42,14 +42,14 @@ describe("PUT /workflows/{workflowId}/versions/{version}/nodes", () => {
   });
 
   it("refuses a partial reorder with NODE_ORDERING_MISMATCH", async () => {
-    const { workflow, nodes } = await seedDraftVersion(harness.db.pool, [
+    const { workflow, version, nodes } = await seedDraftVersion(harness.db.pool, [
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
 
     const response = await harness.app.inject({
       method: "PUT",
-      url: `/api/v1/workflows/${workflow.id}/versions/1/nodes`,
+      url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
       payload: { nodeIds: [nodes[0]!.id] },
     });
 

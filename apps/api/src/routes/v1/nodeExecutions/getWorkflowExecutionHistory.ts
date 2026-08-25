@@ -17,6 +17,7 @@ export function registerGetWorkflowExecutionHistory(
     schema: {
       tags: [TAGS.NODE_EXECUTIONS.name],
       summary: "Get workflow execution history",
+      operationId: "getWorkflowExecutionHistory",
       description:
         "Returns every node execution and attempt for the given workflow execution, in order.",
       params: workflowExecutionParamsSchema,
