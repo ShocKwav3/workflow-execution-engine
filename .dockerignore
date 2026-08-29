@@ -1,0 +1,10 @@
+node_modules
+dist
+artifacts
+.git
+.serena
+.claude
+coverage
+*.tsbuildinfo
+.env
+.env.*

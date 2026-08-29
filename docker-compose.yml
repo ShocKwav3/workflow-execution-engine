@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    environment:
+      POSTGRES_DB: ${PGDATABASE}
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  liquibase:
+    build:
+      context: ./apps/api/db
+      dockerfile: Dockerfile.liquibase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/db/changelog:/liquibase/changelog
+    command:
+      - update
+      - --changelog-file=db.changelog-master.sql
+      - --url=jdbc:postgresql://postgres:5432/${PGDATABASE}
+      - --username=${PGUSER}
+      - --password=${PGPASSWORD}
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      liquibase:
+        condition: service_completed_successfully
+    environment:
+      HOST: 0.0.0.0
+      PORT: ${PORT}
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_PRETTY: "true"
+    ports:
+      - "${PORT}:${PORT}"
+
+volumes:
+  postgres_data:

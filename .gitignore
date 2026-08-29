@@ -6,5 +6,6 @@ dist
 *.tsbuildinfo
 .env
 .env.*
+!.env.example
 coverage
 apps/api/db/drivers

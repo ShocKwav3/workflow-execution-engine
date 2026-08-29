@@ -20,7 +20,9 @@ export interface TestDatabase {
 
 // Runs the changelog files as plain SQL — fast schema setup, doesn't verify Liquibase's own mechanics.
 export async function startTestDatabase(): Promise<TestDatabase> {
-  const container = await new PostgreSqlContainer("postgres:16").start();
+  const container = await new PostgreSqlContainer(
+    `postgres:${process.env.POSTGRES_VERSION ?? "16"}`,
+  ).start();
   const pool = new Pool({ connectionString: container.getConnectionUri() });
 
   await pool.query(loadFullSchemaSql());

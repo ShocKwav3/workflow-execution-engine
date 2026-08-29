@@ -23,6 +23,9 @@
       "onFail": "download"
     }
   },
+  "engines": {
+    "node": "^26.0.0"
+  },
   "type": "module",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
