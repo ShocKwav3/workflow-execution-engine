@@ -4,6 +4,15 @@
     // File Layout
     "rootDir": "./apps",
     "outDir": "./dist",
+    "paths": {
+      "@di/*": ["./apps/api/src/di/*"],
+      "@errors/*": ["./apps/api/src/errors/*"],
+      "@db/*": ["./apps/api/src/db/*"],
+      "@routes/*": ["./apps/api/src/routes/*"],
+      "@config/*": ["./apps/api/src/config/*"],
+      "@logging/*": ["./apps/api/src/logging/*"],
+      "@nodes/*": ["./apps/api/src/nodes/*"]
+    },
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -15,8 +24,6 @@
 
     // Other Outputs
     "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,

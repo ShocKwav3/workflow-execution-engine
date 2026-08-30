@@ -7,9 +7,9 @@
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write . --log-level warn",
-    "generate:openapi": "tsc && node dist/api/scripts/generateOpenApiSpec.js",
+    "generate:openapi": "pnpm build && node dist/api/scripts/generateOpenApiSpec.js",
     "lint:spec": "spectral lint apps/api/spec/*/openapi.yaml",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/api/src/index.js",
     "dev": "LOG_PRETTY=true node dist/api/src/index.js"
   },
@@ -40,6 +40,7 @@
     "pino-pretty": "^13.1.3",
     "prettier": "^3.9.6",
     "testcontainers": "^12.1.0",
+    "tsc-alias": "^1.9.2",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.10"
