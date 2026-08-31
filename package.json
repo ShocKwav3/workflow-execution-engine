@@ -9,9 +9,9 @@
     "format": "prettier --write . --log-level warn",
     "generate:openapi": "pnpm build && node dist/api/scripts/generateOpenApiSpec.js",
     "lint:spec": "spectral lint apps/api/spec/*/openapi.yaml",
-    "build": "tsc && tsc-alias",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/api/src/index.js",
-    "dev": "LOG_PRETTY=true tsc-watch --noClear --onSuccess \"sh -c 'tsc-alias && exec node dist/api/src/index.js'\""
+    "dev": "LOG_PRETTY=true tsc-watch -p tsconfig.build.json --noClear --onSuccess \"sh -c 'tsc-alias -p tsconfig.build.json && exec node dist/api/src/index.js'\""
   },
   "keywords": [],
   "author": "",

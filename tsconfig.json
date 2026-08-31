@@ -41,5 +41,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "apps/*/test/**", "vitest.config.ts"]
+  "exclude": ["node_modules", "dist", "vitest.config.ts"]
 }

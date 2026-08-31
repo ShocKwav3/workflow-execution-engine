@@ -4,6 +4,8 @@ artifacts
 node_modules
 dist
 *.tsbuildinfo
+/*.js
+/*.js.map
 .env
 .env.*
 !.env.example
