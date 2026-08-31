@@ -11,5 +11,12 @@ delete {
 }
 
 params:path {
-  nodeId:
+  nodeId: {{nodeId}}
+}
+
+docs {
+  # Delete Node
+
+  **Not part of the main flow** — removes a node from a `DRAFT` version (`409` once
+  `PUBLISHED`). Only use against a node you don't intend to publish.
 }

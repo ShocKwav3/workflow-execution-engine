@@ -11,5 +11,12 @@ get {
 }
 
 params:path {
-  workflowId:
+  workflowId: {{workflowId}}
+}
+
+docs {
+  # Get Workflow
+
+  Fetches a single workflow by ID. `{{workflowId}}` is auto-filled by **Create Workflow**;
+  override it to look up a different one.
 }

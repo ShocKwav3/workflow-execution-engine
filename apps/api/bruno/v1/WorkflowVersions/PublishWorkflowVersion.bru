@@ -6,11 +6,36 @@ meta {
 
 post {
   url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version/publish
-  body: none
+  body: json
   auth: none
 }
 
 params:path {
-  workflowId:
-  version:
+  workflowId: {{workflowId}}
+  version: {{versionId}}
+}
+
+body:json {
+  {}
+}
+
+docs {
+  # Publish Workflow Version
+
+  Freezes the version and its nodes permanently — no further node create/edit/reorder/
+  delete, and the version itself can never be deleted afterward. Requires **at least one
+  node** (`409` otherwise) and the version must currently be `DRAFT` (`409` if already
+  published).
+
+  ## After this
+  The version can be executed (**Create Execution**) but never edited again — changing a
+  published workflow means creating the next version, not editing this one.
+
+  ## Body is `{}` on purpose
+  This route takes no body — the handler never reads it. `{}` is here only to make Bruno
+  send a real `Content-Type: application/json` instead of the bogus
+  `application/x-www-form-urlencoded` it defaults to on POST/PUT/PATCH requests with
+  "No Body" selected (a confirmed, unresolved upstream Bruno bug —
+  [usebruno/bruno#1693](https://github.com/usebruno/bruno/issues/1693)). Fastify accepts
+  any valid JSON here since no body schema is declared on this route.
 }

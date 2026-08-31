@@ -11,11 +11,33 @@ post {
 }
 
 params:path {
-  workflowId:
+  workflowId: {{workflowId}}
 }
 
 body:json {
   {
     "version": 1
   }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("versionId", res.body.id);
+  }
+}
+
+docs {
+  # Create Workflow Version
+
+  Creates a new version in `DRAFT` status, with no nodes yet. Only one `DRAFT` may exist
+  per workflow at a time (`409` if one is already open). `version` is the human-facing
+  sequential number you choose; the URL/body of every other request addresses the version
+  by its `id` (a UUID), auto-filled here as `{{versionId}}`.
+
+  ## Next step
+  Run **Create Node** one or more times, then **Publish Workflow Version**.
+
+  ## Rules while DRAFT
+  Nodes may be added, edited, reordered, deleted. The version itself may be deleted.
+  It **cannot** be executed yet.
 }

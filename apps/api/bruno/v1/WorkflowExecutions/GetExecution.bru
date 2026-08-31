@@ -11,6 +11,13 @@ get {
 }
 
 params:path {
-  workflowId:
-  executionId:
+  workflowId: {{workflowId}}
+  executionId: {{executionId}}
+}
+
+docs {
+  # Get Execution
+
+  Fetches one workflow-level execution by ID. `{{executionId}}` is auto-filled by
+  **Create Execution**.
 }

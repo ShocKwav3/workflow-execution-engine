@@ -11,6 +11,14 @@ get {
 }
 
 params:path {
-  workflowId:
-  executionId:
+  workflowId: {{workflowId}}
+  executionId: {{executionId}}
+}
+
+docs {
+  # Get Execution History
+
+  Nested view: each node with its attempts grouped underneath (vs. **Get Workflow
+  Execution Nodes**' flat list). `attempts` stays empty for every node until M2's
+  executor exists.
 }

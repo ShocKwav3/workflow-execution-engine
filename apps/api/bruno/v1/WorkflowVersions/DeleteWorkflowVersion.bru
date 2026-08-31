@@ -11,6 +11,14 @@ delete {
 }
 
 params:path {
-  workflowId:
-  version:
+  workflowId: {{workflowId}}
+  version: {{versionId}}
+}
+
+docs {
+  # Delete Workflow Version
+
+  **Not part of the main create → publish → execute flow** — deletes a `DRAFT` version
+  (and its nodes) outright. `409` if the version is already `PUBLISHED` (published
+  versions are permanent). Only use this against a version you don't intend to publish.
 }

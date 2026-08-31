@@ -11,6 +11,13 @@ get {
 }
 
 params:path {
-  workflowId:
-  version:
+  workflowId: {{workflowId}}
+  version: {{versionId}}
+}
+
+docs {
+  # Get Workflow Version
+
+  Fetches one version by its `id`. Response does **not** embed its nodes — use
+  **List Nodes** for that (two representations of one collection would drift).
 }

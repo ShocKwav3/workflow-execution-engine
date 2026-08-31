@@ -15,3 +15,23 @@ body:json {
     "name": "Order Fulfillment"
   }
 }
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("workflowId", res.body.id);
+  }
+}
+
+docs {
+  # Create Workflow
+
+  Creates a workflow definition. This does **not** create a version or make it runnable —
+  a workflow starts with zero versions.
+
+  ## Next step
+  Run **Create Workflow Version** to add a draft version. This request auto-fills
+  `{{workflowId}}` from the response for every other request in this collection.
+
+  ## Response
+  `201 Created` with the workflow, `id`, `name`, `createdAt`, `updatedAt`.
+}

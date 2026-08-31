@@ -9,3 +9,9 @@ get {
   body: none
   auth: none
 }
+
+docs {
+  # Health
+
+  Always `200 { "status": "ok" }` if the process is alive — never touches the database.
+}

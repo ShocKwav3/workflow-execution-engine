@@ -11,11 +11,18 @@ patch {
 }
 
 params:path {
-  nodeId:
+  nodeId: {{nodeId}}
 }
 
 body:json {
   {
     "name": "Reserve Stock"
   }
+}
+
+docs {
+  # Update Node
+
+  Edits a node's `name`/`type`. Only works while the parent version is still `DRAFT`
+  (`409` once `PUBLISHED`).
 }

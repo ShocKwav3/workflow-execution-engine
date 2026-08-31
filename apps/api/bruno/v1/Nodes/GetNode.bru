@@ -11,5 +11,12 @@ get {
 }
 
 params:path {
-  nodeId:
+  nodeId: {{nodeId}}
+}
+
+docs {
+  # Get Node
+
+  Flat address (`nodeId` is globally unique) — doesn't need a workflow/version in the URL.
+  `{{nodeId}}` is auto-filled by **Create Node**.
 }

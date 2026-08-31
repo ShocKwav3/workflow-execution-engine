@@ -11,6 +11,14 @@ get {
 }
 
 params:path {
-  nodeId:
-  executionId:
+  nodeId: {{nodeId}}
+  executionId: {{executionId}}
+}
+
+docs {
+  # Get Node Execution
+
+  Node-level address, distinct from the workflow-level execution routes — never confused
+  via the URL alone, since a node-level run always nests under `/nodes/{nodeId}`, never
+  under a shared `/executions` collection.
 }

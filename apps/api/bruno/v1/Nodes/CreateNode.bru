@@ -11,13 +11,36 @@ post {
 }
 
 params:path {
-  workflowId:
-  version:
+  workflowId: {{workflowId}}
+  version: {{versionId}}
 }
 
 body:json {
   {
-    "name": "Reserve Inventory",
-    "type": "inventory"
+    "name": "Test workflow 1 - Test node 1",
+    "type": "test type 1"
   }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("nodeId", res.body.id);
+  }
+}
+
+docs {
+  # Create Node
+
+  Adds a node to a `DRAFT` version (`409` if the version is already `PUBLISHED`).
+  `sequence` is server-assigned — appended after any existing nodes, not something you set.
+
+  `type` isn't validated against a real registry yet (`src/nodes/registry.ts` is empty
+  until an executor exists at M2+) — any string is currently accepted.
+
+  Returns `201` with a `Location` header at the node's own flat address
+  (`/api/v1/nodes/{nodeId}`) — that's this collection's **Get/Update/Delete Node**
+  requests. Response auto-fills `{{nodeId}}`.
+
+  Call this more than once (change `name`/`type` each time) to build a multi-node
+  workflow before publishing.
 }

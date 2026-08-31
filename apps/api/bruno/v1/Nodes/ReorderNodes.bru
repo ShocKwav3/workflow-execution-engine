@@ -11,12 +11,22 @@ put {
 }
 
 params:path {
-  workflowId:
-  version:
+  workflowId: {{workflowId}}
+  version: {{versionId}}
 }
 
 body:json {
   {
-    "nodeIds": []
+    "nodeIds": ["{{nodeId}}"]
   }
+}
+
+docs {
+  # Reorder Nodes
+
+  Whole-collection replace, not a per-node move — `nodeIds` must list **every** node
+  currently in the version, in the new desired order. A partial or mismatched list
+  returns `409 NODE_ORDERING_MISMATCH`. DRAFT only (`409` if `PUBLISHED`).
+
+  If you've created more than one node, list all their IDs here in the order you want.
 }

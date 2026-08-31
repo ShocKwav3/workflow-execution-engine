@@ -11,7 +11,7 @@ post {
 }
 
 params:path {
-  workflowId:
+  workflowId: {{workflowId}}
 }
 
 headers {
@@ -20,6 +20,27 @@ headers {
 
 body:json {
   {
-    "workflowVersionId": ""
+    "workflowVersionId": "{{versionId}}"
   }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar("executionId", res.body.id);
+  }
+}
+
+docs {
+  # Create Execution
+
+  Starts one execution and returns immediately with `status: "PENDING"` — nothing
+  processes it yet (no executor exists until M2). In the same transaction, one
+  `node_execution` per node in the version is snapshotted, all `PENDING`.
+
+  The version must be `PUBLISHED` (`409` if still `DRAFT`).
+
+  ## Idempotency-Key
+  Repeated requests with the **same** key return the existing execution instead of
+  creating a new one. Change the header value if you want a genuinely new execution
+  against the same version.
 }

@@ -11,6 +11,13 @@ get {
 }
 
 params:path {
-  workflowId:
-  version:
+  workflowId: {{workflowId}}
+  version: {{versionId}}
+}
+
+docs {
+  # List Nodes
+
+  Returns every node in the version, ordered by `sequence`. Works whether the version is
+  `DRAFT` or `PUBLISHED`.
 }

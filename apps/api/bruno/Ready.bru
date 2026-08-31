@@ -9,3 +9,11 @@ get {
   body: none
   auth: none
 }
+
+docs {
+  # Ready
+
+  `200 { "status": "ok" }` if Postgres is reachable (runs `SELECT 1`), else
+  `503 { "status": "unavailable" }`. Reconnection is lazy — no retry loop, the next
+  request is what attempts a fresh connection.
+}
