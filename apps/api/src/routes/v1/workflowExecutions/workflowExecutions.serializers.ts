@@ -1,4 +1,4 @@
-import type { WorkflowExecutionRow } from "../../../db/types.js";
+import type { WorkflowExecutionRow } from "@/db/types.js";
 
 export function toWorkflowExecutionResponse(row: WorkflowExecutionRow) {
   return {

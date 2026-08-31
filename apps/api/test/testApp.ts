@@ -1,4 +1,4 @@
-import { buildServer } from "../src/server.js";
+import { buildServer } from "@/server.js";
 import type { TestDatabase } from "./testDatabase.js";
 
 export async function buildTestApp({ container }: TestDatabase) {

@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
-import { VersionNotPublishedError, WorkflowVersionMismatchError } from "../errors/domain/index.js";
-import { ClassifiedError } from "../errors/index.js";
+import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
+import { ClassifiedError } from "@/errors/index.js";
 import { classifyPgError } from "./errors/index.js";
 import {
   type CreateExecutionInput,

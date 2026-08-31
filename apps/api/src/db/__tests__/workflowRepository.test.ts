@@ -1,18 +1,18 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { UniqueConstraintViolationError } from "../errors/index.js";
+import { UniqueConstraintViolationError } from "@/db/errors/index.js";
 import {
   VersionAlreadyPublishedError,
   VersionHasNoNodesError,
   VersionNotDraftError,
-} from "../../errors/domain/index.js";
-import { NodeRepository } from "../nodeRepository.js";
-import { WorkflowRepository } from "../workflowRepository.js";
+} from "@/errors/domain/index.js";
+import { NodeRepository } from "@/db/nodeRepository.js";
+import { WorkflowRepository } from "@/db/workflowRepository.js";
 import {
   type TestDatabase,
   startTestDatabase,
   stopTestDatabase,
-} from "../../../test/testDatabase.js";
+} from "@test/testDatabase.js";
 
 describe("WorkflowRepository", () => {
   let db: TestDatabase;

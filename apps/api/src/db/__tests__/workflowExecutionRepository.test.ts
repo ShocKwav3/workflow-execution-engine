@@ -1,18 +1,18 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { NodeExecutionRepository } from "../nodeExecutionRepository.js";
+import { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
 import {
   VersionNotPublishedError,
   WorkflowVersionMismatchError,
-} from "../../errors/domain/index.js";
-import { WorkflowExecutionRepository } from "../workflowExecutionRepository.js";
-import { WorkflowRepository } from "../workflowRepository.js";
+} from "@/errors/domain/index.js";
+import { WorkflowExecutionRepository } from "@/db/workflowExecutionRepository.js";
+import { WorkflowRepository } from "@/db/workflowRepository.js";
 import {
   type TestDatabase,
   startTestDatabase,
   stopTestDatabase,
-} from "../../../test/testDatabase.js";
-import { seedDraftVersion, seedPublishedVersion } from "../../../test/fixtures.js";
+} from "@test/testDatabase.js";
+import { seedDraftVersion, seedPublishedVersion } from "@test/fixtures.js";
 
 describe("WorkflowExecutionRepository", () => {
   let db: TestDatabase;

@@ -1,4 +1,4 @@
-import { PROBLEM_DETAILS_CONTENT_TYPE, problemDetailsSchema } from "../errors/problemDetails.js";
+import { PROBLEM_DETAILS_CONTENT_TYPE, problemDetailsSchema } from "@/errors/problemDetails.js";
 
 const problemDetailsResponse = {
   content: { [PROBLEM_DETAILS_CONTENT_TYPE]: { schema: problemDetailsSchema } },

@@ -1,10 +1,10 @@
 import { z } from "zod";
-import type { Resolver } from "../../../di/types.js";
-import { TAGS } from "../config.js";
-import { NotFoundError } from "../../../errors/NotFoundError.js";
-import { nodeRepositoryToken } from "../../../db/tokens.js";
-import type { TypedFastifyInstance } from "../../typedFastify.js";
-import { ERROR_RESPONSES } from "../../errorResponses.js";
+import type { Resolver } from "@/di/types.js";
+import { TAGS } from "@/routes/v1/config.js";
+import { NotFoundError } from "@/errors/NotFoundError.js";
+import { nodeRepositoryToken } from "@/db/tokens.js";
+import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
+import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { nodeIdParamsSchema } from "./nodes.schemas.js";
 
 export function registerDeleteNode(server: TypedFastifyInstance, container: Resolver) {

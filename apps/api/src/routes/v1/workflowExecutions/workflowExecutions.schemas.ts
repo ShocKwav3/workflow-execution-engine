@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { v1SchemaRegistry } from "../registry.js";
+import { v1SchemaRegistry } from "@/routes/v1/registry.js";
 
 export const workflowExecutionResponseSchema = z.object({
   id: z.uuid().max(36).describe("Workflow execution ID."),

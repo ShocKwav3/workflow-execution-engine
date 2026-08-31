@@ -4,7 +4,7 @@ import {
   resetRouteHarness,
   startRouteHarness,
   stopRouteHarness,
-} from "../../../../../test/routeHarness.js";
+} from "@test/routeHarness.js";
 
 describe("GET /workflows", () => {
   let harness: RouteHarness;

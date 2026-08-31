@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { v1SchemaRegistry, withIntFormat } from "../registry.js";
+import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
 const versionNumberResponseSchema = withIntFormat(
   z.int32().positive().describe("Version number, unique within the workflow."),

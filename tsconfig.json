@@ -5,13 +5,8 @@
     "rootDir": "./apps",
     "outDir": "./dist",
     "paths": {
-      "@di/*": ["./apps/api/src/di/*"],
-      "@errors/*": ["./apps/api/src/errors/*"],
-      "@db/*": ["./apps/api/src/db/*"],
-      "@routes/*": ["./apps/api/src/routes/*"],
-      "@config/*": ["./apps/api/src/config/*"],
-      "@logging/*": ["./apps/api/src/logging/*"],
-      "@nodes/*": ["./apps/api/src/nodes/*"]
+      "@/*": ["./apps/api/src/*"],
+      "@test/*": ["./apps/api/test/*"]
     },
 
     // Environment Settings
@@ -46,5 +41,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "apps/*/test/**"]
+  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "apps/*/test/**", "vitest.config.ts"]
 }

@@ -1,17 +1,15 @@
 import { readdirSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { buildApp } from "../src/app.js";
-import { loadAppConfig } from "../src/config.js";
-import { registerRoutes } from "../src/routes/index.js";
-import type { Resolver } from "../src/di/types.js";
+import { buildApp } from "@/app.js";
+import { loadAppConfig } from "@/config.js";
+import { registerRoutes } from "@/routes/index.js";
+import type { Resolver } from "@/di/types.js";
 
 const specDir = path.resolve(process.cwd(), "apps/api/spec");
 
-// Mirrors dist/'s compiled layout (same "../src/..." pattern as the imports above) —
-// discovering versions from the filesystem means adding routes/v2/ later needs
-// no change here.
-const apiVersionsDir = path.resolve(import.meta.dirname, "../src/routes");
+// Filesystem path (not a module specifier, so aliases don't apply) — adding routes/v2/ later needs no change here.
+const apiVersionsDir = path.resolve(process.cwd(), "apps/api/src/routes");
 const versions = readdirSync(apiVersionsDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);

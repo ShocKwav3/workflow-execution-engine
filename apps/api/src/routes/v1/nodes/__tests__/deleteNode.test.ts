@@ -4,8 +4,8 @@ import {
   resetRouteHarness,
   startRouteHarness,
   stopRouteHarness,
-} from "../../../../../test/routeHarness.js";
-import { seedDraftVersion, seedPublishedVersion } from "../../../../../test/fixtures.js";
+} from "@test/routeHarness.js";
+import { seedDraftVersion, seedPublishedVersion } from "@test/fixtures.js";
 
 describe("DELETE /nodes/{nodeId}", () => {
   let harness: RouteHarness;

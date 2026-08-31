@@ -1,6 +1,6 @@
 import type { Pool, PoolClient } from "pg";
-import { NodeOrderingMismatchError, VersionNotDraftError } from "../errors/domain/index.js";
-import { ClassifiedError } from "../errors/index.js";
+import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
+import { ClassifiedError } from "@/errors/index.js";
 import { classifyPgError } from "./errors/index.js";
 import type { NodeRow, WorkflowVersionRow } from "./types.js";
 import {

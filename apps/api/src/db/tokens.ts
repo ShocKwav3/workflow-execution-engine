@@ -1,5 +1,5 @@
 import type { Pool } from "pg";
-import { createToken } from "../di/token.js";
+import { createToken } from "@/di/token.js";
 import type { WorkflowRepository } from "./workflowRepository.js";
 import type { NodeRepository } from "./nodeRepository.js";
 import type { WorkflowExecutionRepository } from "./workflowExecutionRepository.js";

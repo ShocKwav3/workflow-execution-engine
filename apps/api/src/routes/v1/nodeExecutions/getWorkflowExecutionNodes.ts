@@ -1,9 +1,9 @@
-import type { Resolver } from "../../../di/types.js";
-import { TAGS } from "../config.js";
-import { nodeExecutionRepositoryToken } from "../../../db/tokens.js";
-import type { TypedFastifyInstance } from "../../typedFastify.js";
-import { ERROR_RESPONSES } from "../../errorResponses.js";
-import { workflowExecutionParamsSchema } from "../workflowExecutions/workflowExecutions.schemas.js";
+import type { Resolver } from "@/di/types.js";
+import { TAGS } from "@/routes/v1/config.js";
+import { nodeExecutionRepositoryToken } from "@/db/tokens.js";
+import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
+import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
+import { workflowExecutionParamsSchema } from "@/routes/v1/workflowExecutions/workflowExecutions.schemas.js";
 import { nodeExecutionListItemResponseSchema } from "./nodeExecutions.schemas.js";
 import { toNodeExecutionListItemResponse } from "./nodeExecutions.serializers.js";
 

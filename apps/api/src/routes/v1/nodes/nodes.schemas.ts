@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { v1SchemaRegistry, withIntFormat } from "../registry.js";
+import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
 const sequenceSchema = withIntFormat(
   z.int32().describe("Execution order within the workflow version, starting at 0."),

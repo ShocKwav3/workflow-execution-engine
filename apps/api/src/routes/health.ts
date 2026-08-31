@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { pgPoolToken } from "../db/tokens.js";
-import type { Resolver } from "../di/types.js";
+import { pgPoolToken } from "@/db/tokens.js";
+import type { Resolver } from "@/di/types.js";
 
 export async function healthRoutes(app: FastifyInstance, options: { container: Resolver }) {
   const { container } = options;

@@ -1,4 +1,4 @@
-import { ClassifiedError, type ErrorContext } from "../ClassifiedError.js";
+import { ClassifiedError, type ErrorContext } from "@/errors/ClassifiedError.js";
 
 export class VersionHasNoNodesError extends ClassifiedError {
   constructor(version: number, context: ErrorContext) {

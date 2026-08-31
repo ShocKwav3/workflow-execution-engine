@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PG_POOL_DEFAULTS, loadPgPoolConfig } from "../config.js";
+import { PG_POOL_DEFAULTS, loadPgPoolConfig } from "@/db/config.js";
 
 const requiredEnv = {
   PGHOST: "localhost",

@@ -1,4 +1,4 @@
-import type { NodeExecutionAttemptRow } from "../types.js";
+import type { NodeExecutionAttemptRow } from "@/db/types.js";
 
 export interface NodeExecutionWithNode {
   id: string;

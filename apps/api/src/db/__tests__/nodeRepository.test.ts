@@ -1,14 +1,14 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { NodeOrderingMismatchError, VersionNotDraftError } from "../../errors/domain/index.js";
-import { NodeRepository } from "../nodeRepository.js";
-import { WorkflowRepository } from "../workflowRepository.js";
-import type { WorkflowRow, WorkflowVersionRow } from "../types.js";
+import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
+import { NodeRepository } from "@/db/nodeRepository.js";
+import { WorkflowRepository } from "@/db/workflowRepository.js";
+import type { WorkflowRow, WorkflowVersionRow } from "@/db/types.js";
 import {
   type TestDatabase,
   startTestDatabase,
   stopTestDatabase,
-} from "../../../test/testDatabase.js";
+} from "@test/testDatabase.js";
 
 describe("NodeRepository", () => {
   let db: TestDatabase;

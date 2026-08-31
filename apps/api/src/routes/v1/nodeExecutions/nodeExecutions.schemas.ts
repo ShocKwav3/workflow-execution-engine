@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { v1SchemaRegistry, withIntFormat } from "../registry.js";
+import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
 export const nodeExecutionListItemResponseSchema = z.object({
   id: z.uuid().max(36).describe("Node execution ID."),

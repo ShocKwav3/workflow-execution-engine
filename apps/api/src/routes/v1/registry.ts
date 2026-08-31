@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { problemDetailsSchema, problemDetailsStatusSchema } from "../../errors/problemDetails.js";
+import { problemDetailsSchema, problemDetailsStatusSchema } from "@/errors/problemDetails.js";
 
 // Matches fastify-type-provider-zod's unexported SchemaRegistryMeta structurally —
 // createJsonSchemaTransformObject requires a registry typed to it.

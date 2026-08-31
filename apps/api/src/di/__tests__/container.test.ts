@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { Container } from "../container.js";
-import { UnregisteredTokenError } from "../errors.js";
-import { createToken } from "../token.js";
+import { Container } from "@/di/container.js";
+import { UnregisteredTokenError } from "@/di/errors.js";
+import { createToken } from "@/di/token.js";
 
 describe("Container", () => {
   it("resolves a singleton to the same instance every time", () => {

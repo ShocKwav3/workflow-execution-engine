@@ -1,10 +1,10 @@
-import type { Resolver } from "../../../di/types.js";
-import { TAGS } from "../config.js";
-import { NotFoundError } from "../../../errors/NotFoundError.js";
-import { nodeRepositoryToken } from "../../../db/tokens.js";
-import type { TypedFastifyInstance } from "../../typedFastify.js";
-import { ERROR_RESPONSES } from "../../errorResponses.js";
-import { workflowVersionParamsSchema } from "../workflowVersions/workflowVersions.schemas.js";
+import type { Resolver } from "@/di/types.js";
+import { TAGS } from "@/routes/v1/config.js";
+import { NotFoundError } from "@/errors/NotFoundError.js";
+import { nodeRepositoryToken } from "@/db/tokens.js";
+import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
+import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
+import { workflowVersionParamsSchema } from "@/routes/v1/workflowVersions/workflowVersions.schemas.js";
 import { nodeResponseSchema, reorderNodesBodySchema } from "./nodes.schemas.js";
 import { toNodeResponse } from "./nodes.serializers.js";
 

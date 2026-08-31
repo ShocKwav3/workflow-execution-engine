@@ -3,8 +3,8 @@ import {
   VersionAlreadyPublishedError,
   VersionHasNoNodesError,
   VersionNotDraftError,
-} from "../errors/domain/index.js";
-import { ClassifiedError } from "../errors/index.js";
+} from "@/errors/domain/index.js";
+import { ClassifiedError } from "@/errors/index.js";
 import { classifyPgError } from "./errors/index.js";
 import type { WorkflowRow, WorkflowVersionRow } from "./types.js";
 import {

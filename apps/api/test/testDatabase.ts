@@ -3,7 +3,7 @@ import path from "node:path";
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { Pool } from "pg";
 
-const CHANGELOG_DIR = path.resolve(import.meta.dirname, "../db/changelog");
+const CHANGELOG_DIR = path.resolve(process.cwd(), "apps/api/db/changelog");
 
 function loadFullSchemaSql(): string {
   const sqlFiles = readdirSync(CHANGELOG_DIR)
