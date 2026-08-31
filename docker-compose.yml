@@ -41,6 +41,8 @@ services:
         condition: service_healthy
       liquibase:
         condition: service_completed_successfully
+    volumes:
+      - ./apps/api:/app/apps/api
     environment:
       HOST: 0.0.0.0
       PORT: ${PORT}
