@@ -31,9 +31,7 @@ export async function v1Routes(app: FastifyInstance, options: { container: Resol
       info: {
         title: "Workflow Execution Engine API",
         version: "1.0.0",
-        description:
-          "Workflow definitions, versions, nodes, and their executions. See milestones.md " +
-          "for the full system this API is the first slice of.",
+        description: "Workflow definitions, versions, nodes, and their executions.",
       },
       servers: openApiServers,
       tags: Object.values(TAGS),

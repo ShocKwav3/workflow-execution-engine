@@ -3,9 +3,8 @@ extends:
   - "@stoplight/spectral-owasp-ruleset"
 
 rules:
-  # No security scheme or rate limiting exists anywhere in the app yet (no auth at
-  # all in M1; brief puts security/observability hardening at Milestone 10). Revisit
-  # once those features actually exist — see implementationChangelog.md.
+  # No security scheme or rate limiting exists anywhere in the app yet. Revisit
+  # once those features actually exist.
   owasp:api2:2023-read-restricted: off
   owasp:api2:2023-write-restricted: off
   owasp:api4:2023-rate-limit: off
@@ -14,15 +13,14 @@ rules:
   # List-response arrays (listWorkflows, listNodes, execution nodes/history) have no
   # pagination yet, so there's no real bound to pick — an arbitrary .max() would be an
   # actual runtime constraint (response schemas are enforced by the Zod serializer) with
-  # no design behind the number. Revisit when pagination is introduced — see
-  # implementationChangelog.md.
+  # no design behind the number. Revisit when pagination is introduced.
   owasp:api4:2023-array-limit: off
 
   # No auth exists anywhere yet (same reasoning as the api2/api4 rules above) — no 401 is
-  # ever actually returned. A 500 means something unclassified happened; Task 5 deliberately
-  # keeps that undeclared rather than part of the documented contract (see
-  # implementationChangelog.md, "never catch programmer errors" — a 409 that's really a typo
-  # is worse than a 500, and a 500 that's genuinely unclassified isn't a modeled response).
+  # ever actually returned. A 500 means something unclassified happened, deliberately kept
+  # undeclared rather than part of the documented contract — "never catch programmer
+  # errors": a 409 that's really a typo is worse than a 500, and a 500 that's genuinely
+  # unclassified isn't a modeled response.
   owasp:api8:2023-define-error-responses-401: off
   owasp:api8:2023-define-error-responses-500: off
 
@@ -42,7 +40,7 @@ rules:
   owasp:api4:2023-string-restricted: off
 
   # Project-specific: every error response must use the shared RFC 9457 envelope,
-  # not an ad-hoc inline error shape (see globalAgentInstructions.md Task 5 notes).
+  # not an ad-hoc inline error shape.
   error-response-uses-problem-details:
     description: Every 4xx/5xx response schema must reference the shared ProblemDetails component.
     message: "{{property}} must $ref '#/components/schemas/ProblemDetails', found an inline or different schema."

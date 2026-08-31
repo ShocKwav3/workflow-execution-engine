@@ -16,7 +16,7 @@ export const createWorkflowVersionInputSchema = z.object({
 export type CreateWorkflowVersionInput = z.infer<typeof createWorkflowVersionInputSchema>;
 
 // Used to address an existing version (get/delete/publish, and node operations scoped to
-// a version) — by its id, not its number; see implementationChangelog.md Task 6 entry.
+// a version) — by its id, not its number.
 export const workflowVersionRefSchema = z.object({
   workflowId: z.uuid(),
   version: z.uuid(),
