@@ -27,6 +27,10 @@
       "types": "./dist/src/config/*.d.ts",
       "default": "./dist/src/config/*.js"
     },
+    "./services/*.js": {
+      "types": "./dist/src/services/*.d.ts",
+      "default": "./dist/src/services/*.js"
+    },
     "./test/*.js": "./test/*.ts"
   },
   "scripts": {

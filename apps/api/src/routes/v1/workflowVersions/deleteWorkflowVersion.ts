@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
 import { NotFoundError } from "@workflow-engine/core/errors/NotFoundError.js";
-import { workflowRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { workflowServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { workflowVersionParamsSchema } from "./workflowVersions.schemas.js";
@@ -20,8 +20,8 @@ export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, cont
       response: { 204: z.null(), ...ERROR_RESPONSES },
     },
     handler: async (request, reply) => {
-      const repository = container.resolve(workflowRepositoryToken);
-      const deleted = await repository.deleteWorkflowVersion({
+      const service = container.resolve(workflowServiceToken);
+      const deleted = await service.deleteWorkflowVersion({
         workflowId: request.params.workflowId,
         version: request.params.version,
       });

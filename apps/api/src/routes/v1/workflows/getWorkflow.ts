@@ -1,7 +1,7 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
 import { NotFoundError } from "@workflow-engine/core/errors/NotFoundError.js";
-import { workflowRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { workflowServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { workflowIdParamsSchema, workflowResponseSchema } from "./workflows.schemas.js";
@@ -20,8 +20,8 @@ export function registerGetWorkflow(server: TypedFastifyInstance, container: Res
       response: { 200: workflowResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
-      const repository = container.resolve(workflowRepositoryToken);
-      const workflow = await repository.getWorkflowById(request.params.workflowId);
+      const service = container.resolve(workflowServiceToken);
+      const workflow = await service.getWorkflowById(request.params.workflowId);
 
       if (!workflow) {
         throw new NotFoundError("Workflow not found");

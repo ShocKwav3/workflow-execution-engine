@@ -1,6 +1,6 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
-import { nodeExecutionRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { nodeExecutionServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { workflowExecutionParamsSchema } from "@/routes/v1/workflowExecutions/workflowExecutions.schemas.js";
@@ -24,8 +24,8 @@ export function registerGetWorkflowExecutionNodes(
       response: { 200: nodeExecutionListItemResponseSchema.array(), ...ERROR_RESPONSES },
     },
     handler: async (request) => {
-      const repository = container.resolve(nodeExecutionRepositoryToken);
-      const nodeExecutions = await repository.getNodeExecutionsForWorkflowExecution({
+      const service = container.resolve(nodeExecutionServiceToken);
+      const nodeExecutions = await service.getNodeExecutionsForWorkflowExecution({
         workflowId: request.params.workflowId,
         workflowExecutionId: request.params.executionId,
       });
