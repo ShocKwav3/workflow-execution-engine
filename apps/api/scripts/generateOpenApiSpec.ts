@@ -10,8 +10,11 @@ const specDir = path.resolve(process.cwd(), "apps/api/spec");
 
 // Filesystem path (not a module specifier, so aliases don't apply) — adding routes/v2/ later needs no change here.
 const apiVersionsDir = path.resolve(process.cwd(), "apps/api/src/routes");
+const versionDirPattern = /^v\d+$/;
+
+// Allowlist, not a __tests__ denylist — any future non-version folder under routes/ is excluded for free.
 const versions = readdirSync(apiVersionsDir, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
+  .filter((entry) => entry.isDirectory() && versionDirPattern.test(entry.name))
   .map((entry) => entry.name);
 
 // Route registration never resolves anything at registration time — only handlers do, at
@@ -31,6 +34,13 @@ await app.ready();
 
 for (const version of versions) {
   const response = await app.inject({ method: "GET", url: `/api/${version}/docs/yaml` });
+
+  if (response.statusCode !== 200) {
+    throw new Error(
+      `Spec generation for ${version} returned ${response.statusCode}: ${response.body}`,
+    );
+  }
+
   const versionDir = path.join(specDir, version);
   const outputPath = path.join(versionDir, "openapi.yaml");
 
