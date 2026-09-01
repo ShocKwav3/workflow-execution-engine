@@ -11,7 +11,7 @@ Current API surface: workflow definitions, versions (draft → published lifecyc
 - Node.js (`^26`) + Fastify, TypeScript (ESM, `nodenext`)
 - PostgreSQL, raw `pg` (no ORM), Liquibase for migrations
 - Zod for runtime validation + OpenAPI generation (`fastify-type-provider-zod`)
-- pnpm, Vitest (+ Testcontainers for real-Postgres integration tests), ESLint/Prettier
+- pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real-Postgres integration tests), ESLint/Prettier
 - Docker Compose for local infrastructure
 
 ## Running locally
@@ -33,32 +33,39 @@ Restarting only the API container (`docker compose restart api`) should not lose
 ## Exploring the API
 
 - **Bruno collection**: `apps/api/bruno/` — a full request set (`v1/`) covering the create → publish → execute → inspect flow, with docs per request and auto-captured IDs between requests. See `apps/api/bruno/README.md`.
-- **OpenAPI spec**: generated at `apps/api/spec/v1/openapi.json` (run `pnpm generate:openapi`); interactive docs served at `/api/v1/docs` while the app is running.
+- **OpenAPI spec**: generated at `apps/api/spec/v1/openapi.yaml` (run `pnpm generate:openapi`); interactive docs served at `/api/v1/docs` while the app is running.
 
 ## Development
 
 ```bash
 pnpm install
-pnpm build           # tsc -p tsconfig.build.json + tsc-alias
-pnpm dev             # hot-reload dev server (expects PG* env vars, e.g. via docker compose)
-pnpm test            # vitest, spins up Testcontainers PostgreSQL
-pnpm lint            # eslint
+pnpm build                 # builds every package, in dependency order (packages/core, then apps/api)
+pnpm --filter @workflow-engine/api dev   # hot-reload dev server (expects PG* env vars, e.g. via docker compose)
+pnpm test                  # vitest, spins up Testcontainers PostgreSQL
+pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi
-pnpm lint:spec       # spectral, lints the generated OpenAPI doc
+pnpm lint:spec             # spectral, lints the generated OpenAPI doc
+pnpm clean:bundles         # removes every package's compiled output
+pnpm clean:modules         # removes every node_modules in the workspace
 ```
 
-Two `tsconfig`s exist by design: `tsconfig.json` (default, includes tests — what your editor should pick up) and `tsconfig.build.json` (extends it, excludes tests — what `pnpm build`/`pnpm dev` actually compile with).
+Each package has its own `tsconfig.json` (default, includes tests — what your editor should pick up) and `tsconfig.build.json` (extends it, excludes tests — what `pnpm build` actually compiles with), both extending the shared `tsconfig.base.json` at the repo root.
 
 ## Layout
 
 ```text
-apps/api/
-  db/           Liquibase changelog
-  bruno/        HTTP client collection
-  spec/         generated OpenAPI documents (per API version)
-  src/          application source
-  test/         shared test harness/fixtures (excluded from the build)
+packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
+  src/            DI container, error types, database pool + repositories, logging, config
+  test/           shared test harness/fixtures (used by both packages, excluded from the build)
+
+apps/api/         @workflow-engine/api — the HTTP process
+  db/             Liquibase changelog
+  bruno/          HTTP client collection
+  spec/           generated OpenAPI documents (per API version)
+  src/            routes, Fastify app/server setup, composition root
+
 docker-compose.yml
-Dockerfile      multi-stage: builder / dev (hot reload) / runtime (lean, prod)
-tsconfig.json, tsconfig.build.json
+Dockerfile        multi-stage: builder / dev (hot reload) / runtime (lean, prod)
+tsconfig.base.json
+pnpm-workspace.yaml
 ```
