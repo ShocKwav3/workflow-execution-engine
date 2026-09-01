@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
-import { NodeRepository } from "@/db/nodeRepository.js";
-import { WorkflowRepository } from "@/db/workflowRepository.js";
-import type { NodeRow, WorkflowRow, WorkflowVersionRow } from "@/db/types.js";
+import { NodeRepository } from "../src/db/nodeRepository.js";
+import { WorkflowRepository } from "../src/db/workflowRepository.js";
+import type { NodeRow, WorkflowRow, WorkflowVersionRow } from "../src/db/types.js";
 
 export interface NodeDefinition {
   name: string;

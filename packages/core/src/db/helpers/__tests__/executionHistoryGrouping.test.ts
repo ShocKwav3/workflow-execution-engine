@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { groupNodeHistoryRows, type NodeHistoryQueryRow } from "@/db/helpers/executionHistoryGrouping.js";
+import {
+  groupNodeHistoryRows,
+  type NodeHistoryQueryRow,
+} from "@/db/helpers/executionHistoryGrouping.js";
 
 function row(overrides: Partial<NodeHistoryQueryRow>): NodeHistoryQueryRow {
   return {

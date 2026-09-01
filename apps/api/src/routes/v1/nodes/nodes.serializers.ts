@@ -1,4 +1,4 @@
-import type { NodeRow } from "@/db/types.js";
+import type { NodeRow } from "@workflow-engine/core/db/types.js";
 
 export function toNodeResponse(row: NodeRow) {
   return {

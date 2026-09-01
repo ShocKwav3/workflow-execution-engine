@@ -1,0 +1,45 @@
+{
+  "name": "@workflow-engine/core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./di/*.js": {
+      "types": "./dist/src/di/*.d.ts",
+      "default": "./dist/src/di/*.js"
+    },
+    "./db/*.js": {
+      "types": "./dist/src/db/*.d.ts",
+      "default": "./dist/src/db/*.js"
+    },
+    "./errors/*.js": {
+      "types": "./dist/src/errors/*.d.ts",
+      "default": "./dist/src/errors/*.js"
+    },
+    "./logging/*.js": {
+      "types": "./dist/src/logging/*.d.ts",
+      "default": "./dist/src/logging/*.js"
+    },
+    "./config/*.js": {
+      "types": "./dist/src/config/*.d.ts",
+      "default": "./dist/src/config/*.js"
+    },
+    "./test/*.js": "./test/*.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "clean:bundles": "rm -rf dist"
+  },
+  "dependencies": {
+    "pg": "^8.23.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.1.0",
+    "@types/pg": "^8.21.0",
+    "testcontainers": "^12.1.0"
+  }
+}

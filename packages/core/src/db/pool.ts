@@ -1,8 +1,8 @@
 import { Pool } from "pg";
-import type { FastifyBaseLogger } from "fastify";
+import type { Logger } from "../logging/types.js";
 import type { PgPoolConfig } from "./config.js";
 
-export function createPgPool(config: PgPoolConfig, logger: FastifyBaseLogger): Pool {
+export function createPgPool(config: PgPoolConfig, logger: Logger): Pool {
   const pool = new Pool({
     host: config.host,
     port: config.port,

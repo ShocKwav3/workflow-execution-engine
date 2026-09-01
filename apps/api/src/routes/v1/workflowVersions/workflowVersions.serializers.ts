@@ -1,4 +1,4 @@
-import type { WorkflowVersionRow } from "@/db/types.js";
+import type { WorkflowVersionRow } from "@workflow-engine/core/db/types.js";
 
 export function toWorkflowVersionResponse(row: WorkflowVersionRow) {
   return {

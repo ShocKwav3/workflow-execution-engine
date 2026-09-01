@@ -6,7 +6,7 @@ import {
   createJsonSchemaTransformObject,
 } from "fastify-type-provider-zod";
 import { v1SchemaRegistry } from "./registry.js";
-import type { Resolver } from "@/di/types.js";
+import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS, V1_PREFIX } from "./config.js";
 import { workflowRoutes } from "./workflows/index.js";
 import { workflowVersionRoutes } from "./workflowVersions/index.js";

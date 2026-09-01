@@ -5,7 +5,7 @@ import {
   startRouteHarness,
   stopRouteHarness,
 } from "@test/routeHarness.js";
-import { seedPublishedVersion } from "@test/fixtures.js";
+import { seedPublishedVersion } from "@workflow-engine/core/test/fixtures.js";
 
 const DEFINITION = [
   { name: "Reserve Inventory", type: "inventory" },

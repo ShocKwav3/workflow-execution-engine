@@ -8,11 +8,7 @@ import {
 } from "@/errors/domain/index.js";
 import { NodeRepository } from "@/db/nodeRepository.js";
 import { WorkflowRepository } from "@/db/workflowRepository.js";
-import {
-  type TestDatabase,
-  startTestDatabase,
-  stopTestDatabase,
-} from "@test/testDatabase.js";
+import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 
 describe("WorkflowRepository", () => {
   let db: TestDatabase;

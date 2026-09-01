@@ -43,6 +43,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./apps/api:/app/apps/api
+      - ./packages/core:/app/packages/core
     environment:
       HOST: 0.0.0.0
       PORT: ${PORT}

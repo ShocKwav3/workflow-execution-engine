@@ -5,7 +5,7 @@ import {
   startRouteHarness,
   stopRouteHarness,
 } from "@test/routeHarness.js";
-import { seedDraftVersion, seedPublishedVersion } from "@test/fixtures.js";
+import { seedDraftVersion, seedPublishedVersion } from "@workflow-engine/core/test/fixtures.js";
 
 describe("PATCH /nodes/{nodeId}", () => {
   let harness: RouteHarness;

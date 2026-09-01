@@ -1,6 +1,6 @@
 import { buildServer } from "./server.js";
 import { loadAppConfig } from "./config.js";
-import { createContextLogger } from "./logging/contextLogger.js";
+import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 
 // Must stay below docker stop's 10s and Kubernetes' terminationGracePeriodSeconds (default 30).
 const SHUTDOWN_TIMEOUT_MS = 8_000;
