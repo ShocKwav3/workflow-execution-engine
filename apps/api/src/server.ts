@@ -1,8 +1,8 @@
 import { buildApp } from "./app.js";
 import { loadAppConfig, type AppConfig } from "./config.js";
 import { buildContainer } from "./registrations.js";
-import { closePgPool } from "./db/pool.js";
-import { pgPoolToken } from "./db/tokens.js";
+import { closePgPool } from "@workflow-engine/core/db/pool.js";
+import { pgPoolToken } from "@workflow-engine/core/db/tokens.js";
 import { registerRoutes } from "./routes/index.js";
 
 export async function buildServer(config: AppConfig = loadAppConfig()) {

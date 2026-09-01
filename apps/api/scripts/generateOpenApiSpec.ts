@@ -4,12 +4,12 @@ import path from "node:path";
 import { buildApp } from "@/app.js";
 import { loadAppConfig } from "@/config.js";
 import { registerRoutes } from "@/routes/index.js";
-import type { Resolver } from "@/di/types.js";
+import type { Resolver } from "@workflow-engine/core/di/types.js";
 
-const specDir = path.resolve(process.cwd(), "apps/api/spec");
+const specDir = path.resolve(process.cwd(), "spec");
 
 // Filesystem path (not a module specifier, so aliases don't apply) — adding routes/v2/ later needs no change here.
-const apiVersionsDir = path.resolve(process.cwd(), "apps/api/src/routes");
+const apiVersionsDir = path.resolve(process.cwd(), "src/routes");
 const versionDirPattern = /^v\d+$/;
 
 // Allowlist, not a __tests__ denylist — any future non-version folder under routes/ is excluded for free.

@@ -1,21 +1,21 @@
-import type { FastifyBaseLogger } from "fastify";
-import { Container } from "./di/container.js";
-import { loadPgPoolConfig } from "./db/config.js";
-import { createPgPool } from "./db/pool.js";
-import { createContextLogger } from "./logging/contextLogger.js";
+import type { Logger } from "@workflow-engine/core/logging/types.js";
+import { Container } from "@workflow-engine/core/di/container.js";
+import { loadPgPoolConfig } from "@workflow-engine/core/db/config.js";
+import { createPgPool } from "@workflow-engine/core/db/pool.js";
+import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import {
   pgPoolToken,
   workflowRepositoryToken,
   nodeRepositoryToken,
   workflowExecutionRepositoryToken,
   nodeExecutionRepositoryToken,
-} from "./db/tokens.js";
-import { WorkflowRepository } from "./db/workflowRepository.js";
-import { NodeRepository } from "./db/nodeRepository.js";
-import { WorkflowExecutionRepository } from "./db/workflowExecutionRepository.js";
-import { NodeExecutionRepository } from "./db/nodeExecutionRepository.js";
+} from "@workflow-engine/core/db/tokens.js";
+import { WorkflowRepository } from "@workflow-engine/core/db/workflowRepository.js";
+import { NodeRepository } from "@workflow-engine/core/db/nodeRepository.js";
+import { WorkflowExecutionRepository } from "@workflow-engine/core/db/workflowExecutionRepository.js";
+import { NodeExecutionRepository } from "@workflow-engine/core/db/nodeExecutionRepository.js";
 
-export function buildContainer(logger: FastifyBaseLogger): Container {
+export function buildContainer(logger: Logger): Container {
   const container = new Container();
   const dbLogger = createContextLogger(logger, "Database");
 

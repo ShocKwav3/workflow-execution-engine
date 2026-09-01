@@ -7,10 +7,10 @@ import {
 } from "fastify-type-provider-zod";
 import fastifyHelmet from "@fastify/helmet";
 import { loadAppConfig, type AppConfig } from "./config.js";
-import { LOG_REDACT_PATHS } from "./config/logging.js";
-import { PINO_PRETTY_OPTIONS } from "./config/pinoPretty.js";
+import { LOG_REDACT_PATHS } from "@workflow-engine/core/config/logging.js";
+import { PINO_PRETTY_OPTIONS } from "@workflow-engine/core/config/pinoPretty.js";
 import { errorHandler } from "./errorHandler.js";
-import { createContextLogger } from "./logging/contextLogger.js";
+import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 
 const CORRELATION_ID_HEADER = "x-correlation-id";
 

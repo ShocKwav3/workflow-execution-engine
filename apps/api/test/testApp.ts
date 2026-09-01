@@ -1,5 +1,5 @@
 import { buildServer } from "@/server.js";
-import type { TestDatabase } from "./testDatabase.js";
+import type { TestDatabase } from "@workflow-engine/core/test/testDatabase.js";
 
 export async function buildTestApp({ container }: TestDatabase) {
   // Overridable — LOG_LEVEL=info pnpm test brings the logs back for a failing test.

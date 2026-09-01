@@ -2,12 +2,8 @@ import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
 import { WorkflowExecutionRepository } from "@/db/workflowExecutionRepository.js";
-import {
-  type TestDatabase,
-  startTestDatabase,
-  stopTestDatabase,
-} from "@test/testDatabase.js";
-import { seedPublishedVersion } from "@test/fixtures.js";
+import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
+import { seedPublishedVersion } from "@core-test/fixtures.js";
 
 describe("NodeExecutionRepository", () => {
   let db: TestDatabase;

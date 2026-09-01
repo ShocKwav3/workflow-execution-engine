@@ -1,5 +1,5 @@
-import type { NodeExecutionAttemptRow, NodeExecutionRow } from "@/db/types.js";
-import type { NodeExecutionHistoryEntry } from "@/db/helpers/executionHistoryGrouping.js";
+import type { NodeExecutionAttemptRow, NodeExecutionRow } from "@workflow-engine/core/db/types.js";
+import type { NodeExecutionHistoryEntry } from "@workflow-engine/core/db/helpers/executionHistoryGrouping.js";
 
 export function toNodeExecutionListItemResponse(row: NodeExecutionRow) {
   return {

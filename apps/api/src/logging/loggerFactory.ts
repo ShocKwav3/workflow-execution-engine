@@ -1,8 +1,4 @@
-import type { FastifyBaseLogger, FastifyInstance } from "fastify";
-
-export function createContextLogger(logger: FastifyBaseLogger, context: string): FastifyBaseLogger {
-  return logger.child({ context }) as FastifyBaseLogger;
-}
+import type { FastifyInstance } from "fastify";
 
 type ChildLoggerFactory = Parameters<FastifyInstance["setChildLoggerFactory"]>[0];
 

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import type { Resolver } from "@/di/types.js";
-import { createLoggerFactory } from "@/logging/contextLogger.js";
+import type { Resolver } from "@workflow-engine/core/di/types.js";
+import { createLoggerFactory } from "@/logging/loggerFactory.js";
 import { registerCreateNode } from "./createNode.js";
 import { registerListNodes } from "./listNodes.js";
 import { registerReorderNodes } from "./reorderNodes.js";

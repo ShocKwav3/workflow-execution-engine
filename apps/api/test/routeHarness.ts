@@ -1,5 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { type TestDatabase, startTestDatabase, stopTestDatabase } from "./testDatabase.js";
+import {
+  type TestDatabase,
+  startTestDatabase,
+  stopTestDatabase,
+} from "@workflow-engine/core/test/testDatabase.js";
 import { buildTestApp } from "./testApp.js";
 
 export interface RouteHarness {

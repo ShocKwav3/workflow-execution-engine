@@ -3,9 +3,12 @@ import {
   hasZodFastifySchemaValidationErrors,
   isResponseSerializationError,
 } from "fastify-type-provider-zod";
-import { AppError } from "./errors/AppError.js";
-import { errorTranslators } from "./errors/errorTranslators.js";
-import { PROBLEM_DETAILS_CONTENT_TYPE, type ProblemDetails } from "./errors/problemDetails.js";
+import { AppError } from "@workflow-engine/core/errors/AppError.js";
+import { errorTranslators } from "@workflow-engine/core/errors/errorTranslators.js";
+import {
+  PROBLEM_DETAILS_CONTENT_TYPE,
+  type ProblemDetails,
+} from "@workflow-engine/core/errors/problemDetails.js";
 
 function toAppError(error: unknown): AppError {
   if (error instanceof AppError) {
