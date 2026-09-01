@@ -53,7 +53,7 @@ Two `tsconfig`s exist by design: `tsconfig.json` (default, includes tests — wh
 
 ```text
 apps/api/
-  db/           Liquibase changelog + ERD snapshot (schema.erd.json)
+  db/           Liquibase changelog
   bruno/        HTTP client collection
   spec/         generated OpenAPI documents (per API version)
   src/          application source
