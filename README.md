@@ -40,7 +40,7 @@ Restarting only the API container (`docker compose restart api`) should not lose
 ```bash
 pnpm install
 pnpm build                 # builds every package, in dependency order (packages/core, then apps/api)
-pnpm --filter @workflow-engine/api dev   # hot-reload dev server (expects PG* env vars, e.g. via docker compose)
+pnpm dev                   # workspace-wide watch build (TypeScript project references); compiles on any change
 pnpm test                  # vitest, spins up Testcontainers PostgreSQL
 pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi
