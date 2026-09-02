@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
+import { requireEnv } from "@/config/env.js";
 
 const CHANGELOG_DIR = path.resolve(process.cwd(), "apps/api/db/changelog");
 
@@ -25,22 +26,14 @@ export interface TestDatabase {
   pool: Pool;
 }
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name} — is globalSetup wired up?`);
-  }
-
-  return value;
-}
+const GLOBAL_SETUP_HINT = "is globalSetup wired up?";
 
 function sharedContainerCredentials() {
   return {
-    host: requireEnv("TEST_PG_HOST"),
-    port: Number(requireEnv("TEST_PG_PORT")),
-    user: requireEnv("TEST_PG_USER"),
-    password: requireEnv("TEST_PG_PASSWORD"),
+    host: requireEnv("TEST_PG_HOST", GLOBAL_SETUP_HINT),
+    port: Number(requireEnv("TEST_PG_PORT", GLOBAL_SETUP_HINT)),
+    user: requireEnv("TEST_PG_USER", GLOBAL_SETUP_HINT),
+    password: requireEnv("TEST_PG_PASSWORD", GLOBAL_SETUP_HINT),
   };
 }
 
@@ -60,7 +53,7 @@ export async function startTestDatabase(): Promise<TestDatabase> {
   const credentials = sharedContainerCredentials();
   const adminPool = new Pool({
     ...credentials,
-    database: requireEnv("TEST_PG_ADMIN_DATABASE"),
+    database: requireEnv("TEST_PG_ADMIN_DATABASE", GLOBAL_SETUP_HINT),
     max: 2,
   });
 
