@@ -25,6 +25,9 @@ export async function startTestDatabase(): Promise<TestDatabase> {
   ).start();
   const pool = new Pool({ connectionString: container.getConnectionUri() });
 
+  // Same reason createPgPool() attaches this: a zero-listener 'error' event throws, uncaught.
+  pool.on("error", () => {});
+
   await pool.query(loadFullSchemaSql());
 
   return { container, pool };
