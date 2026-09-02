@@ -40,7 +40,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "dev": "tsc-alias -p tsconfig.build.json --watch",
-    "clean:bundles": "rm -rf dist"
+    "clean:bundles": "rm -rf dist",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "amqplib": "^2.0.1",
@@ -51,6 +54,8 @@
     "@testcontainers/postgresql": "^12.1.0",
     "@testcontainers/rabbitmq": "^12.1.0",
     "@types/pg": "^8.21.0",
-    "testcontainers": "^12.1.0"
+    "testcontainers": "^12.1.0",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10"
   }
 }

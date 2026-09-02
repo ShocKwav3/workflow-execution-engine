@@ -5,5 +5,28 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globalSetup: "./packages/core/test/globalSetup.ts",
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: { label: "core:unit", color: "cyan" },
+          include: ["packages/core/**/*.unit.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: { label: "core:integration", color: "blue" },
+          include: ["packages/core/**/*.integration.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: { label: "api:integration", color: "magenta" },
+          include: ["apps/api/**/*.integration.test.ts"],
+        },
+      },
+    ],
   },
 });

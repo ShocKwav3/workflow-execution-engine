@@ -3,7 +3,7 @@ import path from "node:path";
 import { Pool } from "pg";
 import { requireEnv } from "@/config/env.js";
 
-const CHANGELOG_DIR = path.resolve(process.cwd(), "apps/api/db/changelog");
+const CHANGELOG_DIR = path.resolve(import.meta.dirname, "../../../apps/api/db/changelog");
 
 function loadFullSchemaSql(): string {
   const sqlFiles = readdirSync(CHANGELOG_DIR)
