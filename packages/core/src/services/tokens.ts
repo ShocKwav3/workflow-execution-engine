@@ -8,7 +8,8 @@ export const workflowServiceToken = createToken<WorkflowService>("workflowServic
 
 export const nodeServiceToken = createToken<NodeService>("nodeService");
 
-export const workflowExecutionServiceToken =
-  createToken<WorkflowExecutionService>("workflowExecutionService");
+export const workflowExecutionServiceToken = createToken<WorkflowExecutionService>(
+  "workflowExecutionService",
+);
 
 export const nodeExecutionServiceToken = createToken<NodeExecutionService>("nodeExecutionService");
