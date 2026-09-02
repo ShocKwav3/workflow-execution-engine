@@ -10,4 +10,4 @@ dist
 .env.*
 !.env.example
 coverage
-apps/api/db/drivers
+packages/core/db/drivers

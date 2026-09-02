@@ -6,10 +6,12 @@ import { loadAppConfig } from "@/config.js";
 import { registerRoutes } from "@/routes/index.js";
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 
-const specDir = path.resolve(process.cwd(), "spec");
+// import.meta.dirname is dist/scripts/ at runtime (this file is compiled) — two levels up reaches
+// apps/api/, where the committed spec/ output and the source src/routes/ tree actually live.
+const specDir = path.resolve(import.meta.dirname, "../../spec");
 
 // Filesystem path (not a module specifier, so aliases don't apply) — adding routes/v2/ later needs no change here.
-const apiVersionsDir = path.resolve(process.cwd(), "src/routes");
+const apiVersionsDir = path.resolve(import.meta.dirname, "../../src/routes");
 const versionDirPattern = /^v\d+$/;
 
 // Allowlist, not a __tests__ denylist — any future non-version folder under routes/ is excluded for free.

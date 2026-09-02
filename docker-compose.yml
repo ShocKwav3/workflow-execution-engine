@@ -17,13 +17,13 @@ services:
 
   liquibase:
     build:
-      context: ./apps/api/db
+      context: ./packages/core/db
       dockerfile: Dockerfile.liquibase
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./apps/api/db/changelog:/liquibase/changelog
+      - ./packages/core/db/changelog:/liquibase/changelog
     command:
       - update
       - --changelog-file=db.changelog-master.sql
