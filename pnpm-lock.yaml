@@ -276,6 +276,9 @@ importers:
 
   packages/core:
     dependencies:
+      amqplib:
+        specifier: ^2.0.1
+        version: 2.0.1
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -284,6 +287,9 @@ importers:
         version: 4.4.3
     devDependencies:
       '@testcontainers/postgresql':
+        specifier: ^12.1.0
+        version: 12.1.0(supports-color@7.2.0)
+      '@testcontainers/rabbitmq':
         specifier: ^12.1.0
         version: 12.1.0(supports-color@7.2.0)
       '@types/pg':
@@ -714,6 +720,9 @@ packages:
   '@testcontainers/postgresql@12.1.0':
     resolution: {integrity: sha512-Pjf2VSVNirEPfz36nidyrVAnZvc2YhajOznY4VgyEsvfTd5qiMNOuPq96drREvxAUtXl5SFLX7vXj7sSq4aTcA==}
 
+  '@testcontainers/rabbitmq@12.1.0':
+    resolution: {integrity: sha512-u5CrKsrVFJVZpWesyG4I3MAu7Qj3lF5i17EX667g4evJ3K2q8RHkdCs8/9CR4ofKA8Yse/60ci4+Ty56gvG1XA==}
+
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -907,6 +916,10 @@ packages:
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
+
+  amqplib@2.0.1:
+    resolution: {integrity: sha512-a3P2MgfCf9nzVis12VxWEn0dS6hcqve7dlEAhXDtIWR27BlhtMkILOc+H9aeHjDi6i6r94dYKc2Kx2OFe3avvg==}
+    engines: {node: '>=18'}
 
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
@@ -3426,6 +3439,15 @@ snapshots:
       - react-native-b4a
       - supports-color
 
+  '@testcontainers/rabbitmq@12.1.0(supports-color@7.2.0)':
+    dependencies:
+      testcontainers: 12.1.0(supports-color@7.2.0)
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - bare-buffer
+      - react-native-b4a
+      - supports-color
+
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -3662,6 +3684,8 @@ snapshots:
       fast-uri: 3.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
+
+  amqplib@2.0.1: {}
 
   ansi-regex@5.0.1: {}
 

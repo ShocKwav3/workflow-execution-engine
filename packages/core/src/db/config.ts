@@ -1,3 +1,5 @@
+import { requireEnv } from "@/config/env.js";
+
 export interface PgPoolConfig {
   host: string;
   port: number;
@@ -19,16 +21,6 @@ export const PG_POOL_DEFAULTS = {
   connectionTimeoutMillis: 5_000,
   maxLifetimeSeconds: 1800,
 } as const;
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
 
 function optionalIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];

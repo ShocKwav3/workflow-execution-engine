@@ -31,6 +31,10 @@
       "types": "./dist/src/services/*.d.ts",
       "default": "./dist/src/services/*.js"
     },
+    "./amqp/*.js": {
+      "types": "./dist/src/amqp/*.d.ts",
+      "default": "./dist/src/amqp/*.js"
+    },
     "./test/*.js": "./test/*.ts"
   },
   "scripts": {
@@ -39,11 +43,13 @@
     "clean:bundles": "rm -rf dist"
   },
   "dependencies": {
+    "amqplib": "^2.0.1",
     "pg": "^8.23.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.1.0",
+    "@testcontainers/rabbitmq": "^12.1.0",
     "@types/pg": "^8.21.0",
     "testcontainers": "^12.1.0"
   }
