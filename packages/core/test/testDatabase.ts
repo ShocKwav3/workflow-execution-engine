@@ -1,6 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { Pool } from "pg";
 
 const CHANGELOG_DIR = path.resolve(process.cwd(), "apps/api/db/changelog");
@@ -13,27 +12,84 @@ function loadFullSchemaSql(): string {
   return sqlFiles.map((file) => readFileSync(path.join(CHANGELOG_DIR, file), "utf-8")).join("\n");
 }
 
+export interface TestDatabaseConnection {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}
+
 export interface TestDatabase {
-  container: StartedPostgreSqlContainer;
+  connection: TestDatabaseConnection;
   pool: Pool;
 }
 
-// Runs the changelog files as plain SQL — fast schema setup, doesn't verify Liquibase's own mechanics.
-export async function startTestDatabase(): Promise<TestDatabase> {
-  const container = await new PostgreSqlContainer(
-    `postgres:${process.env.POSTGRES_VERSION ?? "16"}`,
-  ).start();
-  const pool = new Pool({ connectionString: container.getConnectionUri() });
+function requireEnv(name: string): string {
+  const value = process.env[name];
 
-  // Same reason createPgPool() attaches this: a zero-listener 'error' event throws, uncaught.
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name} — is globalSetup wired up?`);
+  }
+
+  return value;
+}
+
+function sharedContainerCredentials() {
+  return {
+    host: requireEnv("TEST_PG_HOST"),
+    port: Number(requireEnv("TEST_PG_PORT")),
+    user: requireEnv("TEST_PG_USER"),
+    password: requireEnv("TEST_PG_PASSWORD"),
+  };
+}
+
+function workerDatabaseName(): string {
+  const poolId = process.env.VITEST_POOL_ID ?? "0";
+
+  if (!/^\d+$/.test(poolId)) {
+    throw new Error(`Unexpected VITEST_POOL_ID value: ${poolId}`);
+  }
+
+  return `test_worker_${poolId}`;
+}
+
+// Reuses one database per Vitest worker across every file that worker executes, instead of a
+// fresh container per file. See globalSetup.ts for the shared container itself.
+export async function startTestDatabase(): Promise<TestDatabase> {
+  const credentials = sharedContainerCredentials();
+  const adminPool = new Pool({
+    ...credentials,
+    database: requireEnv("TEST_PG_ADMIN_DATABASE"),
+    max: 2,
+  });
+
+  adminPool.on("error", () => {});
+
+  const database = workerDatabaseName();
+  const existing = await adminPool.query("SELECT 1 FROM pg_database WHERE datname = $1", [
+    database,
+  ]);
+  const isNewDatabase = existing.rowCount === 0;
+
+  if (isNewDatabase) {
+    await adminPool.query(`CREATE DATABASE ${database}`);
+  }
+
+  await adminPool.end();
+
+  const connection: TestDatabaseConnection = { ...credentials, database };
+  const pool = new Pool({ ...connection, max: 3 });
+
   pool.on("error", () => {});
 
-  await pool.query(loadFullSchemaSql());
+  if (isNewDatabase) {
+    await pool.query(loadFullSchemaSql());
+  }
 
-  return { container, pool };
+  return { connection, pool };
 }
 
 export async function stopTestDatabase(db: TestDatabase): Promise<void> {
   await db.pool.end();
-  await db.container.stop();
 }
