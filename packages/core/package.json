@@ -27,10 +27,15 @@
       "types": "./dist/src/config/*.d.ts",
       "default": "./dist/src/config/*.js"
     },
+    "./services/*.js": {
+      "types": "./dist/src/services/*.d.ts",
+      "default": "./dist/src/services/*.js"
+    },
     "./test/*.js": "./test/*.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "dev": "tsc-alias -p tsconfig.build.json --watch",
     "clean:bundles": "rm -rf dist"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
 import { NotFoundError } from "@workflow-engine/core/errors/NotFoundError.js";
-import { nodeRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { nodeServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { toNodeResponse } from "./nodes.serializers.js";
@@ -20,8 +20,8 @@ export function registerGetNode(server: TypedFastifyInstance, container: Resolve
       response: { 200: nodeResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
-      const repository = container.resolve(nodeRepositoryToken);
-      const node = await repository.getNodeById(request.params.nodeId);
+      const service = container.resolve(nodeServiceToken);
+      const node = await service.getNodeById(request.params.nodeId);
 
       if (!node) {
         throw new NotFoundError("Node not found");

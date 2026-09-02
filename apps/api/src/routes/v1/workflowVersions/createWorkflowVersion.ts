@@ -1,6 +1,6 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
-import { workflowRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { workflowServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { workflowIdParamsSchema } from "@/routes/v1/workflows/workflows.schemas.js";
@@ -26,8 +26,8 @@ export function registerCreateWorkflowVersion(server: TypedFastifyInstance, cont
       response: { 201: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request, reply) => {
-      const repository = container.resolve(workflowRepositoryToken);
-      const version = await repository.createWorkflowVersion({
+      const service = container.resolve(workflowServiceToken);
+      const version = await service.createWorkflowVersion({
         workflowId: request.params.workflowId,
         version: request.body.version,
       });

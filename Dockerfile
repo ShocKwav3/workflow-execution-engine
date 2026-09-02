@@ -23,14 +23,12 @@ COPY packages/core/package.json packages/core/
 COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile
 
+COPY tsconfig.json ./
 COPY packages/core ./packages/core
 COPY apps/api ./apps/api
 
-# core has no watcher of its own yet — api's tsc-watch only rebuilds api. A one-time
-# build gives api's dev server something to import; rebuild manually after core edits.
-RUN pnpm --filter @workflow-engine/core build
-
-CMD ["pnpm", "--filter", "@workflow-engine/api", "dev"]
+# Root `tsc -b --watch` rebuilds core then api on any change; each still needs its own tsc-alias watch.
+CMD ["sh", "-c", "pnpm run dev & pnpm --filter @workflow-engine/core run dev & exec pnpm --filter @workflow-engine/api run dev"]
 
 FROM base AS runtime
 

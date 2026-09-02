@@ -1,7 +1,7 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
 import { NotFoundError } from "@workflow-engine/core/errors/NotFoundError.js";
-import { workflowExecutionRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { workflowExecutionServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import {
@@ -23,8 +23,8 @@ export function registerGetWorkflowExecution(server: TypedFastifyInstance, conta
       response: { 200: workflowExecutionResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
-      const repository = container.resolve(workflowExecutionRepositoryToken);
-      const execution = await repository.getWorkflowExecutionById(request.params.executionId);
+      const service = container.resolve(workflowExecutionServiceToken);
+      const execution = await service.getWorkflowExecutionById(request.params.executionId);
 
       if (!execution || execution.workflow_id !== request.params.workflowId) {
         throw new NotFoundError("Workflow execution not found");

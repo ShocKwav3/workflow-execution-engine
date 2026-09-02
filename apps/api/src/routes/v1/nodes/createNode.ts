@@ -1,7 +1,7 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
 import { NotFoundError } from "@workflow-engine/core/errors/NotFoundError.js";
-import { nodeRepositoryToken } from "@workflow-engine/core/db/tokens.js";
+import { nodeServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
 import { workflowVersionParamsSchema } from "@/routes/v1/workflowVersions/workflowVersions.schemas.js";
@@ -23,8 +23,8 @@ export function registerCreateNode(server: TypedFastifyInstance, container: Reso
       response: { 201: nodeResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request, reply) => {
-      const repository = container.resolve(nodeRepositoryToken);
-      const node = await repository.createNode({
+      const service = container.resolve(nodeServiceToken);
+      const node = await service.createNode({
         workflowId: request.params.workflowId,
         version: request.params.version,
         name: request.body.name,
