@@ -1,17 +1,18 @@
 # Workflow Execution Engine
 
-A backend-only distributed workflow execution engine: define workflows as a sequence of nodes, version and publish them, then run and track executions. Built around PostgreSQL, with messaging (RabbitMQ/Kafka), transactional outbox, scheduling, Saga orchestration with retries/compensation, and horizontal scaling planned as the system grows.
+A backend-only distributed workflow execution engine: define workflows as a sequence of nodes, version and publish them, then run and track executions. Built around PostgreSQL and RabbitMQ, with Kafka, transactional outbox, scheduling, Saga orchestration with retries/compensation, and horizontal scaling planned as the system grows.
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Asynchronous execution (messaging, scheduling, Saga orchestration) is not yet implemented — executions are currently created and persisted but not processed.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. RabbitMQ is provisioned, with a connection/channel/topology layer in place — nothing publishes or consumes through it yet, so executions are currently created and persisted but not processed. Scheduling and Saga orchestration are not yet implemented.
 
 ## Stack
 
 - Node.js (`^26`) + Fastify, TypeScript (ESM, `nodenext`)
 - PostgreSQL, raw `pg` (no ORM), Liquibase for migrations
+- RabbitMQ, `amqplib`
 - Zod for runtime validation + OpenAPI generation (`fastify-type-provider-zod`)
-- pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real-Postgres integration tests), ESLint/Prettier
+- pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real Postgres/RabbitMQ in integration tests), ESLint/Prettier
 - Docker Compose for local infrastructure
 
 ## Running locally
@@ -21,14 +22,16 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL, runs Liquibase migrations, and starts the API (hot-reloading, bind-mounted source) on `http://localhost:${PORT}` (default `3000`).
+This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts the API (hot-reloading, bind-mounted source) on `http://localhost:${PORT}` (default `3000`). The API doesn't talk to RabbitMQ yet — it starts alongside everything else, but nothing publishes or consumes through it.
 
 ```bash
 curl http://localhost:3000/health
 curl http://localhost:3000/ready
 ```
 
-Restarting only the API container (`docker compose restart api`) should not lose any data — state lives exclusively in PostgreSQL's named volume (`postgres_data`). `docker compose down -v` wipes that volume; plain `down`/`up` does not.
+RabbitMQ's management UI is at `http://localhost:15672` (credentials from `.env`).
+
+Restarting only the API container (`docker compose restart api`) should not lose any data — state lives exclusively in named volumes (`postgres_data`, `rabbitmq_data`). `docker compose down -v` wipes those volumes; plain `down`/`up` does not.
 
 ## Exploring the API
 
@@ -41,7 +44,7 @@ Restarting only the API container (`docker compose restart api`) should not lose
 pnpm install
 pnpm build                 # builds every package, in dependency order (packages/core, then apps/api)
 pnpm dev                   # workspace-wide watch build (TypeScript project references); compiles on any change
-pnpm test                  # vitest, spins up Testcontainers PostgreSQL
+pnpm test                  # vitest, full suite, spins up Testcontainers PostgreSQL + RabbitMQ
 pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi
 pnpm lint:spec             # spectral, lints the generated OpenAPI doc
@@ -49,17 +52,27 @@ pnpm clean:bundles         # removes every package's compiled output
 pnpm clean:modules         # removes every node_modules in the workspace
 ```
 
+Each package can also be tested independently, without spinning up infrastructure the package you're working on doesn't need:
+
+```bash
+pnpm --filter @workflow-engine/core test:unit          # no containers
+pnpm --filter @workflow-engine/core test:integration    # Postgres + RabbitMQ, scoped to packages/core
+pnpm --filter @workflow-engine/api test                 # Postgres only, scoped to apps/api
+```
+
+Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
+
 Each package has its own `tsconfig.json` (default, includes tests — what your editor should pick up) and `tsconfig.build.json` (extends it, excludes tests — what `pnpm build` actually compiles with), both extending the shared `tsconfig.base.json` at the repo root.
 
 ## Layout
 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
-  src/            DI container, error types, database pool + repositories, logging, config
+  db/             Liquibase changelog (shared schema, not API-specific)
+  src/            DI container, error types, database pool + repositories, AMQP connection/topology, logging, config
   test/           shared test harness/fixtures (used by both packages, excluded from the build)
 
 apps/api/         @workflow-engine/api — the HTTP process
-  db/             Liquibase changelog
   bruno/          HTTP client collection
   spec/           generated OpenAPI documents (per API version)
   src/            routes, Fastify app/server setup, composition root
