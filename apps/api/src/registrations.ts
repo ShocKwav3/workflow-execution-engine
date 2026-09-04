@@ -7,12 +7,15 @@ import {
   pgPoolToken,
   workflowRepositoryToken,
   nodeRepositoryToken,
-  workflowExecutionRepositoryToken,
+  workflowExecutionReaderToken,
+  workflowExecutionUnitOfWorkToken,
   nodeExecutionRepositoryToken,
 } from "@workflow-engine/core/db/tokens.js";
 import { WorkflowRepository } from "@workflow-engine/core/db/workflowRepository.js";
 import { NodeRepository } from "@workflow-engine/core/db/nodeRepository.js";
-import { WorkflowExecutionRepository } from "@workflow-engine/core/db/workflowExecutionRepository.js";
+import { createTransactionRunner } from "@workflow-engine/core/db/transaction.js";
+import { PgWorkflowExecutionReader } from "@workflow-engine/core/db/workflowExecutionReader.js";
+import { PgWorkflowExecutionWriter } from "@workflow-engine/core/db/workflowExecutionWriter.js";
 import { NodeExecutionRepository } from "@workflow-engine/core/db/nodeExecutionRepository.js";
 import {
   workflowServiceToken,
@@ -44,8 +47,17 @@ export function buildContainer(logger: Logger): Container {
   );
 
   container.register(
-    workflowExecutionRepositoryToken,
-    (resolver) => new WorkflowExecutionRepository(resolver.resolve(pgPoolToken)),
+    workflowExecutionReaderToken,
+    (resolver) => new PgWorkflowExecutionReader(resolver.resolve(pgPoolToken)),
+    "singleton",
+  );
+
+  container.register(
+    workflowExecutionUnitOfWorkToken,
+    (resolver) =>
+      createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
+        workflowExecutions: new PgWorkflowExecutionWriter(client),
+      })),
     "singleton",
   );
 
@@ -69,7 +81,11 @@ export function buildContainer(logger: Logger): Container {
 
   container.register(
     workflowExecutionServiceToken,
-    (resolver) => new WorkflowExecutionService(resolver.resolve(workflowExecutionRepositoryToken)),
+    (resolver) =>
+      new WorkflowExecutionService(
+        resolver.resolve(workflowExecutionReaderToken),
+        resolver.resolve(workflowExecutionUnitOfWorkToken),
+      ),
     "singleton",
   );
 

@@ -1,15 +1,23 @@
-import type { WorkflowExecutionRepository } from "@/db/workflowExecutionRepository.js";
-import type { CreateExecutionInput } from "@/db/workflowExecutionRepository.schemas.js";
+import type { CreateExecutionInput } from "@/db/workflowExecution.schemas.js";
+import type { WorkflowExecutionReader } from "@/db/workflowExecutionReader.js";
+import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecutionUnitOfWork.js";
 import type { WorkflowExecutionRow } from "@/db/types.js";
 
 export class WorkflowExecutionService {
-  constructor(private readonly repository: WorkflowExecutionRepository) {}
+  constructor(
+    private readonly reader: WorkflowExecutionReader,
+    private readonly unitOfWork: WorkflowExecutionUnitOfWork,
+  ) {}
 
   async createWorkflowExecution(input: CreateExecutionInput): Promise<WorkflowExecutionRow> {
-    return this.repository.createWorkflowExecution(input);
+    const { execution } = await this.unitOfWork.run(({ workflowExecutions }) =>
+      workflowExecutions.createWorkflowExecution(input),
+    );
+
+    return execution;
   }
 
   async getWorkflowExecutionById(id: string): Promise<WorkflowExecutionRow | undefined> {
-    return this.repository.getWorkflowExecutionById(id);
+    return this.reader.getWorkflowExecutionById(id);
   }
 }

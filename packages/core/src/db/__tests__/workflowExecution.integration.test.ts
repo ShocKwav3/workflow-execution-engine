@@ -2,20 +2,32 @@ import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
-import { WorkflowExecutionRepository } from "@/db/workflowExecutionRepository.js";
+import { createTransactionRunner } from "@/db/transaction.js";
+import type { CreateExecutionInput } from "@/db/workflowExecution.schemas.js";
+import { PgWorkflowExecutionReader } from "@/db/workflowExecutionReader.js";
+import { PgWorkflowExecutionWriter } from "@/db/workflowExecutionWriter.js";
+import type { CreateWorkflowExecutionResult } from "@/db/workflowExecutionWriter.js";
+import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecutionUnitOfWork.js";
 import { WorkflowRepository } from "@/db/workflowRepository.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 import { seedDraftVersion, seedPublishedVersion } from "@core-test/fixtures.js";
 
-describe("WorkflowExecutionRepository", () => {
+describe("workflow execution persistence", () => {
   let db: TestDatabase;
-  let repo: WorkflowExecutionRepository;
+  let reader: PgWorkflowExecutionReader;
+  let unitOfWork: WorkflowExecutionUnitOfWork;
   let nodeExecutionRepo: NodeExecutionRepository;
   let workflowRepo: WorkflowRepository;
 
+  const createExecution = (input: CreateExecutionInput): Promise<CreateWorkflowExecutionResult> =>
+    unitOfWork.run(({ workflowExecutions }) => workflowExecutions.createWorkflowExecution(input));
+
   beforeAll(async () => {
     db = await startTestDatabase();
-    repo = new WorkflowExecutionRepository(db.pool);
+    reader = new PgWorkflowExecutionReader(db.pool);
+    unitOfWork = createTransactionRunner(db.pool, (client) => ({
+      workflowExecutions: new PgWorkflowExecutionWriter(client),
+    }));
     nodeExecutionRepo = new NodeExecutionRepository(db.pool);
     workflowRepo = new WorkflowRepository(db.pool);
   }, 60_000);
@@ -34,11 +46,12 @@ describe("WorkflowExecutionRepository", () => {
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const execution = await repo.createWorkflowExecution({
+    const { execution, created } = await createExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
     });
 
+    expect(created).toBe(true);
     expect(execution.status).toBe("PENDING");
 
     const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution({
@@ -57,22 +70,24 @@ describe("WorkflowExecutionRepository", () => {
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const first = await repo.createWorkflowExecution({
+    const first = await createExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
       idempotencyKey: "abc123",
     });
-    const second = await repo.createWorkflowExecution({
+    const second = await createExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
       idempotencyKey: "abc123",
     });
 
-    expect(second.id).toBe(first.id);
+    expect(first.created).toBe(true);
+    expect(second.created).toBe(false);
+    expect(second.execution.id).toBe(first.execution.id);
 
     const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution({
       workflowId: workflow.id,
-      workflowExecutionId: first.id,
+      workflowExecutionId: first.execution.id,
     });
 
     expect(nodeExecutions).toHaveLength(2);
@@ -84,16 +99,17 @@ describe("WorkflowExecutionRepository", () => {
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const first = await repo.createWorkflowExecution({
+    const first = await createExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
     });
-    const second = await repo.createWorkflowExecution({
+    const second = await createExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
     });
 
-    expect(second.id).not.toBe(first.id);
+    expect(second.execution.id).not.toBe(first.execution.id);
+    expect(second.created).toBe(true);
   });
 
   it("rejects an execution whose version belongs to a different workflow", async () => {
@@ -103,7 +119,7 @@ describe("WorkflowExecutionRepository", () => {
     ]);
     const otherWorkflow = await workflowRepo.createWorkflow({ name: "Unrelated Workflow" });
 
-    const createMismatched = repo.createWorkflowExecution({
+    const createMismatched = createExecution({
       workflowId: otherWorkflow.id,
       workflowVersionId: version.id,
     });
@@ -116,7 +132,7 @@ describe("WorkflowExecutionRepository", () => {
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
-    const createOnDraft = repo.createWorkflowExecution({
+    const createOnDraft = createExecution({
       workflowId: workflow.id,
       workflowVersionId: version.id,
     });
@@ -124,14 +140,54 @@ describe("WorkflowExecutionRepository", () => {
     await expect(createOnDraft).rejects.toThrow(VersionNotPublishedError);
   });
 
+  it("rolls back the execution and its node snapshots when the transaction fails", async () => {
+    const { workflow, version } = await seedPublishedVersion(db.pool, [
+      { name: "Reserve Inventory", type: "inventory" },
+      { name: "Charge Payment", type: "payment" },
+    ]);
+    const failure = new Error("scope participant failed after the execution insert");
+
+    const failedRun = unitOfWork.run(async ({ workflowExecutions }) => {
+      await workflowExecutions.createWorkflowExecution({
+        workflowId: workflow.id,
+        workflowVersionId: version.id,
+      });
+
+      throw failure;
+    });
+
+    await expect(failedRun).rejects.toBe(failure);
+
+    const executions = await db.pool.query("SELECT id FROM workflow_execution");
+    const nodeExecutions = await db.pool.query("SELECT id FROM node_execution");
+
+    expect(executions.rows).toHaveLength(0);
+    expect(nodeExecutions.rows).toHaveLength(0);
+  });
+
   it("returns undefined when fetching an execution that doesn't exist", async () => {
-    const fetched = await repo.getWorkflowExecutionById("00000000-0000-0000-0000-000000000000");
+    const fetched = await reader.getWorkflowExecutionById("00000000-0000-0000-0000-000000000000");
 
     expect(fetched).toBeUndefined();
   });
 
+  it("reads back an execution created inside a transaction", async () => {
+    const { workflow, version } = await seedPublishedVersion(db.pool, [
+      { name: "Reserve Inventory", type: "inventory" },
+    ]);
+
+    const { execution } = await createExecution({
+      workflowId: workflow.id,
+      workflowVersionId: version.id,
+    });
+
+    const fetched = await reader.getWorkflowExecutionById(execution.id);
+
+    expect(fetched?.id).toBe(execution.id);
+  });
+
   it("rejects fetching an execution with a malformed id", async () => {
-    const getMalformed = repo.getWorkflowExecutionById("not-a-uuid");
+    const getMalformed = reader.getWorkflowExecutionById("not-a-uuid");
 
     await expect(getMalformed).rejects.toThrow(ZodError);
   });

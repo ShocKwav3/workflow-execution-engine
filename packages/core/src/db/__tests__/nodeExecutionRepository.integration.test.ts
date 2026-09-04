@@ -1,19 +1,23 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
-import { WorkflowExecutionRepository } from "@/db/workflowExecutionRepository.js";
+import { createTransactionRunner } from "@/db/transaction.js";
+import { PgWorkflowExecutionWriter } from "@/db/workflowExecutionWriter.js";
+import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 import { seedPublishedVersion } from "@core-test/fixtures.js";
 
 describe("NodeExecutionRepository", () => {
   let db: TestDatabase;
   let repo: NodeExecutionRepository;
-  let executionRepo: WorkflowExecutionRepository;
+  let unitOfWork: WorkflowExecutionUnitOfWork;
 
   beforeAll(async () => {
     db = await startTestDatabase();
     repo = new NodeExecutionRepository(db.pool);
-    executionRepo = new WorkflowExecutionRepository(db.pool);
+    unitOfWork = createTransactionRunner(db.pool, (client) => ({
+      workflowExecutions: new PgWorkflowExecutionWriter(client),
+    }));
   }, 60_000);
 
   afterAll(async () => {
@@ -26,10 +30,12 @@ describe("NodeExecutionRepository", () => {
 
   async function createExecutionWithNodes(definition: { name: string; type: string }[]) {
     const { workflow, version, nodes } = await seedPublishedVersion(db.pool, definition);
-    const execution = await executionRepo.createWorkflowExecution({
-      workflowId: workflow.id,
-      workflowVersionId: version.id,
-    });
+    const { execution } = await unitOfWork.run(({ workflowExecutions }) =>
+      workflowExecutions.createWorkflowExecution({
+        workflowId: workflow.id,
+        workflowVersionId: version.id,
+      }),
+    );
 
     return { workflow, execution, nodes };
   }
