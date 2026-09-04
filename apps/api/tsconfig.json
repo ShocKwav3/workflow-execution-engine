@@ -8,5 +8,6 @@
       "@test/*": ["./test/*"]
     }
   },
+  "references": [{ "path": "../../packages/core/tsconfig.build.json" }],
   "exclude": ["node_modules", "dist"]
 }
