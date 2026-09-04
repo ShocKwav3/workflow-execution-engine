@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/src/index.js",
-    "dev": "tsc-alias -p tsconfig.build.json --watch & LOG_PRETTY=true exec node --watch-preserve-output --watch-path=./dist dist/src/index.js",
+    "dev": "tsc-alias -p tsconfig.build.json --watch & LOG_PRETTY=true exec node --watch-preserve-output --watch-path=./dist/src dist/src/index.js",
     "generate:openapi": "node dist/scripts/generateOpenApiSpec.js",
     "test": "vitest run",
     "clean:bundles": "rm -rf dist"
