@@ -26,7 +26,7 @@ services:
       - ./packages/core/db/changelog:/liquibase/changelog
     command:
       - update
-      - --changelog-file=db.changelog-master.sql
+      - --changelog-file=db.changelog-master.yaml
       - --url=jdbc:postgresql://postgres:5432/${PGDATABASE}
       - --username=${PGUSER}
       - --password=${PGPASSWORD}
