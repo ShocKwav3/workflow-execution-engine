@@ -1,11 +1,8 @@
 import type { Pool } from "pg";
-import { classifyPgError } from "./errors/index.js";
+import { classifyPgError } from "../errors/index.js";
 import { executionIdSchema } from "./workflowExecution.schemas.js";
-import type { WorkflowExecutionRow } from "./types.js";
-
-export interface WorkflowExecutionReader {
-  getWorkflowExecutionById(id: string): Promise<WorkflowExecutionRow | undefined>;
-}
+import type { WorkflowExecutionReader } from "./WorkflowExecutionReader.js";
+import type { WorkflowExecutionRow } from "../types.js";
 
 export class PgWorkflowExecutionReader implements WorkflowExecutionReader {
   constructor(private readonly pool: Pool) {}

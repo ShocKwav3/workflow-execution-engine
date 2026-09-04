@@ -1,8 +1,3 @@
-import type { Pool, PoolClient } from "pg";
-
-// Works with either the pool directly or a client borrowed from a transaction.
-export type Queryable = Pool | PoolClient;
-
 export interface WorkflowRow {
   id: string;
   name: string;

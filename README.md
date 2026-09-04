@@ -69,7 +69,7 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
-  src/            DI container, error types, database pool + repositories, AMQP connection/topology, logging, config
+  src/            DI container, error types, database pool + readers/writers, services, AMQP connection/topology, logging, config
   test/           shared test harness/fixtures (used by both packages, excluded from the build)
 
 apps/api/         @workflow-engine/api — the HTTP process

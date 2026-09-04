@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   groupNodeHistoryRows,
   type NodeHistoryQueryRow,
-} from "@/db/helpers/executionHistoryGrouping.js";
+} from "@/db/nodeExecution/executionHistoryGrouping.js";
 
 function row(overrides: Partial<NodeHistoryQueryRow>): NodeHistoryQueryRow {
   return {

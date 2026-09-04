@@ -1,29 +1,26 @@
-import type { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
-import type {
-  GetNodeExecutionInput,
-  WorkflowExecutionRef,
-} from "@/db/nodeExecutionRepository.schemas.js";
-import type { NodeExecutionHistoryEntry } from "@/db/helpers/executionHistoryGrouping.js";
+import type { NodeExecutionReader } from "@/db/nodeExecution/NodeExecutionReader.js";
+import type { GetNodeExecutionInput, WorkflowExecutionRef } from "@/db/nodeExecution/nodeExecution.schemas.js";
+import type { NodeExecutionHistoryEntry } from "@/db/nodeExecution/executionHistoryGrouping.js";
 import type { NodeExecutionRow } from "@/db/types.js";
 
 export class NodeExecutionService {
-  constructor(private readonly repository: NodeExecutionRepository) {}
+  constructor(private readonly nodeExecutions: NodeExecutionReader) {}
 
   async getNodeExecutionsForWorkflowExecution(
     input: WorkflowExecutionRef,
   ): Promise<NodeExecutionRow[]> {
-    return this.repository.getNodeExecutionsForWorkflowExecution(input);
+    return this.nodeExecutions.getNodeExecutionsForWorkflowExecution(input);
   }
 
   async getWorkflowExecutionHistory(
     input: WorkflowExecutionRef,
   ): Promise<NodeExecutionHistoryEntry[]> {
-    return this.repository.getWorkflowExecutionHistory(input);
+    return this.nodeExecutions.getWorkflowExecutionHistory(input);
   }
 
   async getNodeExecutionByNodeAndExecution(
     input: GetNodeExecutionInput,
   ): Promise<NodeExecutionHistoryEntry | undefined> {
-    return this.repository.getNodeExecutionByNodeAndExecution(input);
+    return this.nodeExecutions.getNodeExecutionByNodeAndExecution(input);
   }
 }

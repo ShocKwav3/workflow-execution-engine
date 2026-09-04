@@ -1,21 +1,16 @@
 import type { PoolClient } from "pg";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import { ClassifiedError } from "@/errors/index.js";
-import { classifyPgError } from "./errors/index.js";
+import { classifyPgError } from "../errors/index.js";
 import {
   type CreateExecutionInput,
   createExecutionInputSchema,
 } from "./workflowExecution.schemas.js";
-import type { NodeRow, WorkflowExecutionRow, WorkflowVersionRow } from "./types.js";
-
-export interface CreateWorkflowExecutionResult {
-  execution: WorkflowExecutionRow;
-  created: boolean;
-}
-
-export interface WorkflowExecutionWriter {
-  createWorkflowExecution(input: CreateExecutionInput): Promise<CreateWorkflowExecutionResult>;
-}
+import type {
+  CreateWorkflowExecutionResult,
+  WorkflowExecutionWriter,
+} from "./WorkflowExecutionWriter.js";
+import type { NodeRow, WorkflowExecutionRow, WorkflowVersionRow } from "../types.js";
 
 export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
   constructor(private readonly client: PoolClient) {}

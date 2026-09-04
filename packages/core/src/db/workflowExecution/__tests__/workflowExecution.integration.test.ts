@@ -1,23 +1,25 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
+import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import { createTransactionRunner } from "@/db/transaction.js";
-import type { CreateExecutionInput } from "@/db/workflowExecution.schemas.js";
-import { PgWorkflowExecutionReader } from "@/db/workflowExecutionReader.js";
-import { PgWorkflowExecutionWriter } from "@/db/workflowExecutionWriter.js";
-import type { CreateWorkflowExecutionResult } from "@/db/workflowExecutionWriter.js";
-import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecutionUnitOfWork.js";
-import { WorkflowRepository } from "@/db/workflowRepository.js";
+import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
+import { PgWorkflowExecutionReader } from "@/db/workflowExecution/PgWorkflowExecutionReader.js";
+import { PgWorkflowExecutionWriter } from "@/db/workflowExecution/PgWorkflowExecutionWriter.js";
+import type { CreateWorkflowExecutionResult } from "@/db/workflowExecution/WorkflowExecutionWriter.js";
+import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
-import { seedDraftVersion, seedPublishedVersion } from "@core-test/fixtures.js";
+import {
+  seedDraftVersion,
+  seedPublishedVersion,
+  workflowUnitOfWorkFor,
+} from "@core-test/fixtures.js";
 
 describe("workflow execution persistence", () => {
   let db: TestDatabase;
   let reader: PgWorkflowExecutionReader;
   let unitOfWork: WorkflowExecutionUnitOfWork;
-  let nodeExecutionRepo: NodeExecutionRepository;
-  let workflowRepo: WorkflowRepository;
+  let nodeExecutionReader: PgNodeExecutionReader;
 
   const createExecution = (input: CreateExecutionInput): Promise<CreateWorkflowExecutionResult> =>
     unitOfWork.run(({ workflowExecutions }) => workflowExecutions.createWorkflowExecution(input));
@@ -28,8 +30,7 @@ describe("workflow execution persistence", () => {
     unitOfWork = createTransactionRunner(db.pool, (client) => ({
       workflowExecutions: new PgWorkflowExecutionWriter(client),
     }));
-    nodeExecutionRepo = new NodeExecutionRepository(db.pool);
-    workflowRepo = new WorkflowRepository(db.pool);
+    nodeExecutionReader = new PgNodeExecutionReader(db.pool);
   }, 60_000);
 
   afterAll(async () => {
@@ -54,7 +55,7 @@ describe("workflow execution persistence", () => {
     expect(created).toBe(true);
     expect(execution.status).toBe("PENDING");
 
-    const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution({
+    const nodeExecutions = await nodeExecutionReader.getNodeExecutionsForWorkflowExecution({
       workflowId: workflow.id,
       workflowExecutionId: execution.id,
     });
@@ -85,7 +86,7 @@ describe("workflow execution persistence", () => {
     expect(second.created).toBe(false);
     expect(second.execution.id).toBe(first.execution.id);
 
-    const nodeExecutions = await nodeExecutionRepo.getNodeExecutionsForWorkflowExecution({
+    const nodeExecutions = await nodeExecutionReader.getNodeExecutionsForWorkflowExecution({
       workflowId: workflow.id,
       workflowExecutionId: first.execution.id,
     });
@@ -117,7 +118,9 @@ describe("workflow execution persistence", () => {
       { name: "Reserve Inventory", type: "inventory" },
       { name: "Charge Payment", type: "payment" },
     ]);
-    const otherWorkflow = await workflowRepo.createWorkflow({ name: "Unrelated Workflow" });
+    const otherWorkflow = await workflowUnitOfWorkFor(db.pool).run(({ workflows }) =>
+      workflows.createWorkflow({ name: "Unrelated Workflow" }),
+    );
 
     const createMismatched = createExecution({
       workflowId: otherWorkflow.id,

@@ -1,6 +1,6 @@
-import type { CreateExecutionInput } from "@/db/workflowExecution.schemas.js";
-import type { WorkflowExecutionReader } from "@/db/workflowExecutionReader.js";
-import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecutionUnitOfWork.js";
+import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
+import type { WorkflowExecutionReader } from "@/db/workflowExecution/WorkflowExecutionReader.js";
+import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import type { WorkflowExecutionRow } from "@/db/types.js";
 
 export class WorkflowExecutionService {
