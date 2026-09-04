@@ -1,16 +1,18 @@
-import { classifyPgError } from "./errors/index.js";
+import type { Pool } from "pg";
+import { classifyPgError } from "../errors/index.js";
 import {
   type NodeExecutionHistoryEntry,
   type NodeHistoryQueryRow,
   groupNodeHistoryRows,
-} from "./helpers/executionHistoryGrouping.js";
+} from "./executionHistoryGrouping.js";
 import {
   type GetNodeExecutionInput,
   type WorkflowExecutionRef,
   getNodeExecutionInputSchema,
   workflowExecutionRefSchema,
-} from "./nodeExecutionRepository.schemas.js";
-import type { Queryable, NodeExecutionRow } from "./types.js";
+} from "./nodeExecution.schemas.js";
+import type { NodeExecutionReader } from "./NodeExecutionReader.js";
+import type { NodeExecutionRow } from "../types.js";
 
 const NODE_EXECUTION_HISTORY_QUERY = `
   SELECT
@@ -34,8 +36,8 @@ const NODE_EXECUTION_HISTORY_QUERY = `
   LEFT JOIN node_execution_attempt nea ON nea.node_execution_id = ne.id
 `;
 
-export class NodeExecutionRepository {
-  constructor(private readonly db: Queryable) {}
+export class PgNodeExecutionReader implements NodeExecutionReader {
+  constructor(private readonly pool: Pool) {}
 
   async getNodeExecutionsForWorkflowExecution(
     input: WorkflowExecutionRef,
@@ -43,7 +45,7 @@ export class NodeExecutionRepository {
     const { workflowId, workflowExecutionId } = workflowExecutionRefSchema.parse(input);
 
     try {
-      const result = await this.db.query<NodeExecutionRow>(
+      const result = await this.pool.query<NodeExecutionRow>(
         `SELECT ne.*
          FROM node_execution ne
          JOIN workflow_execution we ON we.id = ne.workflow_execution_id
@@ -64,7 +66,7 @@ export class NodeExecutionRepository {
     const { workflowId, workflowExecutionId } = workflowExecutionRefSchema.parse(input);
 
     try {
-      const result = await this.db.query<NodeHistoryQueryRow>(
+      const result = await this.pool.query<NodeHistoryQueryRow>(
         `${NODE_EXECUTION_HISTORY_QUERY}
          JOIN workflow_execution we ON we.id = ne.workflow_execution_id
          WHERE ne.workflow_execution_id = $1 AND we.workflow_id = $2
@@ -85,7 +87,7 @@ export class NodeExecutionRepository {
     const { nodeId, workflowExecutionId } = getNodeExecutionInputSchema.parse(input);
 
     try {
-      const result = await this.db.query<NodeHistoryQueryRow>(
+      const result = await this.pool.query<NodeHistoryQueryRow>(
         `${NODE_EXECUTION_HISTORY_QUERY}
          WHERE ne.node_id = $1 AND ne.workflow_execution_id = $2
          ORDER BY nea.attempt_number`,

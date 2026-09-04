@@ -1,6 +1,9 @@
 import type { Pool } from "pg";
-import { NodeRepository } from "../src/db/nodeRepository.js";
-import { WorkflowRepository } from "../src/db/workflowRepository.js";
+import { createTransactionRunner } from "../src/db/transaction.js";
+import { PgNodeReader } from "../src/db/node/PgNodeReader.js";
+import { PgNodeWriter } from "../src/db/node/PgNodeWriter.js";
+import { PgWorkflowWriter } from "../src/db/workflow/PgWorkflowWriter.js";
+import { PgWorkflowVersionWriter } from "../src/db/workflowVersion/PgWorkflowVersionWriter.js";
 import type { NodeRow, WorkflowRow, WorkflowVersionRow } from "../src/db/types.js";
 
 export interface NodeDefinition {
@@ -14,21 +17,39 @@ export interface SeededVersion {
   nodes: NodeRow[];
 }
 
+export const workflowUnitOfWorkFor = (pool: Pool) =>
+  createTransactionRunner(pool, (client) => ({ workflows: new PgWorkflowWriter(client) }));
+
+export const workflowVersionUnitOfWorkFor = (pool: Pool) =>
+  createTransactionRunner(pool, (client) => ({
+    workflowVersions: new PgWorkflowVersionWriter(client),
+  }));
+
+export const nodeUnitOfWorkFor = (pool: Pool) =>
+  createTransactionRunner(pool, (client) => ({ nodes: new PgNodeWriter(client) }));
+
 export async function seedDraftVersion(
   pool: Pool,
   definition: NodeDefinition[],
   workflowName = "Order Fulfillment",
 ): Promise<SeededVersion> {
-  const workflows = new WorkflowRepository(pool);
-  const nodes = new NodeRepository(pool);
-  const workflow = await workflows.createWorkflow({ name: workflowName });
-  const version = await workflows.createWorkflowVersion({ workflowId: workflow.id, version: 1 });
+  const workflow = await workflowUnitOfWorkFor(pool).run((scope) =>
+    scope.workflows.createWorkflow({ name: workflowName }),
+  );
+  const version = await workflowVersionUnitOfWorkFor(pool).run((scope) =>
+    scope.workflowVersions.createWorkflowVersion({ workflowId: workflow.id, version: 1 }),
+  );
 
   for (const node of definition) {
-    await nodes.createNode({ workflowId: workflow.id, version: version.id, ...node });
+    await nodeUnitOfWorkFor(pool).run((scope) =>
+      scope.nodes.createNode({ workflowId: workflow.id, version: version.id, ...node }),
+    );
   }
 
-  const created = await nodes.listNodesForVersion({ workflowId: workflow.id, version: version.id });
+  const created = await new PgNodeReader(pool).listNodesForVersion({
+    workflowId: workflow.id,
+    version: version.id,
+  });
 
   return { workflow, version, nodes: created ?? [] };
 }
@@ -38,12 +59,13 @@ export async function seedPublishedVersion(
   definition: NodeDefinition[],
   workflowName = "Order Fulfillment",
 ): Promise<SeededVersion> {
-  const workflows = new WorkflowRepository(pool);
   const seeded = await seedDraftVersion(pool, definition, workflowName);
-  const published = await workflows.publishWorkflowVersion({
-    workflowId: seeded.workflow.id,
-    version: seeded.version.id,
-  });
+  const published = await workflowVersionUnitOfWorkFor(pool).run((scope) =>
+    scope.workflowVersions.publishWorkflowVersion({
+      workflowId: seeded.workflow.id,
+      version: seeded.version.id,
+    }),
+  );
 
   return { ...seeded, version: published! };
 }

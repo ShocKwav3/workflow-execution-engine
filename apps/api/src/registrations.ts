@@ -5,15 +5,26 @@ import { createPgPool } from "@workflow-engine/core/db/pool.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import {
   pgPoolToken,
-  workflowRepositoryToken,
-  nodeRepositoryToken,
-  workflowExecutionRepositoryToken,
-  nodeExecutionRepositoryToken,
+  workflowReaderToken,
+  workflowUnitOfWorkToken,
+  workflowVersionReaderToken,
+  workflowVersionUnitOfWorkToken,
+  nodeReaderToken,
+  nodeUnitOfWorkToken,
+  workflowExecutionReaderToken,
+  workflowExecutionUnitOfWorkToken,
+  nodeExecutionReaderToken,
 } from "@workflow-engine/core/db/tokens.js";
-import { WorkflowRepository } from "@workflow-engine/core/db/workflowRepository.js";
-import { NodeRepository } from "@workflow-engine/core/db/nodeRepository.js";
-import { WorkflowExecutionRepository } from "@workflow-engine/core/db/workflowExecutionRepository.js";
-import { NodeExecutionRepository } from "@workflow-engine/core/db/nodeExecutionRepository.js";
+import { PgWorkflowReader } from "@workflow-engine/core/db/workflow/PgWorkflowReader.js";
+import { PgWorkflowWriter } from "@workflow-engine/core/db/workflow/PgWorkflowWriter.js";
+import { PgWorkflowVersionReader } from "@workflow-engine/core/db/workflowVersion/PgWorkflowVersionReader.js";
+import { PgWorkflowVersionWriter } from "@workflow-engine/core/db/workflowVersion/PgWorkflowVersionWriter.js";
+import { PgNodeReader } from "@workflow-engine/core/db/node/PgNodeReader.js";
+import { PgNodeWriter } from "@workflow-engine/core/db/node/PgNodeWriter.js";
+import { createTransactionRunner } from "@workflow-engine/core/db/transaction.js";
+import { PgWorkflowExecutionReader } from "@workflow-engine/core/db/workflowExecution/PgWorkflowExecutionReader.js";
+import { PgWorkflowExecutionWriter } from "@workflow-engine/core/db/workflowExecution/PgWorkflowExecutionWriter.js";
+import { PgNodeExecutionReader } from "@workflow-engine/core/db/nodeExecution/PgNodeExecutionReader.js";
 import {
   workflowServiceToken,
   nodeServiceToken,
@@ -32,50 +43,103 @@ export function buildContainer(logger: Logger): Container {
   container.register(pgPoolToken, () => createPgPool(loadPgPoolConfig(), dbLogger), "singleton");
 
   container.register(
-    workflowRepositoryToken,
-    (resolver) => new WorkflowRepository(resolver.resolve(pgPoolToken)),
+    workflowReaderToken,
+    (resolver) => new PgWorkflowReader(resolver.resolve(pgPoolToken)),
     "singleton",
   );
 
   container.register(
-    nodeRepositoryToken,
-    (resolver) => new NodeRepository(resolver.resolve(pgPoolToken)),
+    workflowUnitOfWorkToken,
+    (resolver) =>
+      createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
+        workflows: new PgWorkflowWriter(client),
+      })),
     "singleton",
   );
 
   container.register(
-    workflowExecutionRepositoryToken,
-    (resolver) => new WorkflowExecutionRepository(resolver.resolve(pgPoolToken)),
+    workflowVersionReaderToken,
+    (resolver) => new PgWorkflowVersionReader(resolver.resolve(pgPoolToken)),
     "singleton",
   );
 
   container.register(
-    nodeExecutionRepositoryToken,
-    (resolver) => new NodeExecutionRepository(resolver.resolve(pgPoolToken)),
+    workflowVersionUnitOfWorkToken,
+    (resolver) =>
+      createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
+        workflowVersions: new PgWorkflowVersionWriter(client),
+      })),
+    "singleton",
+  );
+
+  container.register(
+    nodeReaderToken,
+    (resolver) => new PgNodeReader(resolver.resolve(pgPoolToken)),
+    "singleton",
+  );
+
+  container.register(
+    nodeUnitOfWorkToken,
+    (resolver) =>
+      createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
+        nodes: new PgNodeWriter(client),
+      })),
+    "singleton",
+  );
+
+  container.register(
+    workflowExecutionReaderToken,
+    (resolver) => new PgWorkflowExecutionReader(resolver.resolve(pgPoolToken)),
+    "singleton",
+  );
+
+  container.register(
+    workflowExecutionUnitOfWorkToken,
+    (resolver) =>
+      createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
+        workflowExecutions: new PgWorkflowExecutionWriter(client),
+      })),
+    "singleton",
+  );
+
+  container.register(
+    nodeExecutionReaderToken,
+    (resolver) => new PgNodeExecutionReader(resolver.resolve(pgPoolToken)),
     "singleton",
   );
 
   container.register(
     workflowServiceToken,
-    (resolver) => new WorkflowService(resolver.resolve(workflowRepositoryToken)),
+    (resolver) =>
+      new WorkflowService(
+        resolver.resolve(workflowReaderToken),
+        resolver.resolve(workflowUnitOfWorkToken),
+        resolver.resolve(workflowVersionReaderToken),
+        resolver.resolve(workflowVersionUnitOfWorkToken),
+      ),
     "singleton",
   );
 
   container.register(
     nodeServiceToken,
-    (resolver) => new NodeService(resolver.resolve(nodeRepositoryToken)),
+    (resolver) =>
+      new NodeService(resolver.resolve(nodeReaderToken), resolver.resolve(nodeUnitOfWorkToken)),
     "singleton",
   );
 
   container.register(
     workflowExecutionServiceToken,
-    (resolver) => new WorkflowExecutionService(resolver.resolve(workflowExecutionRepositoryToken)),
+    (resolver) =>
+      new WorkflowExecutionService(
+        resolver.resolve(workflowExecutionReaderToken),
+        resolver.resolve(workflowExecutionUnitOfWorkToken),
+      ),
     "singleton",
   );
 
   container.register(
     nodeExecutionServiceToken,
-    (resolver) => new NodeExecutionService(resolver.resolve(nodeExecutionRepositoryToken)),
+    (resolver) => new NodeExecutionService(resolver.resolve(nodeExecutionReaderToken)),
     "singleton",
   );
 

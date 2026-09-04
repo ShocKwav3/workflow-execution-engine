@@ -1,19 +1,23 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { NodeExecutionRepository } from "@/db/nodeExecutionRepository.js";
-import { WorkflowExecutionRepository } from "@/db/workflowExecutionRepository.js";
+import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
+import { createTransactionRunner } from "@/db/transaction.js";
+import { PgWorkflowExecutionWriter } from "@/db/workflowExecution/PgWorkflowExecutionWriter.js";
+import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 import { seedPublishedVersion } from "@core-test/fixtures.js";
 
-describe("NodeExecutionRepository", () => {
+describe("node execution persistence", () => {
   let db: TestDatabase;
-  let repo: NodeExecutionRepository;
-  let executionRepo: WorkflowExecutionRepository;
+  let reader: PgNodeExecutionReader;
+  let unitOfWork: WorkflowExecutionUnitOfWork;
 
   beforeAll(async () => {
     db = await startTestDatabase();
-    repo = new NodeExecutionRepository(db.pool);
-    executionRepo = new WorkflowExecutionRepository(db.pool);
+    reader = new PgNodeExecutionReader(db.pool);
+    unitOfWork = createTransactionRunner(db.pool, (client) => ({
+      workflowExecutions: new PgWorkflowExecutionWriter(client),
+    }));
   }, 60_000);
 
   afterAll(async () => {
@@ -26,10 +30,12 @@ describe("NodeExecutionRepository", () => {
 
   async function createExecutionWithNodes(definition: { name: string; type: string }[]) {
     const { workflow, version, nodes } = await seedPublishedVersion(db.pool, definition);
-    const execution = await executionRepo.createWorkflowExecution({
-      workflowId: workflow.id,
-      workflowVersionId: version.id,
-    });
+    const { execution } = await unitOfWork.run(({ workflowExecutions }) =>
+      workflowExecutions.createWorkflowExecution({
+        workflowId: workflow.id,
+        workflowVersionId: version.id,
+      }),
+    );
 
     return { workflow, execution, nodes };
   }
@@ -40,7 +46,7 @@ describe("NodeExecutionRepository", () => {
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution({
+    const nodeExecutions = await reader.getNodeExecutionsForWorkflowExecution({
       workflowId: workflow.id,
       workflowExecutionId: execution.id,
     });
@@ -49,7 +55,7 @@ describe("NodeExecutionRepository", () => {
   });
 
   it("returns an empty array for an execution that doesn't exist", async () => {
-    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution({
+    const nodeExecutions = await reader.getNodeExecutionsForWorkflowExecution({
       workflowId: "00000000-0000-0000-0000-000000000000",
       workflowExecutionId: "00000000-0000-0000-0000-000000000000",
     });
@@ -58,7 +64,7 @@ describe("NodeExecutionRepository", () => {
   });
 
   it("rejects fetching node executions with a malformed workflowExecutionId", async () => {
-    const getMalformed = repo.getNodeExecutionsForWorkflowExecution({
+    const getMalformed = reader.getNodeExecutionsForWorkflowExecution({
       workflowId: "not-a-uuid",
       workflowExecutionId: "not-a-uuid",
     });
@@ -72,7 +78,7 @@ describe("NodeExecutionRepository", () => {
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const history = await repo.getWorkflowExecutionHistory({
+    const history = await reader.getWorkflowExecutionHistory({
       workflowId: workflow.id,
       workflowExecutionId: execution.id,
     });
@@ -83,7 +89,7 @@ describe("NodeExecutionRepository", () => {
   });
 
   it("rejects fetching history with a malformed workflowExecutionId", async () => {
-    const getMalformed = repo.getWorkflowExecutionHistory({
+    const getMalformed = reader.getWorkflowExecutionHistory({
       workflowId: "not-a-uuid",
       workflowExecutionId: "not-a-uuid",
     });
@@ -101,7 +107,7 @@ describe("NodeExecutionRepository", () => {
       "Unrelated Workflow",
     );
 
-    const nodeExecutions = await repo.getNodeExecutionsForWorkflowExecution({
+    const nodeExecutions = await reader.getNodeExecutionsForWorkflowExecution({
       workflowId: other.workflow.id,
       workflowExecutionId: execution.id,
     });
@@ -115,7 +121,7 @@ describe("NodeExecutionRepository", () => {
       { name: "Charge Payment", type: "payment" },
     ]);
 
-    const entry = await repo.getNodeExecutionByNodeAndExecution({
+    const entry = await reader.getNodeExecutionByNodeAndExecution({
       nodeId: nodes[0]!.id,
       workflowExecutionId: execution.id,
     });
@@ -130,7 +136,7 @@ describe("NodeExecutionRepository", () => {
       { name: "Reserve Inventory", type: "inventory" },
     ]);
 
-    const entry = await repo.getNodeExecutionByNodeAndExecution({
+    const entry = await reader.getNodeExecutionByNodeAndExecution({
       nodeId: "00000000-0000-0000-0000-000000000000",
       workflowExecutionId: execution.id,
     });
