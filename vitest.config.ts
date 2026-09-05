@@ -23,6 +23,13 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: { label: "api:unit", color: "cyan" },
+          include: ["apps/api/**/*.unit.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: { label: "api:integration", color: "magenta" },
           include: ["apps/api/**/*.integration.test.ts"],
         },

@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
+import { InternalValidationError } from "@/errors/index.js";
 import { createTransactionRunner } from "@/db/transaction.js";
 import { PgNodeReader } from "@/db/node/PgNodeReader.js";
 import { PgNodeWriter } from "@/db/node/PgNodeWriter.js";
@@ -85,7 +86,10 @@ describe("node persistence", () => {
   });
 
   it("rejects a malformed node id instead of leaking a raw DB error", async () => {
-    await expect(reader.getNodeById("not-a-uuid")).rejects.toThrow(ZodError);
+    const getMalformed = reader.getNodeById("not-a-uuid");
+
+    await expect(getMalformed).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(getMalformed).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("rejects creating a node with an empty name", async () => {
@@ -96,7 +100,8 @@ describe("node persistence", () => {
       type: "inventory",
     });
 
-    await expect(createEmpty).rejects.toThrow(ZodError);
+    await expect(createEmpty).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(createEmpty).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("returns undefined when creating a node on a version that doesn't exist", async () => {
@@ -122,7 +127,10 @@ describe("node persistence", () => {
   it("rejects an update with no fields", async () => {
     const created = await addNode("Reserve Inventory");
 
-    await expect(updateNode(created!.id, {})).rejects.toThrow(ZodError);
+    const updateEmpty = updateNode(created!.id, {});
+
+    await expect(updateEmpty).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(updateEmpty).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("returns undefined when updating a node that doesn't exist", async () => {

@@ -1,10 +1,11 @@
 import type { PoolClient } from "pg";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
-import { ClassifiedError } from "@/errors/index.js";
+import { ClassifiedError, parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateExecutionInput,
-  createExecutionInputSchema,
+  createExecutionRefSchema,
+  idempotencyKeySchema,
 } from "./workflowExecution.schemas.js";
 import type {
   CreateWorkflowExecutionResult,
@@ -18,8 +19,12 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
   async createWorkflowExecution(
     input: CreateExecutionInput,
   ): Promise<CreateWorkflowExecutionResult> {
-    const { workflowId, workflowVersionId, idempotencyKey } =
-      createExecutionInputSchema.parse(input);
+    const { workflowId, workflowVersionId } = parseInternal(
+      createExecutionRefSchema,
+      input,
+      "PgWorkflowExecutionWriter.createWorkflowExecution",
+    );
+    const idempotencyKey = idempotencyKeySchema.parse(input.idempotencyKey);
 
     try {
       // FOR SHARE blocks a concurrent publish/node write without blocking other executions.

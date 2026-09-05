@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { InternalValidationError } from "@/errors/index.js";
 import { createTransactionRunner } from "@/db/transaction.js";
 import { PgWorkflowReader } from "@/db/workflow/PgWorkflowReader.js";
 import { PgWorkflowWriter } from "@/db/workflow/PgWorkflowWriter.js";
@@ -44,7 +45,8 @@ describe("workflow persistence", () => {
   it("rejects creating a workflow with an empty name", async () => {
     const createEmpty = createWorkflow({ name: "  " });
 
-    await expect(createEmpty).rejects.toThrow(ZodError);
+    await expect(createEmpty).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(createEmpty).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("returns undefined when fetching a workflow that doesn't exist", async () => {
@@ -56,7 +58,8 @@ describe("workflow persistence", () => {
   it("rejects fetching a workflow with a malformed id instead of leaking a raw DB error", async () => {
     const getMalformed = reader.getWorkflowById("not-a-uuid");
 
-    await expect(getMalformed).rejects.toThrow(ZodError);
+    await expect(getMalformed).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(getMalformed).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("lists all created workflows", async () => {

@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { InternalValidationError } from "@/errors/index.js";
 import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
@@ -189,6 +190,7 @@ describe("workflow execution persistence", () => {
   it("rejects fetching an execution with a malformed id", async () => {
     const getMalformed = reader.getWorkflowExecutionById("not-a-uuid");
 
-    await expect(getMalformed).rejects.toThrow(ZodError);
+    await expect(getMalformed).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(getMalformed).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 });

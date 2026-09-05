@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
+import { parseInternal } from "@/errors/index.js";
 import { ClassifiedError } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import {
@@ -27,7 +28,11 @@ export class PgNodeWriter implements NodeWriter {
   constructor(private readonly client: PoolClient) {}
 
   async createNode(input: CreateNodeInput): Promise<NodeRow | undefined> {
-    const { workflowId, version, name, type } = createNodeInputSchema.parse(input);
+    const { workflowId, version, name, type } = parseInternal(
+      createNodeInputSchema,
+      input,
+      "PgNodeWriter.createNode",
+    );
 
     return this.onDraftVersion(
       () => this.lockVersionByRef(workflowId, version),
@@ -51,8 +56,12 @@ export class PgNodeWriter implements NodeWriter {
   }
 
   async updateNode(id: string, input: UpdateNodeInput): Promise<NodeRow | undefined> {
-    const validId = nodeIdSchema.parse(id);
-    const { name, type } = updateNodeInputSchema.parse(input);
+    const validId = parseInternal(nodeIdSchema, id, "PgNodeWriter.updateNode id");
+    const { name, type } = parseInternal(
+      updateNodeInputSchema,
+      input,
+      "PgNodeWriter.updateNode input",
+    );
 
     return this.onDraftVersion(
       () => this.lockVersionByNodeId(validId),
@@ -71,7 +80,7 @@ export class PgNodeWriter implements NodeWriter {
   }
 
   async deleteNode(id: string): Promise<boolean> {
-    const validId = nodeIdSchema.parse(id);
+    const validId = parseInternal(nodeIdSchema, id, "PgNodeWriter.deleteNode");
 
     const deleted = await this.onDraftVersion(
       () => this.lockVersionByNodeId(validId),
@@ -86,7 +95,11 @@ export class PgNodeWriter implements NodeWriter {
   }
 
   async reorderNodes(input: ReorderNodesInput): Promise<NodeRow[] | undefined> {
-    const { workflowId, version, nodeIds } = reorderNodesInputSchema.parse(input);
+    const { workflowId, version, nodeIds } = parseInternal(
+      reorderNodesInputSchema,
+      input,
+      "PgNodeWriter.reorderNodes",
+    );
 
     return this.onDraftVersion(
       () => this.lockVersionByRef(workflowId, version),

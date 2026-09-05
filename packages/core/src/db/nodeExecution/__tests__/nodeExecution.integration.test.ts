@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { InternalValidationError } from "@/errors/index.js";
 import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
@@ -65,7 +66,8 @@ describe("node execution persistence", () => {
       workflowExecutionId: "not-a-uuid",
     });
 
-    await expect(getMalformed).rejects.toThrow(ZodError);
+    await expect(getMalformed).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(getMalformed).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("returns execution history with nodes and empty attempts, since nothing has executed yet", async () => {
@@ -90,7 +92,8 @@ describe("node execution persistence", () => {
       workflowExecutionId: "not-a-uuid",
     });
 
-    await expect(getMalformed).rejects.toThrow(ZodError);
+    await expect(getMalformed).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(getMalformed).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("does not return node executions under a workflow they don't belong to", async () => {

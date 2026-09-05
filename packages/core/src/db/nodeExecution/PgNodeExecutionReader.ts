@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type NodeExecutionHistoryEntry,
@@ -42,7 +43,11 @@ export class PgNodeExecutionReader implements NodeExecutionReader {
   async getNodeExecutionsForWorkflowExecution(
     input: WorkflowExecutionRef,
   ): Promise<NodeExecutionRow[]> {
-    const { workflowId, workflowExecutionId } = workflowExecutionRefSchema.parse(input);
+    const { workflowId, workflowExecutionId } = parseInternal(
+      workflowExecutionRefSchema,
+      input,
+      "PgNodeExecutionReader.getNodeExecutionsForWorkflowExecution",
+    );
 
     try {
       const result = await this.pool.query<NodeExecutionRow>(
@@ -63,7 +68,11 @@ export class PgNodeExecutionReader implements NodeExecutionReader {
   async getWorkflowExecutionHistory(
     input: WorkflowExecutionRef,
   ): Promise<NodeExecutionHistoryEntry[]> {
-    const { workflowId, workflowExecutionId } = workflowExecutionRefSchema.parse(input);
+    const { workflowId, workflowExecutionId } = parseInternal(
+      workflowExecutionRefSchema,
+      input,
+      "PgNodeExecutionReader.getWorkflowExecutionHistory",
+    );
 
     try {
       const result = await this.pool.query<NodeHistoryQueryRow>(
@@ -84,7 +93,11 @@ export class PgNodeExecutionReader implements NodeExecutionReader {
   async getNodeExecutionByNodeAndExecution(
     input: GetNodeExecutionInput,
   ): Promise<NodeExecutionHistoryEntry | undefined> {
-    const { nodeId, workflowExecutionId } = getNodeExecutionInputSchema.parse(input);
+    const { nodeId, workflowExecutionId } = parseInternal(
+      getNodeExecutionInputSchema,
+      input,
+      "PgNodeExecutionReader.getNodeExecutionByNodeAndExecution",
+    );
 
     try {
       const result = await this.pool.query<NodeHistoryQueryRow>(
