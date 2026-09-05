@@ -35,7 +35,7 @@ docs {
   `sequence` is server-assigned — appended after any existing nodes, not something you set.
 
   `type` isn't validated against a real registry yet (`src/nodes/registry.ts` is empty
-  until an executor exists at M2+) — any string is currently accepted.
+  until an executor exists) — any string is currently accepted.
 
   Returns `201` with a `Location` header at the node's own flat address
   (`/api/v1/nodes/{nodeId}`) — that's this collection's **Get/Update/Delete Node**

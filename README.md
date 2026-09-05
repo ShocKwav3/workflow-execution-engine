@@ -1,10 +1,10 @@
 # Workflow Execution Engine
 
-A backend-only distributed workflow execution engine: define workflows as a sequence of nodes, version and publish them, then run and track executions. Built around PostgreSQL and RabbitMQ, with Kafka, transactional outbox, scheduling, Saga orchestration with retries/compensation, and horizontal scaling planned as the system grows.
+A backend-only distributed workflow execution engine: define workflows as a sequence of nodes, version and publish them, then run and track executions. Built around PostgreSQL and RabbitMQ, with Kafka, scheduling, Saga orchestration with retries/compensation, and horizontal scaling planned as the system grows.
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. RabbitMQ is provisioned, with a connection/channel/topology layer in place — nothing publishes or consumes through it yet, so executions are currently created and persisted but not processed. Scheduling and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution also writes a `StartWorkflowExecution` command to a transactional outbox table, in the same database transaction as the execution itself. RabbitMQ is provisioned, with a connection/channel/topology layer in place, but nothing publishes or consumes through it yet and nothing drains the outbox — so executions are created and persisted, commands accumulate unread, and no execution is processed. Scheduling and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -22,7 +22,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts the API (hot-reloading, bind-mounted source) on `http://localhost:${PORT}` (default `3000`). The API doesn't talk to RabbitMQ yet — it starts alongside everything else, but nothing publishes or consumes through it.
+This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts the API (hot-reloading, bind-mounted source) on `http://localhost:${PORT}` (default `3000`). The API never opens an AMQP connection — it records outbound commands in the outbox table instead, and RabbitMQ starts alongside everything else with nothing publishing or consuming through it. Creating an execution therefore succeeds even while RabbitMQ is down.
 
 ```bash
 curl http://localhost:3000/health
@@ -69,7 +69,7 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
-  src/            DI container, error types, database pool + readers/writers, services, AMQP connection/topology, logging, config
+  src/            DI container, error types, database pool + readers/writers, transactional outbox, services, AMQP connection/topology/message contracts, logging, config
   test/           shared test harness/fixtures (used by both packages, excluded from the build)
 
 apps/api/         @workflow-engine/api — the HTTP process

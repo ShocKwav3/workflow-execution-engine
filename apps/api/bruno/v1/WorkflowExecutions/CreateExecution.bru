@@ -34,8 +34,10 @@ docs {
   # Create Execution
 
   Starts one execution and returns immediately with `status: "PENDING"` — nothing
-  processes it yet (no executor exists until M2). In the same transaction, one
-  `node_execution` per node in the version is snapshotted, all `PENDING`.
+  processes it yet (no executor exists). In the same transaction, one `node_execution`
+  per node in the version is snapshotted (all `PENDING`), and one `StartWorkflowExecution`
+  command is written to the `outbox_message` table. Nothing drains that table yet, so
+  the command stays `PENDING` too — the API never contacts RabbitMQ itself.
 
   The version must be `PUBLISHED` (`409` if still `DRAFT`).
 

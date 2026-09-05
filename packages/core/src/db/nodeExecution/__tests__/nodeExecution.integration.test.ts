@@ -1,11 +1,9 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
-import { createTransactionRunner } from "@/db/transaction.js";
-import { PgWorkflowExecutionWriter } from "@/db/workflowExecution/PgWorkflowExecutionWriter.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
-import { seedPublishedVersion } from "@core-test/fixtures.js";
+import { seedPublishedVersion, workflowExecutionUnitOfWorkFor } from "@core-test/fixtures.js";
 
 describe("node execution persistence", () => {
   let db: TestDatabase;
@@ -15,9 +13,7 @@ describe("node execution persistence", () => {
   beforeAll(async () => {
     db = await startTestDatabase();
     reader = new PgNodeExecutionReader(db.pool);
-    unitOfWork = createTransactionRunner(db.pool, (client) => ({
-      workflowExecutions: new PgWorkflowExecutionWriter(client),
-    }));
+    unitOfWork = workflowExecutionUnitOfWorkFor(db.pool);
   }, 60_000);
 
   afterAll(async () => {

@@ -2,16 +2,15 @@ import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
-import { createTransactionRunner } from "@/db/transaction.js";
 import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
 import { PgWorkflowExecutionReader } from "@/db/workflowExecution/PgWorkflowExecutionReader.js";
-import { PgWorkflowExecutionWriter } from "@/db/workflowExecution/PgWorkflowExecutionWriter.js";
 import type { CreateWorkflowExecutionResult } from "@/db/workflowExecution/WorkflowExecutionWriter.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 import {
   seedDraftVersion,
   seedPublishedVersion,
+  workflowExecutionUnitOfWorkFor,
   workflowUnitOfWorkFor,
 } from "@core-test/fixtures.js";
 
@@ -27,9 +26,7 @@ describe("workflow execution persistence", () => {
   beforeAll(async () => {
     db = await startTestDatabase();
     reader = new PgWorkflowExecutionReader(db.pool);
-    unitOfWork = createTransactionRunner(db.pool, (client) => ({
-      workflowExecutions: new PgWorkflowExecutionWriter(client),
-    }));
+    unitOfWork = workflowExecutionUnitOfWorkFor(db.pool);
     nodeExecutionReader = new PgNodeExecutionReader(db.pool);
   }, 60_000);
 

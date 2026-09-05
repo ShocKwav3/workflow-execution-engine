@@ -1,3 +1,4 @@
+import { createStartWorkflowExecutionMessage } from "@/amqp/messages/startWorkflowExecution.js";
 import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
 import type { WorkflowExecutionReader } from "@/db/workflowExecution/WorkflowExecutionReader.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
@@ -10,11 +11,18 @@ export class WorkflowExecutionService {
   ) {}
 
   async createWorkflowExecution(input: CreateExecutionInput): Promise<WorkflowExecutionRow> {
-    const { execution } = await this.unitOfWork.run(({ workflowExecutions }) =>
-      workflowExecutions.createWorkflowExecution(input),
-    );
+    return this.unitOfWork.run(async ({ workflowExecutions, workflowExecutionOutbox }) => {
+      const { execution, created } = await workflowExecutions.createWorkflowExecution(input);
 
-    return execution;
+      // An idempotent replay returns the original execution, which was already queued once.
+      if (created) {
+        await workflowExecutionOutbox.addStartCommand(
+          createStartWorkflowExecutionMessage(execution.id),
+        );
+      }
+
+      return execution;
+    });
   }
 
   async getWorkflowExecutionById(id: string): Promise<WorkflowExecutionRow | undefined> {
