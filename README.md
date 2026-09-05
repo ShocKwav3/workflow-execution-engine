@@ -57,7 +57,8 @@ Each package can also be tested independently, without spinning up infrastructur
 ```bash
 pnpm --filter @workflow-engine/core test:unit          # no containers
 pnpm --filter @workflow-engine/core test:integration    # Postgres + RabbitMQ, scoped to packages/core
-pnpm --filter @workflow-engine/api test                 # Postgres only, scoped to apps/api
+pnpm --filter @workflow-engine/api test:unit            # no containers
+pnpm --filter @workflow-engine/api test:integration     # Postgres only, scoped to apps/api
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.

@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import { type CreateWorkflowInput, createWorkflowInputSchema } from "./workflow.schemas.js";
 import type { WorkflowWriter } from "./WorkflowWriter.js";
@@ -8,7 +9,11 @@ export class PgWorkflowWriter implements WorkflowWriter {
   constructor(private readonly client: PoolClient) {}
 
   async createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRow> {
-    const { name } = createWorkflowInputSchema.parse(input);
+    const { name } = parseInternal(
+      createWorkflowInputSchema,
+      input,
+      "PgWorkflowWriter.createWorkflow",
+    );
 
     try {
       const result = await this.client.query<WorkflowRow>(

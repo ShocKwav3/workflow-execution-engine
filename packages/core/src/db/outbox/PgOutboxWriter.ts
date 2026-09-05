@@ -1,20 +1,18 @@
 import type { PoolClient } from "pg";
+import { parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import { type AddOutboxMessageInput, addOutboxMessageInputSchema } from "./outbox.schemas.js";
-import { OutboxMessageValidationError } from "./OutboxMessageValidationError.js";
 import type { OutboxWriter } from "./OutboxWriter.js";
 
 export class PgOutboxWriter implements OutboxWriter {
   constructor(private readonly client: PoolClient) {}
 
   async addOutboxMessage(input: AddOutboxMessageInput): Promise<void> {
-    const parsed = addOutboxMessageInputSchema.safeParse(input);
-
-    if (!parsed.success) {
-      throw new OutboxMessageValidationError(parsed.error);
-    }
-
-    const { destination, routingKey, payload } = parsed.data;
+    const { destination, routingKey, payload } = parseInternal(
+      addOutboxMessageInputSchema,
+      input,
+      "PgOutboxWriter.addOutboxMessage",
+    );
 
     try {
       await this.client.query(

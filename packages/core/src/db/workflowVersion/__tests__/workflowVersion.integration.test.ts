@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { UniqueConstraintViolationError } from "@/db/errors/index.js";
+import { InternalValidationError } from "@/errors/index.js";
 import {
   VersionAlreadyPublishedError,
   VersionHasNoNodesError,
@@ -84,7 +85,8 @@ describe("workflow version persistence", () => {
   it("rejects creating a workflow version with an invalid workflowId", async () => {
     const createInvalid = createVersion({ workflowId: "not-a-uuid", version: 1 });
 
-    await expect(createInvalid).rejects.toThrow(ZodError);
+    await expect(createInvalid).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(createInvalid).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("rejects creating a workflow version with a non-positive version number", async () => {
@@ -92,7 +94,8 @@ describe("workflow version persistence", () => {
 
     const createInvalid = createVersion({ workflowId: workflow.id, version: 0 });
 
-    await expect(createInvalid).rejects.toThrow(ZodError);
+    await expect(createInvalid).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(createInvalid).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
 
   it("returns undefined when fetching a workflow version that doesn't exist", async () => {

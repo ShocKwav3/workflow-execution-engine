@@ -2,7 +2,7 @@ import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTransactionRunner, type TransactionRunner } from "@/db/transaction.js";
 import type { AddOutboxMessageInput } from "@/db/outbox/outbox.schemas.js";
-import { OutboxMessageValidationError } from "@/db/outbox/OutboxMessageValidationError.js";
+import { InternalValidationError } from "@/errors/index.js";
 import type { OutboxMessageRow } from "@/db/outbox/outbox.types.js";
 import { PgOutboxWriter } from "@/db/outbox/PgOutboxWriter.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
@@ -62,7 +62,8 @@ describe("outbox persistence", () => {
       payload: {},
     } as unknown as AddOutboxMessageInput);
 
-    await expect(add).rejects.toBeInstanceOf(OutboxMessageValidationError);
+    await expect(add).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(add).rejects.toHaveProperty("cause", expect.any(ZodError));
     await expect(readMessages()).resolves.toEqual([]);
   });
 
@@ -73,7 +74,8 @@ describe("outbox persistence", () => {
       payload: {},
     });
 
-    await expect(add).rejects.toBeInstanceOf(OutboxMessageValidationError);
+    await expect(add).rejects.toBeInstanceOf(InternalValidationError);
+    await expect(add).rejects.toHaveProperty("cause", expect.any(ZodError));
     await expect(readMessages()).resolves.toEqual([]);
   });
 

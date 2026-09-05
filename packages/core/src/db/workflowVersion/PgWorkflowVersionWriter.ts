@@ -4,7 +4,7 @@ import {
   VersionHasNoNodesError,
   VersionNotDraftError,
 } from "@/errors/domain/index.js";
-import { ClassifiedError } from "@/errors/index.js";
+import { ClassifiedError, parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateWorkflowVersionInput,
@@ -19,7 +19,11 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
   constructor(private readonly client: PoolClient) {}
 
   async createWorkflowVersion(input: CreateWorkflowVersionInput): Promise<WorkflowVersionRow> {
-    const { workflowId, version } = createWorkflowVersionInputSchema.parse(input);
+    const { workflowId, version } = parseInternal(
+      createWorkflowVersionInputSchema,
+      input,
+      "PgWorkflowVersionWriter.createWorkflowVersion",
+    );
 
     try {
       const result = await this.client.query<WorkflowVersionRow>(
@@ -34,7 +38,11 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
   }
 
   async publishWorkflowVersion(input: WorkflowVersionRef): Promise<WorkflowVersionRow | undefined> {
-    const { workflowId, version: versionId } = workflowVersionRefSchema.parse(input);
+    const { workflowId, version: versionId } = parseInternal(
+      workflowVersionRefSchema,
+      input,
+      "PgWorkflowVersionWriter.publishWorkflowVersion",
+    );
 
     try {
       const workflowVersion = await this.lockVersion(workflowId, versionId);
@@ -80,7 +88,11 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
   }
 
   async deleteWorkflowVersion(input: WorkflowVersionRef): Promise<boolean> {
-    const { workflowId, version: versionId } = workflowVersionRefSchema.parse(input);
+    const { workflowId, version: versionId } = parseInternal(
+      workflowVersionRefSchema,
+      input,
+      "PgWorkflowVersionWriter.deleteWorkflowVersion",
+    );
 
     try {
       const workflowVersion = await this.lockVersion(workflowId, versionId);

@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import { type WorkflowVersionRef, workflowVersionRefSchema } from "./workflowVersion.schemas.js";
 import type { WorkflowVersionReader } from "./WorkflowVersionReader.js";
@@ -8,7 +9,11 @@ export class PgWorkflowVersionReader implements WorkflowVersionReader {
   constructor(private readonly pool: Pool) {}
 
   async getWorkflowVersion(input: WorkflowVersionRef): Promise<WorkflowVersionRow | undefined> {
-    const { workflowId, version: versionId } = workflowVersionRefSchema.parse(input);
+    const { workflowId, version: versionId } = parseInternal(
+      workflowVersionRefSchema,
+      input,
+      "PgWorkflowVersionReader.getWorkflowVersion",
+    );
 
     try {
       const result = await this.pool.query<WorkflowVersionRow>(

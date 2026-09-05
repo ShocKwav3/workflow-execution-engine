@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { parseInternal } from "@/errors/index.js";
 
 export const START_WORKFLOW_EXECUTION = "StartWorkflowExecution";
 
@@ -18,12 +19,16 @@ export type StartWorkflowExecutionMessage = z.infer<typeof startWorkflowExecutio
 export function createStartWorkflowExecutionMessage(
   workflowExecutionId: string,
 ): StartWorkflowExecutionMessage {
-  return startWorkflowExecutionMessageSchema.parse({
-    messageId: randomUUID(),
-    // Stopgap: no inbound correlation id reaches this boundary yet, so one is minted per command.
-    correlationId: randomUUID(),
-    type: START_WORKFLOW_EXECUTION,
-    occurredAt: new Date().toISOString(),
-    payload: { workflowExecutionId },
-  });
+  return parseInternal(
+    startWorkflowExecutionMessageSchema,
+    {
+      messageId: randomUUID(),
+      // Stopgap: no inbound correlation id reaches this boundary yet, so one is minted per command.
+      correlationId: randomUUID(),
+      type: START_WORKFLOW_EXECUTION,
+      occurredAt: new Date().toISOString(),
+      payload: { workflowExecutionId },
+    },
+    "createStartWorkflowExecutionMessage",
+  );
 }

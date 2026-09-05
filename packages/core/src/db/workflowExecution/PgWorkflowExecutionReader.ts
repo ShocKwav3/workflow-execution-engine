@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { parseInternal } from "@/errors/index.js";
 import { classifyPgError } from "../errors/index.js";
 import { executionIdSchema } from "./workflowExecution.schemas.js";
 import type { WorkflowExecutionReader } from "./WorkflowExecutionReader.js";
@@ -8,7 +9,11 @@ export class PgWorkflowExecutionReader implements WorkflowExecutionReader {
   constructor(private readonly pool: Pool) {}
 
   async getWorkflowExecutionById(id: string): Promise<WorkflowExecutionRow | undefined> {
-    const validId = executionIdSchema.parse(id);
+    const validId = parseInternal(
+      executionIdSchema,
+      id,
+      "PgWorkflowExecutionReader.getWorkflowExecutionById",
+    );
 
     try {
       const result = await this.pool.query<WorkflowExecutionRow>(

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { InternalValidationError } from "@/errors/index.js";
 import {
   createStartWorkflowExecutionMessage,
   startWorkflowExecutionMessageSchema,
@@ -70,6 +71,7 @@ describe("createStartWorkflowExecutionMessage", () => {
   it("throws when the execution id is not a uuid", () => {
     const build = () => createStartWorkflowExecutionMessage("not-a-uuid");
 
-    expect(build).toThrow(z.ZodError);
+    expect(build).toThrow(InternalValidationError);
+    expect(build).not.toThrow(z.ZodError);
   });
 });
