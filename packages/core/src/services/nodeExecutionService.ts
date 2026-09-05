@@ -1,5 +1,8 @@
 import type { NodeExecutionReader } from "@/db/nodeExecution/NodeExecutionReader.js";
-import type { GetNodeExecutionInput, WorkflowExecutionRef } from "@/db/nodeExecution/nodeExecution.schemas.js";
+import type {
+  GetNodeExecutionInput,
+  WorkflowExecutionRef,
+} from "@/db/nodeExecution/nodeExecution.schemas.js";
 import type { NodeExecutionHistoryEntry } from "@/db/nodeExecution/executionHistoryGrouping.js";
 import type { NodeExecutionRow } from "@/db/types.js";
 

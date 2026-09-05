@@ -1,6 +1,10 @@
 import type { NodeReader } from "@/db/node/NodeReader.js";
 import type { NodeUnitOfWork } from "@/db/node/NodeUnitOfWork.js";
-import type { CreateNodeInput, ReorderNodesInput, UpdateNodeInput } from "@/db/node/node.schemas.js";
+import type {
+  CreateNodeInput,
+  ReorderNodesInput,
+  UpdateNodeInput,
+} from "@/db/node/node.schemas.js";
 import type { NodeRow } from "@/db/types.js";
 import type { WorkflowVersionRef } from "@/db/workflowVersion/workflowVersion.schemas.js";
 

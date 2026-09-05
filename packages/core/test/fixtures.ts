@@ -4,6 +4,9 @@ import { PgNodeReader } from "../src/db/node/PgNodeReader.js";
 import { PgNodeWriter } from "../src/db/node/PgNodeWriter.js";
 import { PgWorkflowWriter } from "../src/db/workflow/PgWorkflowWriter.js";
 import { PgWorkflowVersionWriter } from "../src/db/workflowVersion/PgWorkflowVersionWriter.js";
+import { PgWorkflowExecutionWriter } from "../src/db/workflowExecution/PgWorkflowExecutionWriter.js";
+import { PgOutboxWriter } from "../src/db/outbox/PgOutboxWriter.js";
+import { AmqpWorkflowExecutionOutbox } from "../src/db/outbox/AmqpWorkflowExecutionOutbox.js";
 import type { NodeRow, WorkflowRow, WorkflowVersionRow } from "../src/db/types.js";
 
 export interface NodeDefinition {
@@ -27,6 +30,12 @@ export const workflowVersionUnitOfWorkFor = (pool: Pool) =>
 
 export const nodeUnitOfWorkFor = (pool: Pool) =>
   createTransactionRunner(pool, (client) => ({ nodes: new PgNodeWriter(client) }));
+
+export const workflowExecutionUnitOfWorkFor = (pool: Pool) =>
+  createTransactionRunner(pool, (client) => ({
+    workflowExecutions: new PgWorkflowExecutionWriter(client),
+    workflowExecutionOutbox: new AmqpWorkflowExecutionOutbox(new PgOutboxWriter(client)),
+  }));
 
 export async function seedDraftVersion(
   pool: Pool,
