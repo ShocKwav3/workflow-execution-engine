@@ -1,4 +1,4 @@
-import { requireEnv } from "@/config/env.js";
+import { optionalIntEnv, requireEnv } from "@/config/env.js";
 
 export interface PgPoolConfig {
   host: string;
@@ -21,22 +21,6 @@ export const PG_POOL_DEFAULTS = {
   connectionTimeoutMillis: 5_000,
   maxLifetimeSeconds: 1800,
 } as const;
-
-function optionalIntEnv(name: string, fallback: number): number {
-  const raw = process.env[name];
-
-  if (!raw) {
-    return fallback;
-  }
-
-  const parsed = Number.parseInt(raw, 10);
-
-  if (Number.isNaN(parsed)) {
-    throw new Error(`Environment variable ${name} must be an integer, got: ${raw}`);
-  }
-
-  return parsed;
-}
 
 export function loadPgPoolConfig(): PgPoolConfig {
   return {

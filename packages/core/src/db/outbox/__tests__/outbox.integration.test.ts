@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTransactionRunner, type TransactionRunner } from "@/db/transaction.js";
 import type { AddOutboxMessageInput } from "@/db/outbox/outbox.schemas.js";
 import { InternalValidationError } from "@/errors/index.js";
-import type { OutboxMessageRow } from "@/db/outbox/outbox.types.js";
+import { OUTBOX_MESSAGE_STATUS, type OutboxMessageRow } from "@/db/outbox/outbox.types.js";
 import { PgOutboxWriter } from "@/db/outbox/PgOutboxWriter.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 
@@ -48,7 +48,7 @@ describe("outbox persistence", () => {
     expect(messages[0]).toMatchObject({
       destination: "rabbitmq",
       routing_key: "workflow.execution.start",
-      status: "PENDING",
+      status: OUTBOX_MESSAGE_STATUS.PENDING,
       payload: { type: "SomeCommand", payload: { id: "abc" } },
       claimed_at: null,
       published_at: null,

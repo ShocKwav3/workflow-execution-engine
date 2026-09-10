@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
 import { parseInternal } from "@/errors/index.js";
 import { ClassifiedError } from "@/errors/index.js";
+import { WORKFLOW_VERSION_STATUS } from "../types.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateNodeInput,
@@ -16,7 +17,7 @@ import type { NodeWriter } from "./NodeWriter.js";
 import type { NodeRow, WorkflowVersionRow } from "../types.js";
 
 function assertDraft(workflowVersion: WorkflowVersionRow): void {
-  if (workflowVersion.status !== "DRAFT") {
+  if (workflowVersion.status !== WORKFLOW_VERSION_STATUS.DRAFT) {
     throw new VersionNotDraftError(workflowVersion.version, {
       workflowId: workflowVersion.workflow_id,
       workflowVersionId: workflowVersion.id,

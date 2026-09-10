@@ -7,8 +7,7 @@ import {
 } from "fastify-type-provider-zod";
 import fastifyHelmet from "@fastify/helmet";
 import { loadAppConfig, type AppConfig } from "./config.js";
-import { LOG_REDACT_PATHS } from "@workflow-engine/core/config/logging.js";
-import { PINO_PRETTY_OPTIONS } from "@workflow-engine/core/config/pinoPretty.js";
+import { createPinoOptions } from "@workflow-engine/core/logging/logger.js";
 import { errorHandler } from "./errorHandler.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 
@@ -16,13 +15,7 @@ const CORRELATION_ID_HEADER = "x-correlation-id";
 
 export async function buildApp(config: AppConfig = loadAppConfig()) {
   const app = Fastify({
-    logger: {
-      level: config.logLevel,
-      redact: { paths: LOG_REDACT_PATHS, remove: true },
-      ...(config.logPretty
-        ? { transport: { target: "pino-pretty", options: PINO_PRETTY_OPTIONS } }
-        : {}),
-    },
+    logger: createPinoOptions(config.log),
     requestIdHeader: CORRELATION_ID_HEADER,
     genReqId: () => randomUUID(),
   }).withTypeProvider<ZodTypeProvider>();

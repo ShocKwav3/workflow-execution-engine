@@ -1,3 +1,4 @@
+import { WORKFLOW_VERSION_STATUSES } from "@workflow-engine/core/db/types.js";
 import { z } from "zod";
 import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
@@ -11,7 +12,7 @@ export const workflowVersionResponseSchema = z.object({
   workflowId: z.uuid().max(36).describe("ID of the workflow this version belongs to."),
   version: versionNumberResponseSchema,
   status: z
-    .enum(["DRAFT", "PUBLISHED"])
+    .enum(WORKFLOW_VERSION_STATUSES)
     .describe("DRAFT is editable; PUBLISHED is executable and frozen."),
   createdAt: z.iso.datetime().max(35).describe("When the version was created."),
   publishedAt: z.iso

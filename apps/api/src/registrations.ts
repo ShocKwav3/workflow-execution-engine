@@ -1,9 +1,10 @@
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { Container } from "@workflow-engine/core/di/container.js";
 import { loadPgPoolConfig } from "@workflow-engine/core/db/config.js";
-import { createPgPool } from "@workflow-engine/core/db/pool.js";
+import { closePgPool, createPgPool } from "@workflow-engine/core/db/pool.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import {
+  pgPoolConfigToken,
   pgPoolToken,
   workflowReaderToken,
   workflowUnitOfWorkToken,
@@ -42,12 +43,18 @@ export function buildContainer(logger: Logger): Container {
   const container = new Container();
   const dbLogger = createContextLogger(logger, "Database");
 
-  container.register(pgPoolToken, () => createPgPool(loadPgPoolConfig(), dbLogger), "singleton");
+  container.register(pgPoolConfigToken, loadPgPoolConfig, { lifetime: "singleton" });
+
+  container.register(
+    pgPoolToken,
+    (resolver) => createPgPool(resolver.resolve(pgPoolConfigToken), dbLogger),
+    { lifetime: "singleton", dispose: closePgPool },
+  );
 
   container.register(
     workflowReaderToken,
     (resolver) => new PgWorkflowReader(resolver.resolve(pgPoolToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
@@ -56,13 +63,13 @@ export function buildContainer(logger: Logger): Container {
       createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
         workflows: new PgWorkflowWriter(client),
       })),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
     workflowVersionReaderToken,
     (resolver) => new PgWorkflowVersionReader(resolver.resolve(pgPoolToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
@@ -71,13 +78,13 @@ export function buildContainer(logger: Logger): Container {
       createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
         workflowVersions: new PgWorkflowVersionWriter(client),
       })),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
     nodeReaderToken,
     (resolver) => new PgNodeReader(resolver.resolve(pgPoolToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
@@ -86,13 +93,13 @@ export function buildContainer(logger: Logger): Container {
       createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
         nodes: new PgNodeWriter(client),
       })),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
     workflowExecutionReaderToken,
     (resolver) => new PgWorkflowExecutionReader(resolver.resolve(pgPoolToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
@@ -102,13 +109,13 @@ export function buildContainer(logger: Logger): Container {
         workflowExecutions: new PgWorkflowExecutionWriter(client),
         workflowExecutionOutbox: new AmqpWorkflowExecutionOutbox(new PgOutboxWriter(client)),
       })),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
     nodeExecutionReaderToken,
     (resolver) => new PgNodeExecutionReader(resolver.resolve(pgPoolToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
@@ -120,14 +127,14 @@ export function buildContainer(logger: Logger): Container {
         resolver.resolve(workflowVersionReaderToken),
         resolver.resolve(workflowVersionUnitOfWorkToken),
       ),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
     nodeServiceToken,
     (resolver) =>
       new NodeService(resolver.resolve(nodeReaderToken), resolver.resolve(nodeUnitOfWorkToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
@@ -137,13 +144,13 @@ export function buildContainer(logger: Logger): Container {
         resolver.resolve(workflowExecutionReaderToken),
         resolver.resolve(workflowExecutionUnitOfWorkToken),
       ),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   container.register(
     nodeExecutionServiceToken,
     (resolver) => new NodeExecutionService(resolver.resolve(nodeExecutionReaderToken)),
-    "singleton",
+    { lifetime: "singleton" },
   );
 
   return container;

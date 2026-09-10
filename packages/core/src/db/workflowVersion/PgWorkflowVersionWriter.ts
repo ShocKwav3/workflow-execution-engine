@@ -13,7 +13,7 @@ import {
   workflowVersionRefSchema,
 } from "./workflowVersion.schemas.js";
 import type { WorkflowVersionWriter } from "./WorkflowVersionWriter.js";
-import type { WorkflowVersionRow } from "../types.js";
+import { type WorkflowVersionRow, WORKFLOW_VERSION_STATUS } from "../types.js";
 
 export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
   constructor(private readonly client: PoolClient) {}
@@ -51,7 +51,7 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
         return undefined;
       }
 
-      if (workflowVersion.status !== "DRAFT") {
+      if (workflowVersion.status !== WORKFLOW_VERSION_STATUS.DRAFT) {
         throw new VersionAlreadyPublishedError(workflowVersion.version, {
           workflowId,
           workflowVersionId: workflowVersion.id,
@@ -71,10 +71,10 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
       }
 
       const published = await this.client.query<WorkflowVersionRow>(
-        `UPDATE workflow_version SET status = 'PUBLISHED', published_at = now()
+        `UPDATE workflow_version SET status = $2, published_at = now()
          WHERE id = $1
          RETURNING *`,
-        [workflowVersion.id],
+        [workflowVersion.id, WORKFLOW_VERSION_STATUS.PUBLISHED],
       );
 
       return published.rows[0]!;
@@ -101,7 +101,7 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
         return false;
       }
 
-      if (workflowVersion.status !== "DRAFT") {
+      if (workflowVersion.status !== WORKFLOW_VERSION_STATUS.DRAFT) {
         throw new VersionNotDraftError(workflowVersion.version, {
           workflowId,
           workflowVersionId: workflowVersion.id,

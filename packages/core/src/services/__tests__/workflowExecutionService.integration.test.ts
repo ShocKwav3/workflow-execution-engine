@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { EXECUTION_STATUS } from "@/db/types.js";
 import { startWorkflowExecutionMessageSchema } from "@/amqp/messages/startWorkflowExecution.js";
 import { AMQP_TOPOLOGY } from "@/amqp/topology.js";
 import type { OutboxMessageRow } from "@/db/outbox/outbox.types.js";
@@ -54,7 +55,7 @@ describe("workflow execution service", () => {
 
     expect(messages).toHaveLength(1);
     expect(messages[0]).toMatchObject({
-      status: "PENDING",
+      status: EXECUTION_STATUS.PENDING,
       destination: "rabbitmq",
       routing_key: AMQP_TOPOLOGY.routingKey,
       published_at: null,
