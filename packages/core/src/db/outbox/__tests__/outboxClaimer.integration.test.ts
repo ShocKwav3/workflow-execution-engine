@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { InternalValidationError } from "@/errors/index.js";
@@ -141,12 +142,27 @@ describe("outbox claiming", () => {
 
     await claim();
 
-    await claimer.markOutboxMessagePublished(message.id);
+    await expect(claimer.markOutboxMessagePublished(message.id)).resolves.toBe(true);
 
     const stored = await readMessage(message.id);
 
     expect(stored.status).toBe(OUTBOX_MESSAGE_STATUS.PUBLISHED);
     expect(stored.published_at).toBeInstanceOf(Date);
+  });
+
+  it("reports no transition when the message was never claimed", async () => {
+    const message = await insertMessage();
+
+    await expect(claimer.markOutboxMessagePublished(message.id)).resolves.toBe(false);
+
+    const stored = await readMessage(message.id);
+
+    expect(stored.status).toBe(OUTBOX_MESSAGE_STATUS.PENDING);
+    expect(stored.published_at).toBeNull();
+  });
+
+  it("reports no transition when the message no longer exists", async () => {
+    await expect(claimer.markOutboxMessagePublished(randomUUID())).resolves.toBe(false);
   });
 
   it("rejects an unsupported destination before reaching SQL", async () => {

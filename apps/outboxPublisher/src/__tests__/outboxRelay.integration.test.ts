@@ -131,11 +131,13 @@ describe("outbox publisher end to end", () => {
       return;
     }
 
-    expect(delivered.properties.messageId).toBe(row.id);
-    expect(JSON.parse(delivered.content.toString())).toMatchObject({
+    const body = JSON.parse(delivered.content.toString());
+
+    expect(body).toMatchObject({
       type: "StartWorkflowExecution",
       payload: { workflowExecutionId },
     });
+    expect(delivered.properties.messageId).toBe(body.messageId);
   });
 
   it("leaves a row claimed but unpublished when the broker rejects the publish", async () => {

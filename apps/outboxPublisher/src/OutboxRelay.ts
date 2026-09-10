@@ -36,23 +36,42 @@ export class OutboxRelay {
     this.logger.info({ count: claimed.length }, "claimed outbox messages");
 
     for (const row of claimed) {
+      let published = false;
+
       try {
         // Envelope only — a generic publisher cannot know every payload contract.
         const message = parseInternal(messageEnvelopeSchema, row.payload, "OutboxRelay.runBatch");
 
         await this.publisher.publish({
-          messageId: row.id,
+          messageId: message.messageId,
           routingKey: row.routing_key,
           body: message,
         });
-        await this.claimer.markOutboxMessagePublished(row.id);
 
-        this.logger.info({ outboxMessageId: row.id }, "published outbox message");
+        published = true;
+
+        const marked = await this.claimer.markOutboxMessagePublished(row.id);
+
+        if (!marked) {
+          this.logger.warn(
+            { outboxMessageId: row.id, messageId: message.messageId },
+            "published outbox message was no longer PROCESSING — it may be published again",
+          );
+
+          continue;
+        }
+
+        this.logger.info(
+          { outboxMessageId: row.id, messageId: message.messageId },
+          "published outbox message",
+        );
       } catch (error) {
         // Left PROCESSING on purpose — the stale-claim clause is what retries it.
         this.logger.error(
           { err: error, outboxMessageId: row.id },
-          "failed to publish outbox message",
+          published
+            ? "published outbox message but failed to mark it PUBLISHED — it will be published again"
+            : "failed to publish outbox message",
         );
       }
     }
