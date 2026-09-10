@@ -61,6 +61,8 @@ services:
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages/core:/app/packages/core
+      - /app/packages/core/dist
+      - /app/apps/api/dist
     environment:
       HOST: 0.0.0.0
       PORT: ${PORT}
@@ -79,17 +81,19 @@ services:
       context: .
       dockerfile: Dockerfile
       target: outbox-publisher-dev
-    # No depends_on for rabbitmq on purpose: the publisher must start and keep polling while the
-    # broker is unreachable, publishing only once its connection recovers.
     depends_on:
       postgres:
         condition: service_healthy
       liquibase:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
     restart: unless-stopped
     volumes:
       - ./apps/outboxPublisher:/app/apps/outboxPublisher
       - ./packages/core:/app/packages/core
+      - /app/packages/core/dist
+      - /app/apps/outboxPublisher/dist
     environment:
       PGHOST: postgres
       PGPORT: 5432
