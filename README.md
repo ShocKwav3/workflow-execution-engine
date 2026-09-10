@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution also writes a `StartWorkflowExecution` command to a transactional outbox table, in the same database transaction as the execution itself. RabbitMQ is provisioned, with a connection/channel/topology layer in place, but nothing publishes or consumes through it yet and nothing drains the outbox — so executions are created and persisted, commands accumulate unread, and no execution is processed. Scheduling and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution also writes a `StartWorkflowExecution` command to a transactional outbox table, in the same database transaction as the execution itself. A separate outbox publisher process drains that table and publishes each command to RabbitMQ on a confirm channel. Nothing consumes those commands yet, so they accumulate in the queue and no execution is processed. Scheduling and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -22,7 +22,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts the API (hot-reloading, bind-mounted source) on `http://localhost:${PORT}` (default `3000`). The API never opens an AMQP connection — it records outbound commands in the outbox table instead, and RabbitMQ starts alongside everything else with nothing publishing or consuming through it. Creating an execution therefore succeeds even while RabbitMQ is down.
+This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts two processes (hot-reloading, bind-mounted source): the API on `http://localhost:${PORT}` (default `3000`), and the outbox publisher. The API never opens an AMQP connection — it records outbound commands in the outbox table instead, so creating an execution succeeds even while RabbitMQ is down. The publisher polls that table, claims rows with `FOR UPDATE SKIP LOCKED`, and publishes each command with a publisher confirm before marking the row published; it starts and keeps polling even when the broker is unreachable, and reconnects on its own. Nothing consumes the queue yet.
 
 ```bash
 curl http://localhost:3000/health
@@ -42,8 +42,9 @@ Restarting only the API container (`docker compose restart api`) should not lose
 
 ```bash
 pnpm install
-pnpm build                 # builds every package, in dependency order (packages/core, then apps/api)
+pnpm build                 # builds every package, in dependency order (packages/core, then the apps)
 pnpm dev                   # workspace-wide watch build (TypeScript project references); compiles on any change
+                           # (containers don't use this — each runs its own app's dev script)
 pnpm test                  # vitest, full suite, spins up Testcontainers PostgreSQL + RabbitMQ
 pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi
@@ -59,6 +60,8 @@ pnpm --filter @workflow-engine/core test:unit          # no containers
 pnpm --filter @workflow-engine/core test:integration    # Postgres + RabbitMQ, scoped to packages/core
 pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres only, scoped to apps/api
+pnpm --filter @workflow-engine/outbox-publisher test:unit          # no containers
+pnpm --filter @workflow-engine/outbox-publisher test:integration   # Postgres + RabbitMQ
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
@@ -71,15 +74,18 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
   src/            DI container, error types, database pool + readers/writers, transactional outbox, services, AMQP connection/topology/message contracts, logging, config
-  test/           shared test harness/fixtures (used by both packages, excluded from the build)
+  test/           shared test harness/fixtures (used across packages, excluded from the build)
 
 apps/api/         @workflow-engine/api — the HTTP process
   bruno/          HTTP client collection
   spec/           generated OpenAPI documents (per API version)
   src/            routes, Fastify app/server setup, composition root
 
+apps/outboxPublisher/  @workflow-engine/outbox-publisher — drains the outbox table to RabbitMQ
+  src/            poll loop, outbox relay, composition root, entrypoint
+
 docker-compose.yml
-Dockerfile        multi-stage: builder / dev (hot reload) / runtime (lean, prod)
+Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod)
 tsconfig.base.json
 pnpm-workspace.yaml
 ```

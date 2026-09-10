@@ -6,3 +6,10 @@ export class UnregisteredTokenError extends Error {
     this.name = "UnregisteredTokenError";
   }
 }
+
+export class ContainerDisposedError extends Error {
+  constructor(token: Token<unknown>) {
+    super(`Container was disposed; cannot resolve token: ${token.description ?? String(token)}`);
+    this.name = "ContainerDisposedError";
+  }
+}

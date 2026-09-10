@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import { ClassifiedError, parseInternal } from "@/errors/index.js";
+import { WORKFLOW_VERSION_STATUS } from "../types.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateExecutionInput,
@@ -38,7 +39,7 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
         throw new WorkflowVersionMismatchError({ workflowId, workflowVersionId });
       }
 
-      if (workflowVersion.status !== "PUBLISHED") {
+      if (workflowVersion.status !== WORKFLOW_VERSION_STATUS.PUBLISHED) {
         throw new VersionNotPublishedError(workflowVersion.version, {
           workflowId,
           workflowVersionId,

@@ -1,14 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { parseInternal } from "@/errors/index.js";
+import { messageEnvelopeSchema } from "./envelope.js";
 
 export const START_WORKFLOW_EXECUTION = "StartWorkflowExecution";
 
-export const startWorkflowExecutionMessageSchema = z.object({
-  messageId: z.uuid(),
-  correlationId: z.uuid(),
+export const startWorkflowExecutionMessageSchema = messageEnvelopeSchema.extend({
   type: z.literal(START_WORKFLOW_EXECUTION),
-  occurredAt: z.iso.datetime(),
   payload: z.object({
     workflowExecutionId: z.uuid(),
   }),

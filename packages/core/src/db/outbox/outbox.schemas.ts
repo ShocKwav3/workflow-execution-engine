@@ -11,3 +11,13 @@ export const addOutboxMessageInputSchema = z.object({
 });
 
 export type AddOutboxMessageInput = z.infer<typeof addOutboxMessageInputSchema>;
+
+export const outboxMessageIdSchema = z.uuid();
+
+export const claimOutboxMessagesInputSchema = z.object({
+  destination: z.enum(OUTBOX_DESTINATIONS),
+  staleClaimSeconds: z.int32().positive(),
+  batchSize: z.int32().positive(),
+});
+
+export type ClaimOutboxMessagesInput = z.infer<typeof claimOutboxMessagesInputSchema>;

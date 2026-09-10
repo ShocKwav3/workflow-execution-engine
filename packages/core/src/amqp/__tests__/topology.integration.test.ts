@@ -1,12 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createAmqpChannel } from "@/amqp/channel.js";
 import { AMQP_TOPOLOGY, declareTopology } from "@/amqp/topology.js";
-import {
-  type TestRabbitmq,
-  startTestRabbitmq,
-  stopTestRabbitmq,
-  testLogger,
-} from "@core-test/testRabbitmq.js";
+import { type TestRabbitmq, startTestRabbitmq, stopTestRabbitmq } from "@core-test/testRabbitmq.js";
 
 describe("declareTopology", () => {
   let rabbitmq: TestRabbitmq;
@@ -20,7 +14,7 @@ describe("declareTopology", () => {
   });
 
   it("declares the exchange, queue, and binding", async () => {
-    const channel = await createAmqpChannel(rabbitmq.connectionModel, testLogger);
+    const channel = await rabbitmq.connectionModel.createChannel();
 
     await expect(declareTopology(channel)).resolves.toBeUndefined();
 
@@ -28,7 +22,7 @@ describe("declareTopology", () => {
   });
 
   it("is idempotent — redeclaring identical topology does not throw", async () => {
-    const channel = await createAmqpChannel(rabbitmq.connectionModel, testLogger);
+    const channel = await rabbitmq.connectionModel.createChannel();
 
     await declareTopology(channel);
     await expect(declareTopology(channel)).resolves.toBeUndefined();
@@ -37,7 +31,10 @@ describe("declareTopology", () => {
   });
 
   it("rejects redeclaring the queue with a mismatched argument", async () => {
-    const channel = await createAmqpChannel(rabbitmq.connectionModel, testLogger);
+    const channel = await rabbitmq.connectionModel.createChannel();
+
+    // The broker closes the channel on a failed assertion, so the 'error' it emits needs an owner.
+    channel.on("error", () => {});
 
     await declareTopology(channel);
 

@@ -29,7 +29,8 @@ const specResolver: Resolver = {
   },
 };
 
-const app = await buildApp({ ...loadAppConfig(), logLevel: "silent" });
+const config = loadAppConfig();
+const app = await buildApp({ ...config, log: { ...config.log, logLevel: "silent" } });
 
 await app.register(registerRoutes, { container: specResolver });
 await app.ready();

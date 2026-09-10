@@ -1,9 +1,8 @@
-import type { Channel, ChannelModel, ConfirmChannel } from "amqplib";
 import { createToken } from "@/di/token.js";
+import type { AmqpConnectionConfig } from "./config.js";
+import type { MessagePublisher } from "./MessagePublisher.js";
 
-// Ports, not implementations — type-only imports above, so importing a token never pulls amqplib in.
-export const amqpConnectionToken = createToken<ChannelModel>("amqpConnection");
+export const amqpConnectionConfigToken = createToken<AmqpConnectionConfig>("amqpConnectionConfig");
 
-export const amqpChannelToken = createToken<Channel>("amqpChannel");
-
-export const amqpConfirmChannelToken = createToken<ConfirmChannel>("amqpConfirmChannel");
+// Port, not implementation — type-only import above, so importing the token never pulls amqplib in.
+export const messagePublisherToken = createToken<MessagePublisher>("messagePublisher");
