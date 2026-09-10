@@ -20,7 +20,6 @@
     "amqplib": "^2.0.1"
   },
   "devDependencies": {
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"
   }
 }

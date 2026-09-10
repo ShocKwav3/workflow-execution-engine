@@ -26,7 +26,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"
   }
 }
