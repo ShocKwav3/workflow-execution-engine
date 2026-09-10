@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import type { MessagePublisher } from "@workflow-engine/core/amqp/MessagePublisher.js";
+import type { MessageEnvelope } from "@workflow-engine/core/amqp/messages/envelope.js";
 import { createStartWorkflowExecutionMessage } from "@workflow-engine/core/amqp/messages/startWorkflowExecution.js";
 import { AMQP_TOPOLOGY } from "@workflow-engine/core/amqp/topology.js";
 import type { OutboxClaimer } from "@workflow-engine/core/db/outbox/OutboxClaimer.js";
@@ -36,9 +37,11 @@ const outboxRow = (payload: unknown = createStartWorkflowExecutionMessage(random
     created_at: new Date(),
   }) satisfies OutboxMessageRow;
 
+const envelopeOf = (row: OutboxMessageRow) => row.payload as MessageEnvelope;
+
 const claimerFor = (rows: OutboxMessageRow[]): OutboxClaimer => ({
   claimOutboxMessages: vi.fn().mockResolvedValue(rows),
-  markOutboxMessagePublished: vi.fn().mockResolvedValue(undefined),
+  markOutboxMessagePublished: vi.fn().mockResolvedValue(true),
 });
 
 const publisherThat = (behaviour: MessagePublisher["publish"]): MessagePublisher => ({
@@ -60,17 +63,26 @@ const relayFor = (claimer: OutboxClaimer, publisher: MessagePublisher, logger = 
   new OutboxRelay(claimer, publisher, logger, { batchSize: 10, staleClaimSeconds: 30 });
 
 describe("OutboxRelay", () => {
-  it("publishes each claimed row under its own routing key and id", async () => {
+  it("publishes each claimed row under its own routing key and envelope message id", async () => {
     const row = outboxRow();
     const publisher = acceptingPublisher();
 
     await relayFor(claimerFor([row]), publisher).runBatch();
 
     expect(publisher.publish).toHaveBeenCalledExactlyOnceWith({
-      messageId: row.id,
+      messageId: envelopeOf(row).messageId,
       routingKey: row.routing_key,
       body: row.payload,
     });
+  });
+
+  it("publishes under the envelope's id rather than the outbox row's id", async () => {
+    const row = outboxRow();
+    const publisher = acceptingPublisher();
+
+    await relayFor(claimerFor([row]), publisher).runBatch();
+
+    expect(vi.mocked(publisher.publish).mock.calls[0]?.[0].messageId).not.toBe(row.id);
   });
 
   it("marks a row published only after the publish resolves", async () => {
@@ -84,6 +96,8 @@ describe("OutboxRelay", () => {
 
     vi.mocked(claimer.markOutboxMessagePublished).mockImplementation(async () => {
       order.push("mark");
+
+      return true;
     });
 
     await relayFor(claimer, publisher).runBatch();
@@ -104,7 +118,7 @@ describe("OutboxRelay", () => {
     const healthy = outboxRow();
     const claimer = claimerFor([failing, healthy]);
     const publisher = publisherThat((message) =>
-      message.messageId === failing.id
+      message.messageId === envelopeOf(failing).messageId
         ? Promise.reject(new Error("broker unreachable"))
         : Promise.resolve(),
     );
@@ -135,6 +149,35 @@ describe("OutboxRelay", () => {
       expect.objectContaining({ err: expect.any(InternalValidationError) }),
       "failed to publish outbox message",
     );
+  });
+
+  it("distinguishes a failed publish from a publish that could not be marked", async () => {
+    const logger = testLogger();
+    const claimer = claimerFor([outboxRow()]);
+
+    vi.mocked(claimer.markOutboxMessagePublished).mockRejectedValue(new Error("database gone"));
+
+    await relayFor(claimer, acceptingPublisher(), logger).runBatch();
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.any(Error) }),
+      "published outbox message but failed to mark it PUBLISHED — it will be published again",
+    );
+  });
+
+  it("warns when a published row was no longer PROCESSING", async () => {
+    const logger = testLogger();
+    const claimer = claimerFor([outboxRow()]);
+
+    vi.mocked(claimer.markOutboxMessagePublished).mockResolvedValue(false);
+
+    await relayFor(claimer, acceptingPublisher(), logger).runBatch();
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ outboxMessageId: expect.any(String) }),
+      "published outbox message was no longer PROCESSING — it may be published again",
+    );
+    expect(logger.info).not.toHaveBeenCalledWith(expect.anything(), "published outbox message");
   });
 
   it("does nothing when there is nothing to claim", async () => {
@@ -183,7 +226,7 @@ describe("OutboxRelay", () => {
     await relayFor(claimer, publisher).runBatch();
 
     expect(publisher.publish).toHaveBeenCalledExactlyOnceWith({
-      messageId: row.id,
+      messageId: envelopeOf(row).messageId,
       routingKey: row.routing_key,
       body: row.payload,
     });

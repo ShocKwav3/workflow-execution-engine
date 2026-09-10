@@ -7,11 +7,10 @@ import { PublisherRuntime } from "./PublisherRuntime.js";
 // Must stay below docker stop's 10s and Kubernetes' terminationGracePeriodSeconds (default 30).
 const SHUTDOWN_TIMEOUT_MS = 8_000;
 
-const config = loadOutboxPublisherConfig();
 const logger = createLogger(loadLogConfig());
 const lifecycleLogger = createContextLogger(logger, "Lifecycle");
-const runtime = new PublisherRuntime(config, logger);
 
+let runtime: PublisherRuntime | undefined;
 let shuttingDown = false;
 
 async function shutdown(reason: string, exitCode: number): Promise<void> {
@@ -29,7 +28,7 @@ async function shutdown(reason: string, exitCode: number): Promise<void> {
 
   forceExit.unref();
 
-  const [closed] = await Promise.allSettled([runtime.close()]);
+  const [closed] = await Promise.allSettled([runtime?.close()]);
 
   clearTimeout(forceExit);
 
@@ -57,5 +56,13 @@ process.on("uncaughtException", (error: Error) => {
   void shutdown("uncaught exception", 1);
 });
 
-runtime.start();
-lifecycleLogger.info("outbox publisher ready");
+// Construction happens under the handlers above, so a startup failure is logged, not printed raw.
+try {
+  runtime = new PublisherRuntime(loadOutboxPublisherConfig(), logger);
+
+  runtime.start();
+  lifecycleLogger.info("outbox publisher ready");
+} catch (error) {
+  lifecycleLogger.fatal({ err: error }, "outbox publisher failed to start");
+  process.exit(1);
+}

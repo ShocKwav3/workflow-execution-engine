@@ -52,7 +52,7 @@ export class PgOutboxClaimer implements OutboxClaimer {
     }
   }
 
-  async markOutboxMessagePublished(id: string): Promise<void> {
+  async markOutboxMessagePublished(id: string): Promise<boolean> {
     const validId = parseInternal(
       outboxMessageIdSchema,
       id,
@@ -60,10 +60,12 @@ export class PgOutboxClaimer implements OutboxClaimer {
     );
 
     try {
-      await this.pool.query(
-        `UPDATE outbox_message SET status = $1, published_at = now() WHERE id = $2`,
-        [OUTBOX_MESSAGE_STATUS.PUBLISHED, validId],
+      const result = await this.pool.query(
+        `UPDATE outbox_message SET status = $1, published_at = now() WHERE id = $2 AND status = $3`,
+        [OUTBOX_MESSAGE_STATUS.PUBLISHED, validId, OUTBOX_MESSAGE_STATUS.PROCESSING],
       );
+
+      return result.rowCount === 1;
     } catch (error) {
       throw classifyPgError(error);
     }
