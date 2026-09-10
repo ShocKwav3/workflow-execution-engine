@@ -52,7 +52,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: dev
+      target: api-dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,6 +73,35 @@ services:
       LOG_PRETTY: "true"
     ports:
       - "${PORT}:${PORT}"
+
+  outbox-publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: outbox-publisher-dev
+    # No depends_on for rabbitmq on purpose: the publisher must start and keep polling while the
+    # broker is unreachable, publishing only once its connection recovers.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      liquibase:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    volumes:
+      - ./apps/outboxPublisher:/app/apps/outboxPublisher
+      - ./packages/core:/app/packages/core
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      OUTBOX_POLL_INTERVAL_MS: ${OUTBOX_POLL_INTERVAL_MS}
+      OUTBOX_BATCH_SIZE: ${OUTBOX_BATCH_SIZE}
+      OUTBOX_STALE_CLAIM_SECONDS: ${OUTBOX_STALE_CLAIM_SECONDS}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_PRETTY: "true"
 
 volumes:
   postgres_data:
