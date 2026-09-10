@@ -1,35 +1,18 @@
-import type { ChannelModel } from "amqplib";
-import { closeAmqpConnection, createAmqpConnection } from "@/amqp/connection.js";
+import amqplib, { type ChannelModel } from "amqplib";
 import { requireEnv } from "@/config/env.js";
-import type { Logger } from "@/logging/types.js";
-
-export const testLogger: Logger = {
-  child: () => testLogger,
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  fatal: () => {},
-};
-
-export interface TestRabbitmqConnection {
-  url: string;
-}
 
 export interface TestRabbitmq {
-  connection: TestRabbitmqConnection;
+  url: string;
   connectionModel: ChannelModel;
 }
 
 // One shared RabbitMQ container for the whole run (see globalSetup.ts).
 export async function startTestRabbitmq(): Promise<TestRabbitmq> {
-  const connection: TestRabbitmqConnection = {
-    url: requireEnv("TEST_RABBITMQ_URL", "is globalSetup wired up?"),
-  };
-  const connectionModel = await createAmqpConnection(connection, testLogger);
+  const url = requireEnv("TEST_RABBITMQ_URL", "is globalSetup wired up?");
 
-  return { connection, connectionModel };
+  return { url, connectionModel: await amqplib.connect(url) };
 }
 
 export async function stopTestRabbitmq(rabbitmq: TestRabbitmq): Promise<void> {
-  await closeAmqpConnection(rabbitmq.connectionModel);
+  await rabbitmq.connectionModel.close();
 }
