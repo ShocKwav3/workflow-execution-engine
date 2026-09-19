@@ -1,4 +1,4 @@
-import type { Channel, ConfirmChannel } from "amqplib";
+import type { Channel } from "amqplib";
 
 export const AMQP_TOPOLOGY = {
   exchange: "workflow.commands",
@@ -6,7 +6,7 @@ export const AMQP_TOPOLOGY = {
   routingKey: "workflow.execution.start",
 } as const;
 
-export async function declareTopology(channel: Channel | ConfirmChannel): Promise<void> {
+export async function declareTopology(channel: Channel): Promise<void> {
   await channel.assertExchange(AMQP_TOPOLOGY.exchange, "direct", { durable: true });
 
   await channel.assertQueue(AMQP_TOPOLOGY.queue, {

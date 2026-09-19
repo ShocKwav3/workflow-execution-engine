@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfirmChannel } from "amqplib";
+import { AmqpConnection } from "@/amqp/AmqpConnection.js";
 import { AmqpConnectionError, AmqpPublishError } from "@/amqp/errors/index.js";
 import { RabbitMqMessagePublisher } from "@/amqp/RabbitMqMessagePublisher.js";
 import { AMQP_TOPOLOGY } from "@/amqp/topology.js";
@@ -17,12 +18,23 @@ const silentLogger: Logger = {
 
 describe("RabbitMqMessagePublisher", () => {
   let rabbitmq: TestRabbitmq;
+  let connection: AmqpConnection;
   let publisher: RabbitMqMessagePublisher;
   let inspector: ConfirmChannel;
 
+  const publisherOn = (url: string) => {
+    const ownConnection = new AmqpConnection({ url }, silentLogger);
+
+    return {
+      connection: ownConnection,
+      publisher: new RabbitMqMessagePublisher(ownConnection, silentLogger),
+    };
+  };
+
   beforeAll(async () => {
     rabbitmq = await startTestRabbitmq();
-    publisher = new RabbitMqMessagePublisher({ url: rabbitmq.url }, silentLogger);
+    connection = new AmqpConnection({ url: rabbitmq.url }, silentLogger);
+    publisher = new RabbitMqMessagePublisher(connection, silentLogger);
 
     await publisher.ready();
 
@@ -30,7 +42,7 @@ describe("RabbitMqMessagePublisher", () => {
   }, 60_000);
 
   afterAll(async () => {
-    await publisher.dispose();
+    await connection.dispose();
     await stopTestRabbitmq(rabbitmq);
   });
 
@@ -68,9 +80,9 @@ describe("RabbitMqMessagePublisher", () => {
   });
 
   it("rejects with a classified error when no channel is available yet", async () => {
-    const unconnected = new RabbitMqMessagePublisher({ url: rabbitmq.url }, silentLogger);
+    const unconnected = publisherOn(rabbitmq.url);
 
-    const published = unconnected.publish({
+    const published = unconnected.publisher.publish({
       messageId: randomUUID(),
       routingKey: AMQP_TOPOLOGY.routingKey,
       body: {},
@@ -78,19 +90,19 @@ describe("RabbitMqMessagePublisher", () => {
 
     await expect(published).rejects.toBeInstanceOf(AmqpConnectionError);
 
-    await unconnected.ready();
-    await unconnected.dispose();
+    await unconnected.publisher.ready();
+    await unconnected.connection.dispose();
   });
 
   it("reopens its channel after a channel-level failure closes it", async () => {
-    const recovering = new RabbitMqMessagePublisher({ url: rabbitmq.url }, silentLogger);
+    const recovering = publisherOn(rabbitmq.url);
 
-    await recovering.ready();
+    await recovering.publisher.ready();
 
     // Publishing to a deleted exchange is a 404 the broker answers by killing the channel.
     await inspector.deleteExchange(AMQP_TOPOLOGY.exchange);
 
-    const failed = recovering.publish({
+    const failed = recovering.publisher.publish({
       messageId: randomUUID(),
       routingKey: AMQP_TOPOLOGY.routingKey,
       body: { hello: "gone" },
@@ -98,11 +110,13 @@ describe("RabbitMqMessagePublisher", () => {
 
     await expect(failed).rejects.toBeInstanceOf(AmqpPublishError);
 
-    await vi.waitFor(() => expect(recovering.isAvailable()).toBe(true), { timeout: 5_000 });
+    await vi.waitFor(() => expect(recovering.publisher.isAvailable()).toBe(true), {
+      timeout: 5_000,
+    });
 
     const messageId = randomUUID();
 
-    await recovering.publish({
+    await recovering.publisher.publish({
       messageId,
       routingKey: AMQP_TOPOLOGY.routingKey,
       body: { hello: "again" },
@@ -118,15 +132,16 @@ describe("RabbitMqMessagePublisher", () => {
 
     expect(delivered.properties.messageId).toBe(messageId);
 
-    await recovering.dispose();
+    await recovering.connection.dispose();
   });
 
   it("holds no connection when disposed before its first connect completes", async () => {
-    const early = new RabbitMqMessagePublisher({ url: rabbitmq.url }, silentLogger);
+    const early = publisherOn(rabbitmq.url);
 
-    await early.dispose();
-    await early.ready();
+    await early.connection.dispose();
+    await expect(early.publisher.ready()).rejects.toThrow();
 
-    expect(early.isAvailable()).toBe(false);
+    expect(early.connection.isUp()).toBe(false);
+    expect(early.publisher.isAvailable()).toBe(false);
   });
 });
