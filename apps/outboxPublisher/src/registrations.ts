@@ -1,7 +1,9 @@
+import { AmqpConnection } from "@workflow-engine/core/amqp/AmqpConnection.js";
 import { loadAmqpConnectionConfig } from "@workflow-engine/core/amqp/config.js";
 import { RabbitMqMessagePublisher } from "@workflow-engine/core/amqp/RabbitMqMessagePublisher.js";
 import {
   amqpConnectionConfigToken,
+  amqpConnectionToken,
   messagePublisherToken,
 } from "@workflow-engine/core/amqp/tokens.js";
 import { Container } from "@workflow-engine/core/di/container.js";
@@ -39,9 +41,14 @@ export function buildContainer(logger: Logger): Container {
   );
 
   container.register(
+    amqpConnectionToken,
+    (resolver) => new AmqpConnection(resolver.resolve(amqpConnectionConfigToken), amqpLogger),
+    { lifetime: "singleton" },
+  );
+
+  container.register(
     messagePublisherToken,
-    (resolver) =>
-      new RabbitMqMessagePublisher(resolver.resolve(amqpConnectionConfigToken), amqpLogger),
+    (resolver) => new RabbitMqMessagePublisher(resolver.resolve(amqpConnectionToken), amqpLogger),
     { lifetime: "singleton" },
   );
 
