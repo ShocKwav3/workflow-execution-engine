@@ -23,3 +23,18 @@ export function optionalIntEnv(name: string, fallback: number): number {
 
   return parsed;
 }
+
+// Strict so "10ms" or "0" fails at startup, not later at runtime; parseInt would accept both.
+export function positiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name]?.trim();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  if (!/^\d+$/.test(raw) || Number(raw) < 1) {
+    throw new Error(`Environment variable ${name} must be a positive integer, got: ${raw}`);
+  }
+
+  return Number(raw);
+}

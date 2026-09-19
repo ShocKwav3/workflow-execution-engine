@@ -107,6 +107,27 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       LOG_PRETTY: "true"
 
+  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: executor-dev
+    # service_started, never service_healthy: the executor must start and reconnect on its own.
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+    volumes:
+      - ./apps/executor:/app/apps/executor
+      - ./packages/core:/app/packages/core
+      - /app/packages/core/dist
+      - /app/apps/executor/dist
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      EXECUTOR_PREFETCH: ${EXECUTOR_PREFETCH}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_PRETTY: "true"
+
 volumes:
   postgres_data:
   rabbitmq_data:
