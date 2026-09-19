@@ -49,6 +49,13 @@ export default defineConfig({
           include: ["apps/outboxPublisher/**/*.integration.test.ts"],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: { label: "executor:unit", color: "cyan" },
+          include: ["apps/executor/**/*.unit.test.ts"],
+        },
+      },
     ],
   },
 });

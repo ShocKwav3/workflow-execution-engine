@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution also writes a `StartWorkflowExecution` command to a transactional outbox table, in the same database transaction as the execution itself. A separate outbox publisher process drains that table and publishes each command to RabbitMQ on a confirm channel. Nothing consumes those commands yet, so they accumulate in the queue and no execution is processed. Scheduling and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution also writes a `StartWorkflowExecution` command to a transactional outbox table, in the same database transaction as the execution itself. A separate outbox publisher process drains that table and publishes each command to RabbitMQ on a confirm channel. An executor process consumes those commands with manual acknowledgement and a bounded prefetch; it currently logs and acknowledges each one without advancing the execution, so executions stay `PENDING`. Scheduling and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -22,7 +22,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts two processes (hot-reloading, bind-mounted source): the API on `http://localhost:${PORT}` (default `3000`), and the outbox publisher. The API never opens an AMQP connection — it records outbound commands in the outbox table instead, so creating an execution succeeds even while RabbitMQ is down. The publisher polls that table, claims rows with `FOR UPDATE SKIP LOCKED`, and publishes each command with a publisher confirm before marking the row published; it starts and keeps polling even when the broker is unreachable, and reconnects on its own. Nothing consumes the queue yet.
+This starts PostgreSQL, runs Liquibase migrations, starts RabbitMQ, and starts three processes (hot-reloading, bind-mounted source): the API on `http://localhost:${PORT}` (default `3000`), the outbox publisher, and the executor. The API never opens an AMQP connection — it records outbound commands in the outbox table instead, so creating an execution succeeds even while RabbitMQ is down. The publisher polls that table, claims rows with `FOR UPDATE SKIP LOCKED`, and publishes each command with a publisher confirm before marking the row published; it starts and keeps polling even when the broker is unreachable, and reconnects on its own. The executor subscribes to the queue with manual acknowledgement and a prefetch of `EXECUTOR_PREFETCH` (default `1`); like the publisher, it starts while the broker is down and subscribes once it is reachable.
 
 ```bash
 curl http://localhost:3000/health
@@ -62,6 +62,7 @@ pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres only, scoped to apps/api
 pnpm --filter @workflow-engine/outbox-publisher test:unit          # no containers
 pnpm --filter @workflow-engine/outbox-publisher test:integration   # Postgres + RabbitMQ
+pnpm --filter @workflow-engine/executor test:unit                  # no containers
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
@@ -83,6 +84,9 @@ apps/api/         @workflow-engine/api — the HTTP process
 
 apps/outboxPublisher/  @workflow-engine/outbox-publisher — drains the outbox table to RabbitMQ
   src/            poll loop, outbox relay, composition root, entrypoint
+
+apps/executor/    @workflow-engine/executor — consumes work commands from RabbitMQ
+  src/            message handler, consumer runtime, composition root, entrypoint
 
 docker-compose.yml
 Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod)

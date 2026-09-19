@@ -9,6 +9,9 @@
     },
     {
       "path": "apps/outboxPublisher/tsconfig.build.json"
+    },
+    {
+      "path": "apps/executor/tsconfig.build.json"
     }
   ]
 }
