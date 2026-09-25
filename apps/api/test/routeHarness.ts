@@ -24,6 +24,5 @@ export async function stopRouteHarness(harness: RouteHarness): Promise<void> {
 }
 
 export async function resetRouteHarness(harness: RouteHarness): Promise<void> {
-  // outbox_message has no foreign key into workflow, so CASCADE does not reach it.
-  await harness.db.pool.query("TRUNCATE workflow, outbox_message CASCADE");
+  await harness.db.pool.query("TRUNCATE workflow CASCADE");
 }

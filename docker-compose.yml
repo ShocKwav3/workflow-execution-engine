@@ -31,23 +31,6 @@ services:
       - --username=${PGUSER}
       - --password=${PGPASSWORD}
 
-  rabbitmq:
-    image: rabbitmq:${RABBITMQ_VERSION}-management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
   api:
     build:
       context: .
@@ -76,58 +59,5 @@ services:
     ports:
       - "${PORT}:${PORT}"
 
-  outbox-publisher:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: outbox-publisher-dev
-    depends_on:
-      postgres:
-        condition: service_healthy
-      liquibase:
-        condition: service_completed_successfully
-      rabbitmq:
-        condition: service_started
-    restart: unless-stopped
-    volumes:
-      - ./apps/outboxPublisher:/app/apps/outboxPublisher
-      - ./packages/core:/app/packages/core
-      - /app/packages/core/dist
-      - /app/apps/outboxPublisher/dist
-    environment:
-      PGHOST: postgres
-      PGPORT: 5432
-      PGDATABASE: ${PGDATABASE}
-      PGUSER: ${PGUSER}
-      PGPASSWORD: ${PGPASSWORD}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      OUTBOX_POLL_INTERVAL_MS: ${OUTBOX_POLL_INTERVAL_MS}
-      OUTBOX_BATCH_SIZE: ${OUTBOX_BATCH_SIZE}
-      OUTBOX_STALE_CLAIM_SECONDS: ${OUTBOX_STALE_CLAIM_SECONDS}
-      LOG_LEVEL: ${LOG_LEVEL}
-      LOG_PRETTY: "true"
-
-  executor:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: executor-dev
-    # service_started, never service_healthy: the executor must start and reconnect on its own.
-    depends_on:
-      rabbitmq:
-        condition: service_started
-    restart: unless-stopped
-    volumes:
-      - ./apps/executor:/app/apps/executor
-      - ./packages/core:/app/packages/core
-      - /app/packages/core/dist
-      - /app/apps/executor/dist
-    environment:
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      EXECUTOR_PREFETCH: ${EXECUTOR_PREFETCH}
-      LOG_LEVEL: ${LOG_LEVEL}
-      LOG_PRETTY: "true"
-
 volumes:
   postgres_data:
-  rabbitmq_data:
