@@ -25,8 +25,6 @@ import { PgNodeWriter } from "@workflow-engine/core/db/node/PgNodeWriter.js";
 import { createTransactionRunner } from "@workflow-engine/core/db/transaction.js";
 import { PgWorkflowExecutionReader } from "@workflow-engine/core/db/workflowExecution/PgWorkflowExecutionReader.js";
 import { PgWorkflowExecutionWriter } from "@workflow-engine/core/db/workflowExecution/PgWorkflowExecutionWriter.js";
-import { PgOutboxWriter } from "@workflow-engine/core/db/outbox/PgOutboxWriter.js";
-import { AmqpWorkflowExecutionOutbox } from "@workflow-engine/core/db/outbox/AmqpWorkflowExecutionOutbox.js";
 import { PgNodeExecutionReader } from "@workflow-engine/core/db/nodeExecution/PgNodeExecutionReader.js";
 import {
   workflowServiceToken,
@@ -107,7 +105,6 @@ export function buildContainer(logger: Logger): Container {
     (resolver) =>
       createTransactionRunner(resolver.resolve(pgPoolToken), (client) => ({
         workflowExecutions: new PgWorkflowExecutionWriter(client),
-        workflowExecutionOutbox: new AmqpWorkflowExecutionOutbox(new PgOutboxWriter(client)),
       })),
     { lifetime: "singleton" },
   );

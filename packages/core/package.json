@@ -31,10 +31,6 @@
       "types": "./dist/src/services/*.d.ts",
       "default": "./dist/src/services/*.js"
     },
-    "./amqp/*.js": {
-      "types": "./dist/src/amqp/*.d.ts",
-      "default": "./dist/src/amqp/*.js"
-    },
     "./test/*.js": "./test/*.ts"
   },
   "scripts": {
@@ -46,14 +42,12 @@
     "test:integration": "vitest run --project integration"
   },
   "dependencies": {
-    "amqplib": "^2.0.1",
     "pg": "^8.23.0",
     "pino": "^10.3.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^12.1.0",
-    "@testcontainers/rabbitmq": "^12.1.0",
     "@types/pg": "^8.21.0",
     "testcontainers": "^12.1.0",
     "vitest": "^4.1.10"
