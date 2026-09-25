@@ -31,6 +31,10 @@
       "types": "./dist/src/services/*.d.ts",
       "default": "./dist/src/services/*.js"
     },
+    "./schemas/*.js": {
+      "types": "./dist/src/schemas/*.d.ts",
+      "default": "./dist/src/schemas/*.js"
+    },
     "./test/*.js": "./test/*.ts"
   },
   "scripts": {
