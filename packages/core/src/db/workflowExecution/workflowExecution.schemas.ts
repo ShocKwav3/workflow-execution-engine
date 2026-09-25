@@ -1,16 +1,15 @@
-import { z } from "zod";
+import type { z } from "zod";
+import { workflowExecutionSchema } from "@/schemas/workflowExecution.schemas.js";
 
 // Fails predictably on a malformed id instead of leaking a raw Postgres type-cast error.
-export const executionIdSchema = z.uuid();
+export const executionIdSchema = workflowExecutionSchema.shape.id;
 
 // Client-supplied through the Idempotency-Key header, which no route schema validates.
-export const idempotencyKeySchema = z.string().trim().min(1).optional();
+export const idempotencyKeySchema = workflowExecutionSchema.shape.idempotencyKey.optional();
 
-export const createExecutionInputSchema = z.object({
-  workflowId: z.uuid(),
-  workflowVersionId: z.uuid(),
-  idempotencyKey: idempotencyKeySchema,
-});
+export const createExecutionInputSchema = workflowExecutionSchema
+  .pick({ workflowId: true, workflowVersionId: true })
+  .extend({ idempotencyKey: idempotencyKeySchema });
 
 export const createExecutionRefSchema = createExecutionInputSchema.omit({ idempotencyKey: true });
 
