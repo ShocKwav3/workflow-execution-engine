@@ -73,4 +73,30 @@ describe("POST /workflows/{workflowId}/executions", () => {
 
     expect(second.json().executionId).toBe(first.json().executionId);
   });
+
+  it("carries the request's correlation id into the outbox row", async () => {
+    const { workflow, version } = await seedPublishedVersion(harness.db.pool, DEFINITION);
+    const correlationId = "3f6c1a2e-8b4d-4c1e-9a7f-2d5e6b8c9a01";
+
+    const response = await harness.app.inject({
+      method: "POST",
+      url: `/api/v1/workflows/${workflow.id}/executions`,
+      payload: { workflowVersionId: version.id },
+      headers: { "x-correlation-id": correlationId },
+    });
+    const outbox = await harness.db.pool.query(
+      "SELECT correlation_id, payload FROM outbox_message",
+    );
+
+    expect(outbox.rows).toEqual([
+      {
+        correlation_id: correlationId,
+        payload: {
+          schemaVersion: 1,
+          executionId: response.json().executionId,
+          correlationId,
+        },
+      },
+    ]);
+  });
 });

@@ -5,7 +5,7 @@ import { WORKFLOW_EXECUTION_STATUS } from "@/schemas/workflowExecution.schemas.j
 import { InternalValidationError } from "@/errors/index.js";
 import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
-import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
+import type { CreateWorkflowExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
 import { PgWorkflowExecutionReader } from "@/db/workflowExecution/PgWorkflowExecutionReader.js";
 import type { CreateWorkflowExecutionResult } from "@/db/workflowExecution/WorkflowExecutionWriter.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
@@ -23,7 +23,9 @@ describe("workflow execution persistence", () => {
   let unitOfWork: WorkflowExecutionUnitOfWork;
   let nodeExecutionReader: PgNodeExecutionReader;
 
-  const createExecution = (input: CreateExecutionInput): Promise<CreateWorkflowExecutionResult> =>
+  const createExecution = (
+    input: CreateWorkflowExecutionInput,
+  ): Promise<CreateWorkflowExecutionResult> =>
     unitOfWork.run(({ workflowExecutions }) => workflowExecutions.createWorkflowExecution(input));
 
   beforeAll(async () => {

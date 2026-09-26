@@ -1,5 +1,6 @@
 import type { NodeConfig } from "@/schemas/node.schemas.js";
 import type { NodeExecutionStatus } from "@/schemas/nodeExecution.schemas.js";
+import type { OutboxDestination, OutboxMessageStatus } from "@/schemas/outboxMessage.schemas.js";
 import type { WorkflowExecutionStatus } from "@/schemas/workflowExecution.schemas.js";
 import type { WorkflowVersionStatus } from "@/schemas/workflowVersion.schemas.js";
 
@@ -57,4 +58,18 @@ export interface NodeExecutionAttemptRow {
   started_at: Date | null;
   finished_at: Date | null;
   error: string | null;
+}
+
+export interface OutboxMessageRow {
+  id: string;
+  destination: OutboxDestination;
+  message_type: string;
+  payload: Record<string, unknown>;
+  correlation_id: string;
+  status: OutboxMessageStatus;
+  claim_token: string | null;
+  lease_until: Date | null;
+  attempts: number;
+  created_at: Date;
+  published_at: Date | null;
 }

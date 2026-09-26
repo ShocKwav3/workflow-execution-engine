@@ -26,17 +26,23 @@ body:json {
 
 script:post-response {
   if (res.status === 201) {
-    bru.setVar("executionId", res.body.id);
+    bru.setVar("executionId", res.body.executionId);
   }
 }
 
 docs {
   # Create Execution
 
-  Starts one execution and returns immediately with `status: "CREATED"` — nothing
-  processes it yet (no executor exists). In the same transaction, one `node_execution`
-  per node in the version is snapshotted (all `PENDING`). The execution stays `CREATED`
-  until a worker process exists to advance it.
+  Starts one execution and returns immediately with its `executionId`. The execution is
+  created as `CREATED`. In the same transaction, one `node_execution` per node in the
+  version is snapshotted (all `PENDING`), and one `outbox_message` row (`PENDING`) records
+  the `StartWorkflowExecution` job to dispatch. Nothing publishes that row yet, so the
+  execution stays `CREATED`.
+
+  ## x-correlation-id
+  Optional. A valid UUID is kept and stored on the outbox row and in the job payload;
+  anything else is replaced with a generated UUID. The value used is echoed back in the
+  response header.
 
   The version must be `PUBLISHED` (`409` if still `DRAFT`).
 

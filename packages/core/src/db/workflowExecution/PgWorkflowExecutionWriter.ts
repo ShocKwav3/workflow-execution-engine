@@ -4,8 +4,8 @@ import { ClassifiedError, parseInternal } from "@/errors/index.js";
 import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
-  type CreateExecutionInput,
-  createExecutionRefSchema,
+  type CreateWorkflowExecutionInput,
+  createWorkflowExecutionRefSchema,
   idempotencyKeySchema,
 } from "./workflowExecution.schemas.js";
 import type {
@@ -18,10 +18,10 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
   constructor(private readonly client: PoolClient) {}
 
   async createWorkflowExecution(
-    input: CreateExecutionInput,
+    input: CreateWorkflowExecutionInput,
   ): Promise<CreateWorkflowExecutionResult> {
     const { workflowId, workflowVersionId } = parseInternal(
-      createExecutionRefSchema,
+      createWorkflowExecutionRefSchema,
       input,
       "PgWorkflowExecutionWriter.createWorkflowExecution",
     );
