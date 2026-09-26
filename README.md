@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it and returns immediately; nothing dispatches the work yet, so executions stay `CREATED`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; nothing publishes the outbox yet, so executions stay `CREATED`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
