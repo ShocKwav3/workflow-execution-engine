@@ -1,4 +1,5 @@
 import type { NodeExecutionAttemptRow } from "@/db/types.js";
+import type { NodeExecutionStatus } from "@/schemas/nodeExecution.schemas.js";
 
 export interface NodeExecutionWithNode {
   id: string;
@@ -7,7 +8,7 @@ export interface NodeExecutionWithNode {
   name: string;
   type: string;
   sequence: number;
-  status: string;
+  status: NodeExecutionStatus;
   created_at: Date;
   updated_at: Date;
 }
@@ -24,7 +25,7 @@ export interface NodeHistoryQueryRow {
   node_name: string;
   node_type: string;
   node_sequence: number;
-  node_execution_status: string;
+  node_execution_status: NodeExecutionStatus;
   node_execution_created_at: Date;
   node_execution_updated_at: Date;
   attempt_id: string | null;

@@ -6,14 +6,14 @@ import {
 import { z } from "zod";
 import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
-const { id, workflowExecutionId, nodeId } = nodeExecutionSchema.shape;
+const { id, workflowExecutionId, nodeId, status } = nodeExecutionSchema.shape;
 const attempt = nodeExecutionAttemptSchema.shape;
 
 export const nodeExecutionListItemResponseSchema = z.object({
   id: id.max(36).describe("Node execution ID."),
   workflowExecutionId: workflowExecutionId.max(36).describe("ID of the parent workflow execution."),
   nodeId: nodeId.max(36).describe("ID of the executed node."),
-  status: z.string().max(50).describe("Current node execution status."),
+  status: status.describe("Current node execution status."),
   createdAt: z.iso.datetime().max(35).describe("When the node execution was created."),
   updatedAt: z.iso.datetime().max(35).describe("When the node execution was last updated."),
 });
@@ -59,7 +59,7 @@ export const nodeExecutionDetailResponseSchema = z.object({
   name: nodeSchema.shape.name.max(255).describe("Node name, snapshotted at execution time."),
   type: nodeSchema.shape.type.max(100).describe("Node type, snapshotted at execution time."),
   sequence: detailSequenceSchema,
-  status: z.string().max(50).describe("Current node execution status."),
+  status: status.describe("Current node execution status."),
   createdAt: z.iso.datetime().max(35).describe("When the node execution was created."),
   updatedAt: z.iso.datetime().max(35).describe("When the node execution was last updated."),
   attempts: z

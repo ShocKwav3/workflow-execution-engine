@@ -33,9 +33,9 @@ script:post-response {
 docs {
   # Create Execution
 
-  Starts one execution and returns immediately with `status: "PENDING"` — nothing
+  Starts one execution and returns immediately with `status: "CREATED"` — nothing
   processes it yet (no executor exists). In the same transaction, one `node_execution`
-  per node in the version is snapshotted (all `PENDING`). The execution stays `PENDING`
+  per node in the version is snapshotted (all `PENDING`). The execution stays `CREATED`
   until a worker process exists to advance it.
 
   The version must be `PUBLISHED` (`409` if still `DRAFT`).

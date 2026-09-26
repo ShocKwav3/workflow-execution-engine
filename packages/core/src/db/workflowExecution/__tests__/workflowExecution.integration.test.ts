@@ -1,6 +1,7 @@
 import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { EXECUTION_STATUS } from "@/db/types.js";
+import { NODE_EXECUTION_STATUS } from "@/schemas/nodeExecution.schemas.js";
+import { WORKFLOW_EXECUTION_STATUS } from "@/schemas/workflowExecution.schemas.js";
 import { InternalValidationError } from "@/errors/index.js";
 import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.js";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
@@ -52,7 +53,7 @@ describe("workflow execution persistence", () => {
     });
 
     expect(created).toBe(true);
-    expect(execution.status).toBe(EXECUTION_STATUS.PENDING);
+    expect(execution.status).toBe(WORKFLOW_EXECUTION_STATUS.CREATED);
 
     const nodeExecutions = await nodeExecutionReader.getNodeExecutionsForWorkflowExecution({
       workflowId: workflow.id,
@@ -61,7 +62,7 @@ describe("workflow execution persistence", () => {
 
     expect(nodeExecutions).toHaveLength(nodes.length);
     expect(nodeExecutions.map((ne) => ne.node_id).sort()).toEqual(nodes.map((n) => n.id).sort());
-    expect(nodeExecutions.every((ne) => ne.status === EXECUTION_STATUS.PENDING)).toBe(true);
+    expect(nodeExecutions.every((ne) => ne.status === NODE_EXECUTION_STATUS.PENDING)).toBe(true);
   });
 
   it("returns the existing execution on a repeated idempotency key, without creating a duplicate", async () => {

@@ -13,7 +13,8 @@ import {
   workflowVersionRefSchema,
 } from "./workflowVersion.schemas.js";
 import type { WorkflowVersionWriter } from "./WorkflowVersionWriter.js";
-import { type WorkflowVersionRow, WORKFLOW_VERSION_STATUS } from "../types.js";
+import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
+import type { WorkflowVersionRow } from "../types.js";
 
 export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
   constructor(private readonly client: PoolClient) {}

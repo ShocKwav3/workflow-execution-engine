@@ -41,7 +41,7 @@ describe("GET /workflows/{workflowId}/executions/{executionId}", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json().status).toBe("PENDING");
+    expect(response.json().status).toBe("CREATED");
   });
 
   it("does not expose an execution under a workflow it doesn't belong to", async () => {
