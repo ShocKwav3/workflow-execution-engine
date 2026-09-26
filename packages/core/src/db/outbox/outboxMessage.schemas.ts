@@ -18,3 +18,10 @@ export const claimOutboxMessagesInputSchema = outboxMessageSchema
   });
 
 export type ClaimOutboxMessagesInput = z.infer<typeof claimOutboxMessagesInputSchema>;
+
+export const markOutboxMessagePublishedInputSchema = outboxMessageSchema.pick({
+  id: true,
+  claimToken: true,
+});
+
+export type MarkOutboxMessagePublishedInput = z.infer<typeof markOutboxMessagePublishedInputSchema>;

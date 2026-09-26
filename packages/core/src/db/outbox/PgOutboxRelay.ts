@@ -1,9 +1,12 @@
 import type { Pool } from "pg";
 import { parseInternal } from "@/errors/index.js";
+import { OUTBOX_MESSAGE_STATUS } from "@/schemas/outboxMessage.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type ClaimOutboxMessagesInput,
+  type MarkOutboxMessagePublishedInput,
   claimOutboxMessagesInputSchema,
+  markOutboxMessagePublishedInputSchema,
 } from "./outboxMessage.schemas.js";
 import type { OutboxRelay } from "./OutboxRelay.js";
 import type { OutboxMessageRow } from "../types.js";
@@ -49,6 +52,27 @@ export class PgOutboxRelay implements OutboxRelay {
       ]);
 
       return result.rows;
+    } catch (error) {
+      throw classifyPgError(error);
+    }
+  }
+
+  async markOutboxMessagePublished(input: MarkOutboxMessagePublishedInput): Promise<boolean> {
+    const { id, claimToken } = parseInternal(
+      markOutboxMessagePublishedInputSchema,
+      input,
+      "PgOutboxRelay.markOutboxMessagePublished",
+    );
+
+    try {
+      const result = await this.pool.query(
+        `UPDATE outbox_message
+         SET status = $3, published_at = now(), lease_until = NULL
+         WHERE id = $1 AND claim_token = $2 AND status = $4`,
+        [id, claimToken, OUTBOX_MESSAGE_STATUS.PUBLISHED, OUTBOX_MESSAGE_STATUS.PROCESSING],
+      );
+
+      return result.rowCount === 1;
     } catch (error) {
       throw classifyPgError(error);
     }

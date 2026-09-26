@@ -155,4 +155,61 @@ describe("outbox relay", () => {
       await expect(claimWith).rejects.toHaveProperty("cause", expect.any(ZodError));
     });
   });
+
+  describe("markOutboxMessagePublished", () => {
+    const markPublished = (row: OutboxMessageRow) =>
+      relay.markOutboxMessagePublished({ id: row.id, claimToken: row.claim_token! });
+
+    const readRow = async (id: string) =>
+      (await db.pool.query<OutboxMessageRow>("SELECT * FROM outbox_message WHERE id = $1", [id]))
+        .rows[0]!;
+
+    it("fences out a stale owner whose lease was re-claimed", async () => {
+      await seedMessages(1);
+      const [ownerA] = await claim(1, 1);
+
+      await setTimeout(20);
+
+      const [ownerB] = await claim(1);
+
+      expect(await markPublished(ownerA!)).toBe(false);
+      expect(await readRow(ownerA!.id)).toMatchObject({
+        status: "PROCESSING",
+        claim_token: ownerB!.claim_token,
+      });
+
+      expect(await markPublished(ownerB!)).toBe(true);
+
+      const published = await readRow(ownerB!.id);
+
+      expect(published).toMatchObject({
+        status: "PUBLISHED",
+        claim_token: ownerB!.claim_token,
+        lease_until: null,
+      });
+      expect(published.published_at).toBeInstanceOf(Date);
+    });
+
+    it("returns false when the row is already published", async () => {
+      await seedMessages(1);
+      const [claimed] = await claim(1);
+
+      expect(await markPublished(claimed!)).toBe(true);
+      expect(await markPublished(claimed!)).toBe(false);
+    });
+
+    it.each([
+      ["a non-UUID id", { id: "row-1" }],
+      ["a non-UUID claim token", { claimToken: "token-1" }],
+    ])("rejects %s as an internal validation failure", async (_label, override) => {
+      const markWith = relay.markOutboxMessagePublished({
+        id: randomUUID(),
+        claimToken: randomUUID(),
+        ...override,
+      });
+
+      await expect(markWith).rejects.toBeInstanceOf(InternalValidationError);
+      await expect(markWith).rejects.toHaveProperty("cause", expect.any(ZodError));
+    });
+  });
 });

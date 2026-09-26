@@ -20,4 +20,5 @@ export const outboxMessageSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
   correlationId: correlationIdSchema,
   status: outboxMessageStatusSchema,
+  claimToken: z.uuid(),
 });
