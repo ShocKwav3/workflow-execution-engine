@@ -10,14 +10,18 @@ import { loadAppConfig, type AppConfig } from "./config.js";
 import { createPinoOptions } from "@workflow-engine/core/logging/logger.js";
 import { errorHandler } from "./errorHandler.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
+import { correlationIdSchema } from "@workflow-engine/core/schemas/correlation.schemas.js";
 
 const CORRELATION_ID_HEADER = "x-correlation-id";
 
 export async function buildApp(config: AppConfig = loadAppConfig()) {
   const app = Fastify({
     logger: createPinoOptions(config.log),
-    requestIdHeader: CORRELATION_ID_HEADER,
-    genReqId: () => randomUUID(),
+    genReqId: (req) => {
+      const incoming = correlationIdSchema.safeParse(req.headers[CORRELATION_ID_HEADER]);
+
+      return incoming.success ? incoming.data : randomUUID();
+    },
   }).withTypeProvider<ZodTypeProvider>();
 
   app.addHook("onSend", async (request, reply) => {
