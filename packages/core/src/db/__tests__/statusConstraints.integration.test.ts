@@ -16,8 +16,16 @@ describe("status check constraints", () => {
   });
 
   beforeEach(async () => {
-    await db.pool.query("TRUNCATE workflow CASCADE");
+    await db.pool.query("TRUNCATE workflow, outbox_message CASCADE");
   });
+
+  async function insertOutboxMessage(overrides: { destination?: string; status?: string } = {}) {
+    return db.pool.query(
+      `INSERT INTO outbox_message (destination, message_type, payload, correlation_id, status)
+       VALUES ($1, 'StartWorkflowExecution', '{}', gen_random_uuid(), $2)`,
+      [overrides.destination ?? "bullmq", overrides.status ?? "PENDING"],
+    );
+  }
 
   async function seedExecution() {
     const { workflow, version } = await seedPublishedVersion(db.pool, [
@@ -82,5 +90,25 @@ describe("status check constraints", () => {
       "UPDATE node_execution SET status = 'COMPLETED' WHERE workflow_execution_id = $1",
       [execution.id],
     );
+  });
+
+  it("rejects an unknown outbox message status", async () => {
+    await expect(insertOutboxMessage({ status: "FAILED" })).rejects.toMatchObject({
+      code: CHECK_VIOLATION,
+      constraint: "outbox_message_status_check",
+    });
+  });
+
+  it("rejects an unknown outbox destination", async () => {
+    await expect(insertOutboxMessage({ destination: "kafka" })).rejects.toMatchObject({
+      code: CHECK_VIOLATION,
+      constraint: "outbox_message_destination_check",
+    });
+  });
+
+  it("accepts every known outbox status", async () => {
+    for (const status of ["PENDING", "PROCESSING", "PUBLISHED"]) {
+      await insertOutboxMessage({ status });
+    }
   });
 });
