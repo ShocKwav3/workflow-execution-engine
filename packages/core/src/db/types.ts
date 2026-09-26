@@ -1,30 +1,14 @@
+import type { NodeConfig } from "@/schemas/node.schemas.js";
+import type { NodeExecutionStatus } from "@/schemas/nodeExecution.schemas.js";
+import type { WorkflowExecutionStatus } from "@/schemas/workflowExecution.schemas.js";
+import type { WorkflowVersionStatus } from "@/schemas/workflowVersion.schemas.js";
+
 export interface WorkflowRow {
   id: string;
   name: string;
   created_at: Date;
   updated_at: Date;
 }
-
-export const WORKFLOW_VERSION_STATUSES = ["DRAFT", "PUBLISHED"] as const;
-
-export type WorkflowVersionStatus = (typeof WORKFLOW_VERSION_STATUSES)[number];
-
-export const WORKFLOW_VERSION_STATUS = {
-  DRAFT: "DRAFT",
-  PUBLISHED: "PUBLISHED",
-} as const satisfies Record<string, WorkflowVersionStatus>;
-
-// PENDING is the column default; RUNNING and COMPLETED are written once execution exists. FAILED
-// is deliberately absent — nothing fails an execution yet.
-export const EXECUTION_STATUSES = ["PENDING", "RUNNING", "COMPLETED"] as const;
-
-export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
-
-export const EXECUTION_STATUS = {
-  PENDING: "PENDING",
-  RUNNING: "RUNNING",
-  COMPLETED: "COMPLETED",
-} as const satisfies Record<string, ExecutionStatus>;
 
 export interface WorkflowVersionRow {
   id: string;
@@ -41,6 +25,7 @@ export interface NodeRow {
   name: string;
   type: string;
   sequence: number;
+  config: NodeConfig;
   created_at: Date;
 }
 
@@ -48,7 +33,7 @@ export interface WorkflowExecutionRow {
   id: string;
   workflow_id: string;
   workflow_version_id: string;
-  status: ExecutionStatus;
+  status: WorkflowExecutionStatus;
   idempotency_key: string | null;
   created_at: Date;
   updated_at: Date;
@@ -59,7 +44,7 @@ export interface NodeExecutionRow {
   id: string;
   workflow_execution_id: string;
   node_id: string;
-  status: ExecutionStatus;
+  status: NodeExecutionStatus;
   created_at: Date;
   updated_at: Date;
 }

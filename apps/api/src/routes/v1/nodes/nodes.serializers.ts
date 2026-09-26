@@ -7,6 +7,7 @@ export function toNodeResponse(row: NodeRow) {
     name: row.name,
     type: row.type,
     sequence: row.sequence,
+    config: row.config,
     createdAt: row.created_at.toISOString(),
   };
 }

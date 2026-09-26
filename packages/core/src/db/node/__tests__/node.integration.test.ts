@@ -85,6 +85,22 @@ describe("node persistence", () => {
     expect(fetched).toEqual(created);
   });
 
+  it("stores config exactly as given, and {} when omitted", async () => {
+    const config = { durationSeconds: 5, crash: { duringRetry: 0 } };
+
+    const withConfig = await createNode({
+      workflowId: workflow.id,
+      version: version.id,
+      name: "Reserve Inventory",
+      type: "inventory",
+      config,
+    });
+    const withoutConfig = await addNode("Charge Payment", "payment");
+
+    expect((await reader.getNodeById(withConfig!.id))?.config).toEqual(config);
+    expect((await reader.getNodeById(withoutConfig!.id))?.config).toEqual({});
+  });
+
   it("rejects a malformed node id instead of leaking a raw DB error", async () => {
     const getMalformed = reader.getNodeById("not-a-uuid");
 

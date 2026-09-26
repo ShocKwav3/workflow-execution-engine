@@ -1,7 +1,7 @@
 import type { PoolClient } from "pg";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import { ClassifiedError, parseInternal } from "@/errors/index.js";
-import { WORKFLOW_VERSION_STATUS } from "../types.js";
+import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateExecutionInput,

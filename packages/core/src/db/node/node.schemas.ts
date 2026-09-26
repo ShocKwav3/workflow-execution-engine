@@ -1,31 +1,26 @@
 import { z } from "zod";
+import { nodeSchema } from "@/schemas/node.schemas.js";
+import { atLeastOneOf } from "@/schemas/refinements.js";
+import { workflowVersionRefSchema } from "../workflowVersion/workflowVersion.schemas.js";
 
-export const nodeIdSchema = z.uuid();
+export const nodeIdSchema = nodeSchema.shape.id;
 
-export const createNodeInputSchema = z.object({
-  workflowId: z.uuid(),
-  version: z.uuid(),
-  name: z.string().trim().min(1),
-  type: z.string().trim().min(1),
+export const createNodeInputSchema = workflowVersionRefSchema.extend({
+  ...nodeSchema.pick({ name: true, type: true }).shape,
+  config: nodeSchema.shape.config.optional(),
 });
 
 export type CreateNodeInput = z.infer<typeof createNodeInputSchema>;
 
-export const updateNodeInputSchema = z
-  .object({
-    name: z.string().trim().min(1).optional(),
-    type: z.string().trim().min(1).optional(),
-  })
-  .refine((input) => input.name !== undefined || input.type !== undefined, {
-    message: "At least one of name or type must be provided",
-  });
+export const updateNodeInputSchema = nodeSchema
+  .pick({ name: true, type: true })
+  .partial()
+  .refine(...atLeastOneOf(["name", "type"]));
 
 export type UpdateNodeInput = z.infer<typeof updateNodeInputSchema>;
 
-export const reorderNodesInputSchema = z.object({
-  workflowId: z.uuid(),
-  version: z.uuid(),
-  nodeIds: z.array(z.uuid()).min(1),
+export const reorderNodesInputSchema = workflowVersionRefSchema.extend({
+  nodeIds: z.array(nodeSchema.shape.id).min(1),
 });
 
 export type ReorderNodesInput = z.infer<typeof reorderNodesInputSchema>;

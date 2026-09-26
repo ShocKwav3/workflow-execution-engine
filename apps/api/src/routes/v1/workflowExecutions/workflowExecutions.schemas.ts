@@ -1,13 +1,15 @@
+import { workflowExecutionSchema } from "@workflow-engine/core/schemas/workflowExecution.schemas.js";
 import { z } from "zod";
 import { v1SchemaRegistry } from "@/routes/v1/registry.js";
 
+const { id, workflowId, workflowVersionId, status, idempotencyKey } = workflowExecutionSchema.shape;
+
 export const workflowExecutionResponseSchema = z.object({
-  id: z.uuid().max(36).describe("Workflow execution ID."),
-  workflowId: z.uuid().max(36).describe("ID of the executed workflow."),
-  workflowVersionId: z.uuid().max(36).describe("ID of the executed workflow version."),
-  status: z.string().max(50).describe("Current execution status."),
-  idempotencyKey: z
-    .string()
+  id: id.max(36).describe("Workflow execution ID."),
+  workflowId: workflowId.max(36).describe("ID of the executed workflow."),
+  workflowVersionId: workflowVersionId.max(36).describe("ID of the executed workflow version."),
+  status: status.describe("Current execution status."),
+  idempotencyKey: idempotencyKey
     .max(255)
     .nullable()
     .describe("Idempotency key the execution was created with, if any."),
@@ -23,14 +25,16 @@ export const workflowExecutionResponseSchema = z.object({
 v1SchemaRegistry.add(workflowExecutionResponseSchema, { id: "WorkflowExecution" });
 
 export const createWorkflowExecutionBodySchema = z.object({
-  workflowVersionId: z.uuid().max(36).describe("ID of the published workflow version to execute."),
+  workflowVersionId: workflowVersionId
+    .max(36)
+    .describe("ID of the published workflow version to execute."),
 });
 
 export const createWorkflowExecutionResponseSchema = z.object({
-  executionId: z.uuid().max(36).describe("ID of the created execution."),
+  executionId: id.max(36).describe("ID of the created execution."),
 });
 
 export const workflowExecutionParamsSchema = z.object({
-  workflowId: z.uuid().max(36).describe("ID of the parent workflow."),
-  executionId: z.uuid().max(36).describe("Workflow execution ID."),
+  workflowId: workflowId.max(36).describe("ID of the parent workflow."),
+  executionId: id.max(36).describe("Workflow execution ID."),
 });

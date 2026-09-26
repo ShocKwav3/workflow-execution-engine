@@ -18,7 +18,10 @@ params:path {
 body:json {
   {
     "name": "Test workflow 1 - Test node 1",
-    "type": "test type 1"
+    "type": "test type 1",
+    "config": {
+      "durationSeconds": 5
+    }
   }
 }
 
@@ -36,6 +39,14 @@ docs {
 
   `type` isn't validated against a real registry yet (`src/nodes/registry.ts` is empty
   until an executor exists) — any string is currently accepted.
+
+  `config` is optional and stored exactly as sent (`{}` when omitted):
+
+  - `durationSeconds` — seconds the node's simulated work takes (treated as `0` when absent)
+  - `crash.duringRetry` — deliberately crash the executor on that attempt (`0` = first)
+
+  Unknown keys, at either level, are rejected with `400` — try adding `"retries": 3`.
+  `config` is set at creation only; **Update Node** doesn't change it.
 
   Returns `201` with a `Location` header at the node's own flat address
   (`/api/v1/nodes/{nodeId}`) — that's this collection's **Get/Update/Delete Node**

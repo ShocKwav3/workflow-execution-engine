@@ -2,7 +2,7 @@ import type { PoolClient } from "pg";
 import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
 import { parseInternal } from "@/errors/index.js";
 import { ClassifiedError } from "@/errors/index.js";
-import { WORKFLOW_VERSION_STATUS } from "../types.js";
+import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateNodeInput,
@@ -29,7 +29,7 @@ export class PgNodeWriter implements NodeWriter {
   constructor(private readonly client: PoolClient) {}
 
   async createNode(input: CreateNodeInput): Promise<NodeRow | undefined> {
-    const { workflowId, version, name, type } = parseInternal(
+    const { workflowId, version, name, type, config } = parseInternal(
       createNodeInputSchema,
       input,
       "PgNodeWriter.createNode",
@@ -45,10 +45,16 @@ export class PgNodeWriter implements NodeWriter {
         );
 
         const inserted = await this.client.query<NodeRow>(
-          `INSERT INTO node (workflow_version_id, name, type, sequence)
-           VALUES ($1, $2, $3, $4)
+          `INSERT INTO node (workflow_version_id, name, type, sequence, config)
+           VALUES ($1, $2, $3, $4, $5)
            RETURNING *`,
-          [workflowVersion.id, name, type, next.rows[0]!.next_sequence],
+          [
+            workflowVersion.id,
+            name,
+            type,
+            next.rows[0]!.next_sequence,
+            JSON.stringify(config ?? {}),
+          ],
         );
 
         return inserted.rows[0]!;

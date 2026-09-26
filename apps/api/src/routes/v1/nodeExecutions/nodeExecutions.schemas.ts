@@ -1,11 +1,19 @@
+import { nodeSchema } from "@workflow-engine/core/schemas/node.schemas.js";
+import {
+  nodeExecutionAttemptSchema,
+  nodeExecutionSchema,
+} from "@workflow-engine/core/schemas/nodeExecution.schemas.js";
 import { z } from "zod";
 import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
+const { id, workflowExecutionId, nodeId, status } = nodeExecutionSchema.shape;
+const attempt = nodeExecutionAttemptSchema.shape;
+
 export const nodeExecutionListItemResponseSchema = z.object({
-  id: z.uuid().max(36).describe("Node execution ID."),
-  workflowExecutionId: z.uuid().max(36).describe("ID of the parent workflow execution."),
-  nodeId: z.uuid().max(36).describe("ID of the executed node."),
-  status: z.string().max(50).describe("Current node execution status."),
+  id: id.max(36).describe("Node execution ID."),
+  workflowExecutionId: workflowExecutionId.max(36).describe("ID of the parent workflow execution."),
+  nodeId: nodeId.max(36).describe("ID of the executed node."),
+  status: status.describe("Current node execution status."),
   createdAt: z.iso.datetime().max(35).describe("When the node execution was created."),
   updatedAt: z.iso.datetime().max(35).describe("When the node execution was last updated."),
 });
@@ -13,13 +21,13 @@ export const nodeExecutionListItemResponseSchema = z.object({
 v1SchemaRegistry.add(nodeExecutionListItemResponseSchema, { id: "NodeExecutionListItem" });
 
 const attemptNumberSchema = withIntFormat(
-  z.int32().describe("Attempt number, starting at 1."),
+  attempt.attemptNumber.describe("Attempt number, starting at 1."),
   "int32",
 );
 
 const nodeExecutionAttemptResponseSchema = z.object({
-  id: z.uuid().max(36).describe("Attempt ID."),
-  nodeExecutionId: z.uuid().max(36).describe("ID of the parent node execution."),
+  id: attempt.id.max(36).describe("Attempt ID."),
+  nodeExecutionId: attempt.nodeExecutionId.max(36).describe("ID of the parent node execution."),
   attemptNumber: attemptNumberSchema,
   status: z.string().max(50).describe("Outcome of this attempt."),
   startedAt: z.iso
@@ -40,18 +48,18 @@ const nodeExecutionAttemptResponseSchema = z.object({
 });
 
 const detailSequenceSchema = withIntFormat(
-  z.int32().describe("Execution order within the workflow version."),
+  nodeSchema.shape.sequence.describe("Execution order within the workflow version."),
   "int32",
 );
 
 export const nodeExecutionDetailResponseSchema = z.object({
-  id: z.uuid().max(36).describe("Node execution ID."),
-  workflowExecutionId: z.uuid().max(36).describe("ID of the parent workflow execution."),
-  nodeId: z.uuid().max(36).describe("ID of the executed node."),
-  name: z.string().max(255).describe("Node name, snapshotted at execution time."),
-  type: z.string().max(100).describe("Node type, snapshotted at execution time."),
+  id: id.max(36).describe("Node execution ID."),
+  workflowExecutionId: workflowExecutionId.max(36).describe("ID of the parent workflow execution."),
+  nodeId: nodeId.max(36).describe("ID of the executed node."),
+  name: nodeSchema.shape.name.max(255).describe("Node name, snapshotted at execution time."),
+  type: nodeSchema.shape.type.max(100).describe("Node type, snapshotted at execution time."),
   sequence: detailSequenceSchema,
-  status: z.string().max(50).describe("Current node execution status."),
+  status: status.describe("Current node execution status."),
   createdAt: z.iso.datetime().max(35).describe("When the node execution was created."),
   updatedAt: z.iso.datetime().max(35).describe("When the node execution was last updated."),
   attempts: z
@@ -63,6 +71,6 @@ export const nodeExecutionDetailResponseSchema = z.object({
 v1SchemaRegistry.add(nodeExecutionDetailResponseSchema, { id: "NodeExecutionDetail" });
 
 export const nodeExecutionParamsSchema = z.object({
-  nodeId: z.uuid().max(36).describe("ID of the node."),
-  executionId: z.uuid().max(36).describe("ID of the workflow execution."),
+  nodeId: nodeId.max(36).describe("ID of the node."),
+  executionId: workflowExecutionId.max(36).describe("ID of the workflow execution."),
 });

@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it and returns immediately; nothing dispatches the work yet, so executions stay `PENDING`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it and returns immediately; nothing dispatches the work yet, so executions stay `CREATED`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -68,7 +68,8 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
-  src/            DI container, error types, database pool + readers/writers, services, logging, config
+  src/            DI container, error types, database pool + readers/writers, services, logging, config,
+                  shared validation schemas (schemas/) that persistence inputs and API schemas derive from
   test/           shared test harness/fixtures (used across packages, excluded from the build)
 
 apps/api/         @workflow-engine/api — the HTTP process

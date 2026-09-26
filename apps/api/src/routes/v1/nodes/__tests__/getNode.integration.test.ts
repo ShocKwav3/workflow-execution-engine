@@ -27,7 +27,7 @@ describe("GET /nodes/{nodeId}", () => {
     const created = await harness.app.inject({
       method: "POST",
       url: `/api/v1/workflows/${workflow.id}/versions/${version.id}/nodes`,
-      payload: { name: "Reserve Inventory", type: "inventory" },
+      payload: { name: "Reserve Inventory", type: "inventory", config: { durationSeconds: 3 } },
     });
 
     const response = await harness.app.inject({
@@ -37,6 +37,7 @@ describe("GET /nodes/{nodeId}", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().id).toBe(created.json().id);
+    expect(response.json().config).toEqual({ durationSeconds: 3 });
   });
 
   it("returns 404 for a node that doesn't exist", async () => {

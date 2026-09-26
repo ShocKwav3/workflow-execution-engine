@@ -29,6 +29,7 @@ export function registerCreateNode(server: TypedFastifyInstance, container: Reso
         version: request.params.version,
         name: request.body.name,
         type: request.body.type,
+        config: request.body.config,
       });
 
       if (!node) {
