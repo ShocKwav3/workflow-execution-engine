@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
+import { setTimeout } from "node:timers/promises";
+import { ZodError } from "zod";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { InternalValidationError } from "@/errors/index.js";
 import { type TransactionRunner, createTransactionRunner } from "@/db/transaction.js";
+import type { ClaimOutboxMessagesInput } from "@/db/outbox/outboxMessage.schemas.js";
 import { PgOutboxWriter } from "@/db/outbox/PgOutboxWriter.js";
 import { PgOutboxRelay } from "@/db/outbox/PgOutboxRelay.js";
 import type { OutboxWriter } from "@/db/outbox/OutboxWriter.js";
@@ -120,6 +124,35 @@ describe("outbox relay", () => {
 
       expect(new Set(claimedIds).size).toBe(claimedIds.length);
       expect(claimedIds.toSorted()).toEqual(seeded.map((row) => row.id).toSorted());
+    });
+
+    it("re-claims a row whose lease expired, with a new token", async () => {
+      const [seeded] = await seedMessages(1);
+      const [first] = await claim(1, 1);
+
+      await setTimeout(20);
+
+      const [second] = await claim(1);
+
+      expect(second).toMatchObject({ id: seeded!.id, status: "PROCESSING", attempts: 2 });
+      expect(second!.claim_token).not.toBe(first!.claim_token);
+    });
+
+    it.each([
+      ["a zero batch size", { batchSize: 0 }],
+      ["a zero lease", { leaseMs: 0 }],
+      ["a fractional lease", { leaseMs: 1.5 }],
+      ["an unknown destination", { destination: "kafka" }],
+    ])("rejects %s as an internal validation failure", async (_label, override) => {
+      const claimWith = relay.claimOutboxMessages({
+        destination: "bullmq",
+        batchSize: 1,
+        leaseMs: LONG_LEASE_MS,
+        ...override,
+      } as ClaimOutboxMessagesInput);
+
+      await expect(claimWith).rejects.toBeInstanceOf(InternalValidationError);
+      await expect(claimWith).rejects.toHaveProperty("cause", expect.any(ZodError));
     });
   });
 });
