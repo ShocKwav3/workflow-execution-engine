@@ -12,6 +12,7 @@ Current API surface: workflow definitions, versions (draft → published lifecyc
 - PostgreSQL, raw `pg` (no ORM), Liquibase for migrations
 - Zod for runtime validation + OpenAPI generation (`fastify-type-provider-zod`)
 - pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real Postgres in integration tests), ESLint/Prettier
+- Redis (AOF persistence, `noeviction`) as queue storage, configured by `infra/redis/redis.conf`
 - Docker Compose for local infrastructure
 
 ## Running locally
@@ -21,14 +22,14 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL, runs Liquibase migrations, and starts the API on `http://localhost:${PORT}` (default `3000`) with hot reloading from bind-mounted source.
+This starts PostgreSQL and Redis, runs Liquibase migrations, and starts the API on `http://localhost:${PORT}` (default `3000`) with hot reloading from bind-mounted source.
 
 ```bash
 curl http://localhost:3000/health
 curl http://localhost:3000/ready
 ```
 
-Restarting only the API container (`docker compose restart api`) should not lose any data — state lives exclusively in the named `postgres_data` volume. `docker compose down -v` wipes that volume; plain `down`/`up` does not.
+Restarting only the API container (`docker compose restart api`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes both; plain `down`/`up` does not.
 
 ## Exploring the API
 
@@ -77,6 +78,8 @@ apps/api/         @workflow-engine/api — the HTTP process
   bruno/          HTTP client collection
   spec/           generated OpenAPI documents (per API version)
   src/            routes, Fastify app/server setup, composition root
+
+infra/redis/      Redis server configuration mounted by Docker Compose
 
 docker-compose.yml
 Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod)

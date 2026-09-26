@@ -15,6 +15,20 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:${REDIS_VERSION}
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   liquibase:
     build:
       context: ./packages/core/db
@@ -61,3 +75,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
