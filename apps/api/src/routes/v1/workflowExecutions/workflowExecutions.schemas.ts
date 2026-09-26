@@ -2,8 +2,7 @@ import { workflowExecutionSchema } from "@workflow-engine/core/schemas/workflowE
 import { z } from "zod";
 import { v1SchemaRegistry } from "@/routes/v1/registry.js";
 
-const { id, workflowId, workflowVersionId, status, idempotencyKey } =
-  workflowExecutionSchema.shape;
+const { id, workflowId, workflowVersionId, status, idempotencyKey } = workflowExecutionSchema.shape;
 
 export const workflowExecutionResponseSchema = z.object({
   id: id.max(36).describe("Workflow execution ID."),

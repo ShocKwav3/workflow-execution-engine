@@ -166,7 +166,10 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         status:
           type: string
-          maxLength: 50
+          enum:
+            - CREATED
+            - RUNNING
+            - COMPLETED
         idempotencyKey:
           nullable: true
           type: string
@@ -217,7 +220,10 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         status:
           type: string
-          maxLength: 50
+          enum:
+            - PENDING
+            - RUNNING
+            - COMPLETED
         createdAt:
           type: string
           maxLength: 35
@@ -268,7 +274,10 @@ components:
           format: int32
         status:
           type: string
-          maxLength: 50
+          enum:
+            - PENDING
+            - RUNNING
+            - COMPLETED
         createdAt:
           type: string
           maxLength: 35
@@ -503,7 +512,10 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         status:
           type: string
-          maxLength: 50
+          enum:
+            - CREATED
+            - RUNNING
+            - COMPLETED
         idempotencyKey:
           nullable: true
           type: string
@@ -555,7 +567,10 @@ components:
           pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
         status:
           type: string
-          maxLength: 50
+          enum:
+            - PENDING
+            - RUNNING
+            - COMPLETED
         createdAt:
           type: string
           maxLength: 35
@@ -607,7 +622,10 @@ components:
           format: int32
         status:
           type: string
-          maxLength: 50
+          enum:
+            - PENDING
+            - RUNNING
+            - COMPLETED
         createdAt:
           type: string
           maxLength: 35
