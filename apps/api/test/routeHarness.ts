@@ -24,5 +24,5 @@ export async function stopRouteHarness(harness: RouteHarness): Promise<void> {
 }
 
 export async function resetRouteHarness(harness: RouteHarness): Promise<void> {
-  await harness.db.pool.query("TRUNCATE workflow CASCADE");
+  await harness.db.pool.query("TRUNCATE workflow, outbox_message CASCADE");
 }

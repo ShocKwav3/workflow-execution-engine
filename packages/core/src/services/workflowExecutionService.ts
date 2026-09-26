@@ -1,7 +1,13 @@
-import type { CreateExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
+import type { CreateWorkflowExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
 import type { WorkflowExecutionReader } from "@/db/workflowExecution/WorkflowExecutionReader.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import type { WorkflowExecutionRow } from "@/db/types.js";
+import { parseInternal } from "@/errors/index.js";
+import { OUTBOX_DESTINATION } from "@/schemas/outboxMessage.schemas.js";
+import {
+  START_WORKFLOW_EXECUTION,
+  startWorkflowExecutionJobSchema,
+} from "@/schemas/startWorkflowExecutionJob.schemas.js";
 
 export class WorkflowExecutionService {
   constructor(
@@ -9,9 +15,30 @@ export class WorkflowExecutionService {
     private readonly unitOfWork: WorkflowExecutionUnitOfWork,
   ) {}
 
-  async createWorkflowExecution(input: CreateExecutionInput): Promise<WorkflowExecutionRow> {
-    return this.unitOfWork.run(async ({ workflowExecutions }) => {
-      const { execution } = await workflowExecutions.createWorkflowExecution(input);
+  async createWorkflowExecution({
+    correlationId,
+    ...input
+  }: CreateWorkflowExecutionInput & { correlationId: string }): Promise<WorkflowExecutionRow> {
+    return this.unitOfWork.run(async ({ workflowExecutions, outboxMessages }) => {
+      const { execution, created } = await workflowExecutions.createWorkflowExecution(input);
+
+      // An idempotent replay must not dispatch the work a second time.
+      if (!created) {
+        return execution;
+      }
+
+      const payload = parseInternal(
+        startWorkflowExecutionJobSchema,
+        { schemaVersion: 1, executionId: execution.id, correlationId },
+        "WorkflowExecutionService.createWorkflowExecution payload",
+      );
+
+      await outboxMessages.createOutboxMessage({
+        destination: OUTBOX_DESTINATION.bullmq,
+        messageType: START_WORKFLOW_EXECUTION,
+        payload,
+        correlationId,
+      });
 
       return execution;
     });

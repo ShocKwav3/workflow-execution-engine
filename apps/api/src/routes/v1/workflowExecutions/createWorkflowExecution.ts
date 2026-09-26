@@ -32,6 +32,7 @@ export function registerCreateWorkflowExecution(server: TypedFastifyInstance, co
         workflowId: request.params.workflowId,
         workflowVersionId: request.body.workflowVersionId,
         idempotencyKey: typeof idempotencyKeyHeader === "string" ? idempotencyKeyHeader : undefined,
+        correlationId: request.id,
       });
 
       reply.status(201);

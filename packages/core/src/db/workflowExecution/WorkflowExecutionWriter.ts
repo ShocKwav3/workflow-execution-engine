@@ -1,4 +1,4 @@
-import type { CreateExecutionInput } from "./workflowExecution.schemas.js";
+import type { CreateWorkflowExecutionInput } from "./workflowExecution.schemas.js";
 import type { WorkflowExecutionRow } from "../types.js";
 
 export interface CreateWorkflowExecutionResult {
@@ -7,5 +7,7 @@ export interface CreateWorkflowExecutionResult {
 }
 
 export interface WorkflowExecutionWriter {
-  createWorkflowExecution(input: CreateExecutionInput): Promise<CreateWorkflowExecutionResult>;
+  createWorkflowExecution(
+    input: CreateWorkflowExecutionInput,
+  ): Promise<CreateWorkflowExecutionResult>;
 }
