@@ -5,9 +5,10 @@ import { workflowVersionRefSchema } from "../workflowVersion/workflowVersion.sch
 
 export const nodeIdSchema = nodeSchema.shape.id;
 
-export const createNodeInputSchema = workflowVersionRefSchema.extend(
-  nodeSchema.pick({ name: true, type: true }).shape,
-);
+export const createNodeInputSchema = workflowVersionRefSchema.extend({
+  ...nodeSchema.pick({ name: true, type: true }).shape,
+  config: nodeSchema.shape.config.optional(),
+});
 
 export type CreateNodeInput = z.infer<typeof createNodeInputSchema>;
 

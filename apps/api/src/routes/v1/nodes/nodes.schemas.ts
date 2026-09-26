@@ -1,9 +1,23 @@
-import { nodeSchema } from "@workflow-engine/core/schemas/node.schemas.js";
+import { nodeConfigSchema, nodeSchema } from "@workflow-engine/core/schemas/node.schemas.js";
 import { atLeastOneOf } from "@workflow-engine/core/schemas/refinements.js";
 import { z } from "zod";
 import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
-const { id, workflowVersionId, name, type, sequence } = nodeSchema.shape;
+const { id, workflowVersionId, name, type, sequence, config } = nodeSchema.shape;
+const { durationSeconds, crash } = nodeConfigSchema.shape;
+
+// Nested config fields are core's own instances, so OpenAPI metadata attaches via the registry.
+v1SchemaRegistry.add(durationSeconds.unwrap(), {
+  format: "int32",
+  description: "Seconds the node's simulated work takes. Treated as 0 when omitted.",
+});
+v1SchemaRegistry.add(crash.unwrap(), {
+  description: "Deliberate crash injection, for failure testing.",
+});
+v1SchemaRegistry.add(crash.unwrap().shape.duringRetry.unwrap(), {
+  format: "int32",
+  description: "Crash the executor while running this attempt (0 = first attempt).",
+});
 
 const sequenceSchema = withIntFormat(
   sequence.describe("Execution order within the workflow version, starting at 0."),
@@ -18,6 +32,7 @@ export const nodeResponseSchema = z.object({
   name: name.max(255).describe("Node name."),
   type: type.max(100).describe("Node type — determines what the node does when executed."),
   sequence: sequenceSchema,
+  config: config.describe("Node configuration, exactly as submitted."),
   createdAt: z.iso.datetime().max(35).describe("When the node was created."),
 });
 
@@ -30,6 +45,9 @@ export const nodeIdParamsSchema = z.object({
 export const createNodeBodySchema = z.object({
   name: name.max(255).describe("Node name."),
   type: type.max(100).describe("Node type — determines what the node does when executed."),
+  config: config
+    .optional()
+    .describe("Node configuration. Unknown keys are rejected. Stored as {} when omitted."),
 });
 
 export const updateNodeBodySchema = z

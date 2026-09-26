@@ -134,6 +134,27 @@ components:
           minimum: -2147483648
           maximum: 2147483647
           format: int32
+        config:
+          type: object
+          properties:
+            durationSeconds:
+              type: integer
+              minimum: 0
+              maximum: 2147483647
+              format: int32
+              description: Seconds the node's simulated work takes. Treated as 0 when omitted.
+            crash:
+              type: object
+              properties:
+                duringRetry:
+                  type: integer
+                  minimum: 0
+                  maximum: 2147483647
+                  format: int32
+                  description: Crash the executor while running this attempt (0 = first attempt).
+              additionalProperties: false
+              description: Deliberate crash injection, for failure testing.
+          additionalProperties: false
         createdAt:
           type: string
           maxLength: 35
@@ -145,6 +166,7 @@ components:
         - name
         - type
         - sequence
+        - config
         - createdAt
     WorkflowExecutionInput:
       type: object
@@ -479,6 +501,27 @@ components:
           minimum: -2147483648
           maximum: 2147483647
           format: int32
+        config:
+          type: object
+          properties:
+            durationSeconds:
+              type: integer
+              minimum: 0
+              maximum: 2147483647
+              format: int32
+              description: Seconds the node's simulated work takes. Treated as 0 when omitted.
+            crash:
+              type: object
+              properties:
+                duringRetry:
+                  type: integer
+                  minimum: 0
+                  maximum: 2147483647
+                  format: int32
+                  description: Crash the executor while running this attempt (0 = first attempt).
+              additionalProperties: false
+              description: Deliberate crash injection, for failure testing.
+          additionalProperties: false
         createdAt:
           type: string
           maxLength: 35
@@ -490,6 +533,7 @@ components:
         - name
         - type
         - sequence
+        - config
         - createdAt
       additionalProperties: false
     WorkflowExecution:
@@ -1093,6 +1137,27 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 100
+                config:
+                  type: object
+                  properties:
+                    durationSeconds:
+                      type: integer
+                      minimum: 0
+                      maximum: 2147483647
+                      format: int32
+                      description: Seconds the node's simulated work takes. Treated as 0 when omitted.
+                    crash:
+                      type: object
+                      properties:
+                        duringRetry:
+                          type: integer
+                          minimum: 0
+                          maximum: 2147483647
+                          format: int32
+                          description: Crash the executor while running this attempt (0 = first attempt).
+                      additionalProperties: false
+                      description: Deliberate crash injection, for failure testing.
+                  additionalProperties: false
               required:
                 - name
                 - type

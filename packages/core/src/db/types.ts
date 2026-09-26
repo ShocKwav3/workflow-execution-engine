@@ -1,3 +1,4 @@
+import type { NodeConfig } from "@/schemas/node.schemas.js";
 import type { NodeExecutionStatus } from "@/schemas/nodeExecution.schemas.js";
 import type { WorkflowExecutionStatus } from "@/schemas/workflowExecution.schemas.js";
 import type { WorkflowVersionStatus } from "@/schemas/workflowVersion.schemas.js";
@@ -24,6 +25,7 @@ export interface NodeRow {
   name: string;
   type: string;
   sequence: number;
+  config: NodeConfig;
   created_at: Date;
 }
 
