@@ -40,10 +40,10 @@ Restarting only the API container (`docker compose restart api`) should not lose
 
 ```bash
 pnpm install
-pnpm build                 # builds every package, in dependency order (packages/core, then apps/api)
+pnpm build                 # builds every package, in dependency order (packages/core, then the apps)
 pnpm dev                   # workspace-wide watch build (TypeScript project references); compiles on any change
                            # (containers don't use this — each runs its own app's dev script)
-pnpm test                  # vitest, full suite, spins up Testcontainers PostgreSQL
+pnpm test                  # vitest, full suite, spins up Testcontainers PostgreSQL and Redis
 pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi
 pnpm lint:spec             # spectral, lints the generated OpenAPI doc
@@ -58,6 +58,8 @@ pnpm --filter @workflow-engine/core test:unit          # no containers
 pnpm --filter @workflow-engine/core test:integration    # Postgres, scoped to packages/core
 pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres, scoped to apps/api
+pnpm --filter @workflow-engine/outbox-publisher test:unit          # no containers
+pnpm --filter @workflow-engine/outbox-publisher test:integration   # Postgres + Redis
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
@@ -78,6 +80,10 @@ apps/api/         @workflow-engine/api — the HTTP process
   bruno/          HTTP client collection
   spec/           generated OpenAPI documents (per API version)
   src/            routes, Fastify app/server setup, composition root
+
+apps/outbox-publisher/  @workflow-engine/outbox-publisher — drains the transactional outbox into the
+                        job queue
+  src/            polling loop, composition root, configuration
 
 infra/redis/      Redis server configuration mounted by Docker Compose
 
