@@ -55,7 +55,7 @@ Each package can also be tested independently, without spinning up infrastructur
 
 ```bash
 pnpm --filter @workflow-engine/core test:unit          # no containers
-pnpm --filter @workflow-engine/core test:integration    # Postgres, scoped to packages/core
+pnpm --filter @workflow-engine/core test:integration    # Postgres + Redis, scoped to packages/core
 pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres, scoped to apps/api
 pnpm --filter @workflow-engine/outbox-publisher test:unit          # no containers
@@ -71,7 +71,8 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
-  src/            DI container, error types, database pool + readers/writers + outbox relay, services,
+  src/            DI container, error types, database pool + readers/writers + outbox relay, Redis
+                  connection factory, services,
                   logging, config, shared validation schemas (schemas/) that persistence inputs and
                   API schemas derive from
   test/           shared test harness/fixtures (used across packages, excluded from the build)

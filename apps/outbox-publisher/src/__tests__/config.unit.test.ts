@@ -6,27 +6,22 @@ afterEach(() => {
 });
 
 describe("loadOutboxPublisherConfig", () => {
-  it("applies defaults when only REDIS_URL is set", () => {
-    vi.stubEnv("REDIS_URL", "redis://localhost:6379");
+  it("applies defaults when nothing is set", () => {
+    for (const name of [
+      "OUTBOX_POLL_INTERVAL_MS",
+      "OUTBOX_BATCH_SIZE",
+      "OUTBOX_LEASE_MS",
+      "OUTBOX_PUBLISH_TIMEOUT_MS",
+    ]) {
+      vi.stubEnv(name, undefined);
+    }
 
     const config = loadOutboxPublisherConfig();
 
-    expect(config).toMatchObject({
-      ...OUTBOX_PUBLISHER_DEFAULTS,
-      redis: { url: "redis://localhost:6379" },
-    });
-  });
-
-  it("throws when REDIS_URL is missing", () => {
-    vi.stubEnv("REDIS_URL", undefined);
-
-    expect(() => loadOutboxPublisherConfig()).toThrow(
-      "Missing required environment variable: REDIS_URL",
-    );
+    expect(config).toEqual(OUTBOX_PUBLISHER_DEFAULTS);
   });
 
   it("throws when the lease equals the publish timeout", () => {
-    vi.stubEnv("REDIS_URL", "redis://localhost:6379");
     vi.stubEnv("OUTBOX_LEASE_MS", "5000");
     vi.stubEnv("OUTBOX_PUBLISH_TIMEOUT_MS", "5000");
 
@@ -36,7 +31,6 @@ describe("loadOutboxPublisherConfig", () => {
   });
 
   it("throws when a tunable is not a positive integer", () => {
-    vi.stubEnv("REDIS_URL", "redis://localhost:6379");
     vi.stubEnv("OUTBOX_BATCH_SIZE", "0");
 
     expect(() => loadOutboxPublisherConfig()).toThrow(

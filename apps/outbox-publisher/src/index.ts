@@ -1,16 +1,27 @@
+import type { Container } from "@workflow-engine/core/di/container.js";
+import { loadLogConfig } from "@workflow-engine/core/config/logConfig.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import { createLogger } from "@workflow-engine/core/logging/logger.js";
-import { loadOutboxPublisherConfig } from "./config.js";
+import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { buildContainer } from "./registrations.js";
+import { outboxPublisherConfigToken } from "./tokens.js";
 
 // Must stay below docker stop's 10s and Kubernetes' terminationGracePeriodSeconds (default 30).
 const SHUTDOWN_TIMEOUT_MS = 8_000;
 
-const config = loadOutboxPublisherConfig();
-const logger = createLogger(config.log);
-const lifecycleLogger = createContextLogger(logger, "Lifecycle");
-const container = buildContainer(logger);
+let logger: Logger;
 
+// Nothing else can report a failure to build the logger itself, e.g. an unknown LOG_LEVEL.
+try {
+  logger = createLogger(loadLogConfig());
+} catch (error) {
+  console.error("outbox publisher failed to create its logger", error);
+  process.exit(1);
+}
+
+const lifecycleLogger = createContextLogger(logger, "Lifecycle");
+
+let container: Container | undefined;
 let shuttingDown = false;
 
 async function shutdown(reason: string, exitCode: number): Promise<void> {
@@ -28,7 +39,7 @@ async function shutdown(reason: string, exitCode: number): Promise<void> {
 
   forceExit.unref();
 
-  const [disposed] = await Promise.allSettled([container.dispose()]);
+  const [disposed] = await Promise.allSettled([container?.dispose()]);
 
   clearTimeout(forceExit);
 
@@ -56,12 +67,14 @@ process.on("uncaughtException", (error: Error) => {
   void shutdown("uncaught exception", 1);
 });
 
-lifecycleLogger.info(
-  {
-    pollIntervalMs: config.pollIntervalMs,
-    batchSize: config.batchSize,
-    leaseMs: config.leaseMs,
-    publishTimeoutMs: config.publishTimeoutMs,
-  },
-  "outbox publisher started",
-);
+// Resolution happens under the handlers above, so a startup failure is logged, not printed raw.
+try {
+  container = buildContainer(logger);
+  lifecycleLogger.info(
+    container.resolve(outboxPublisherConfigToken),
+    "outbox publisher configuration loaded",
+  );
+} catch (error) {
+  lifecycleLogger.fatal({ err: error }, "outbox publisher failed to start");
+  process.exit(1);
+}

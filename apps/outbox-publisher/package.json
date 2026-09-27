@@ -16,7 +16,8 @@
     "clean:bundles": "rm -rf dist"
   },
   "dependencies": {
-    "@workflow-engine/core": "workspace:*"
+    "@workflow-engine/core": "workspace:*",
+    "bullmq": "^6.3.9"
   },
   "devDependencies": {
     "vitest": "^4.1.10"

@@ -5,5 +5,6 @@ packages:
 allowBuilds:
   "@scarf/scarf": false
   cpu-features: true
+  msgpackr-extract: false
   protobufjs: true
   ssh2: true

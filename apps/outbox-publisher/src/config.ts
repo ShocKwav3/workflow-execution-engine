@@ -1,14 +1,10 @@
 import { positiveIntEnv } from "@workflow-engine/core/config/env.js";
-import { loadLogConfig, type LogConfig } from "@workflow-engine/core/config/logConfig.js";
-import { loadRedisConfig, type RedisConfig } from "@workflow-engine/core/config/redisConfig.js";
 
 export interface OutboxPublisherConfig {
   pollIntervalMs: number;
   batchSize: number;
   leaseMs: number;
   publishTimeoutMs: number;
-  redis: RedisConfig;
-  log: LogConfig;
 }
 
 export const OUTBOX_PUBLISHER_DEFAULTS = {
@@ -30,8 +26,6 @@ export function loadOutboxPublisherConfig(): OutboxPublisherConfig {
       "OUTBOX_PUBLISH_TIMEOUT_MS",
       OUTBOX_PUBLISHER_DEFAULTS.publishTimeoutMs,
     ),
-    redis: loadRedisConfig(),
-    log: loadLogConfig(),
   };
 
   // A publish that outlives its lease lets a second claimer publish the same row concurrently.

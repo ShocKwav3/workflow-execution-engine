@@ -18,7 +18,10 @@ export default defineConfig({
         test: {
           name: { label: "integration", color: "blue" },
           include: ["src/**/*.integration.test.ts"],
-          globalSetup: ["./test/setupTestcontainersPostgres.ts"],
+          globalSetup: [
+            "./test/setupTestcontainersPostgres.ts",
+            "./test/setupTestcontainersRedis.ts",
+          ],
         },
       },
     ],
