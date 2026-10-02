@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; nothing consumes the queue yet, so executions stay `CREATED`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; nothing consumes the queue yet, so executions stay `CREATED`. Running the queued work, scheduling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -12,7 +12,7 @@ Current API surface: workflow definitions, versions (draft → published lifecyc
 - PostgreSQL, raw `pg` (no ORM), Liquibase for migrations
 - Zod for runtime validation + OpenAPI generation (`fastify-type-provider-zod`)
 - pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real Postgres in integration tests), ESLint/Prettier
-- Redis (AOF persistence, `noeviction`) as queue storage, configured by `infra/redis/redis.conf`
+- BullMQ on Redis (AOF persistence, `noeviction`) as the job queue; Redis is configured by `infra/redis/redis.conf`
 - Docker Compose for local infrastructure
 
 ## Running locally
