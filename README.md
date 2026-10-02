@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; nothing publishes the outbox yet, so executions stay `CREATED`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; nothing consumes the queue yet, so executions stay `CREATED`. Asynchronous work dispatch, scheduling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -58,8 +58,8 @@ pnpm --filter @workflow-engine/core test:unit          # no containers
 pnpm --filter @workflow-engine/core test:integration    # Postgres + Redis, scoped to packages/core
 pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres, scoped to apps/api
-pnpm --filter @workflow-engine/outbox-publisher test:unit          # no containers
-pnpm --filter @workflow-engine/outbox-publisher test:integration   # Postgres + Redis
+pnpm --filter @workflow-engine/outbox-relay test:unit              # no containers
+pnpm --filter @workflow-engine/outbox-relay test:integration       # Postgres + Redis
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
@@ -71,7 +71,7 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
-  src/            DI container, error types, database pool + readers/writers + outbox relay, Redis
+  src/            DI container, error types, database pool + readers/writers + outbox claimer, Redis
                   connection factory, services,
                   logging, config, shared validation schemas (schemas/) that persistence inputs and
                   API schemas derive from
@@ -82,9 +82,9 @@ apps/api/         @workflow-engine/api — the HTTP process
   spec/           generated OpenAPI documents (per API version)
   src/            routes, Fastify app/server setup, composition root
 
-apps/outbox-publisher/  @workflow-engine/outbox-publisher — drains the transactional outbox into the
-                        job queue
-  src/            polling loop, composition root, configuration
+apps/outbox-relay/  @workflow-engine/outbox-relay — drains the transactional outbox into the job
+                    queue
+  src/            relay, poller, queue adapter, composition root, configuration
 
 infra/redis/      Redis server configuration mounted by Docker Compose
 

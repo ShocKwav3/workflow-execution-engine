@@ -38,15 +38,15 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: { label: "outbox-publisher:unit", color: "cyan" },
-          include: ["apps/outbox-publisher/**/*.unit.test.ts"],
+          name: { label: "outbox-relay:unit", color: "cyan" },
+          include: ["apps/outbox-relay/**/*.unit.test.ts"],
         },
       },
       {
         extends: true,
         test: {
-          name: { label: "outbox-publisher:integration", color: "yellow" },
-          include: ["apps/outbox-publisher/**/*.integration.test.ts"],
+          name: { label: "outbox-relay:integration", color: "yellow" },
+          include: ["apps/outbox-relay/**/*.integration.test.ts"],
         },
       },
     ],

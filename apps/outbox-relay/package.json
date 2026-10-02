@@ -1,5 +1,5 @@
 {
-  "name": "@workflow-engine/outbox-publisher",
+  "name": "@workflow-engine/outbox-relay",
   "version": "1.0.0",
   "private": true,
   "type": "module",

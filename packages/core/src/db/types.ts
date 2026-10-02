@@ -73,3 +73,9 @@ export interface OutboxMessageRow {
   created_at: Date;
   published_at: Date | null;
 }
+
+// What a claim returns: the claim always sets a token and a lease.
+export type ClaimedOutboxMessageRow = OutboxMessageRow & {
+  claim_token: string;
+  lease_until: Date;
+};

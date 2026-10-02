@@ -5,17 +5,21 @@ import { closePgPool, createPgPool } from "@workflow-engine/core/db/pool.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import {
-  outboxRelayToken,
+  outboxClaimerToken,
   pgPoolConfigToken,
   pgPoolToken,
 } from "@workflow-engine/core/db/tokens.js";
-import { PgOutboxRelay } from "@workflow-engine/core/db/outbox/PgOutboxRelay.js";
+import { PgOutboxClaimer } from "@workflow-engine/core/db/outbox/PgOutboxClaimer.js";
 import { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
-import { loadOutboxPublisherConfig } from "./config.js";
+import { loadOutboxRelayConfig } from "./config.js";
+import { OutboxRelay } from "./OutboxRelay.js";
+import { createPoller } from "./poller.js";
 import { BullMqJobQueue } from "./queue/BullMqJobQueue.js";
 import {
   jobQueueToken,
-  outboxPublisherConfigToken,
+  outboxRelayConfigToken,
+  outboxRelayToken,
+  pollerToken,
   redisConfigToken,
   redisConnectionToken,
 } from "./tokens.js";
@@ -23,9 +27,7 @@ import {
 export function buildContainer(logger: Logger): Container {
   const container = new Container();
 
-  container.register(outboxPublisherConfigToken, loadOutboxPublisherConfig, {
-    lifetime: "singleton",
-  });
+  container.register(outboxRelayConfigToken, loadOutboxRelayConfig, { lifetime: "singleton" });
 
   container.register(redisConfigToken, loadRedisConfig, { lifetime: "singleton" });
 
@@ -39,8 +41,8 @@ export function buildContainer(logger: Logger): Container {
   );
 
   container.register(
-    outboxRelayToken,
-    (resolver) => new PgOutboxRelay(resolver.resolve(pgPoolToken)),
+    outboxClaimerToken,
+    (resolver) => new PgOutboxClaimer(resolver.resolve(pgPoolToken)),
     { lifetime: "singleton" },
   );
 
@@ -52,7 +54,7 @@ export function buildContainer(logger: Logger): Container {
         {
           url: resolver.resolve(redisConfigToken).url,
           enableOfflineQueue: false,
-          commandTimeoutMs: resolver.resolve(outboxPublisherConfigToken).publishTimeoutMs,
+          commandTimeoutMs: resolver.resolve(outboxRelayConfigToken).publishTimeoutMs,
         },
         createContextLogger(logger, "Redis"),
       ),
@@ -63,6 +65,35 @@ export function buildContainer(logger: Logger): Container {
     jobQueueToken,
     (resolver) => new BullMqJobQueue(resolver.resolve(redisConnectionToken)),
     { lifetime: "singleton" },
+  );
+
+  container.register(
+    outboxRelayToken,
+    (resolver) =>
+      new OutboxRelay(
+        resolver.resolve(outboxClaimerToken),
+        resolver.resolve(jobQueueToken),
+        resolver.resolve(outboxRelayConfigToken),
+        createContextLogger(logger, "Relay"),
+      ),
+    { lifetime: "singleton" },
+  );
+
+  // Resolved last, so disposed first: polling stops before the queue and pools close.
+  container.register(
+    pollerToken,
+    (resolver) => {
+      const relay = resolver.resolve(outboxRelayToken);
+      const { pollIntervalMs, maxBackoffMs } = resolver.resolve(outboxRelayConfigToken);
+
+      return createPoller({
+        intervalMs: pollIntervalMs,
+        maxBackoffMs,
+        logger: createContextLogger(logger, "Poller"),
+        tick: () => relay.relayBatch(),
+      });
+    },
+    { lifetime: "singleton", dispose: (poller) => poller.stop() },
   );
 
   return container;

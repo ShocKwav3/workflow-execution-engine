@@ -4,7 +4,7 @@ import { createContextLogger } from "@workflow-engine/core/logging/contextLogger
 import { createLogger } from "@workflow-engine/core/logging/logger.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { buildContainer } from "./registrations.js";
-import { outboxPublisherConfigToken } from "./tokens.js";
+import { pollerToken } from "./tokens.js";
 
 // Must stay below docker stop's 10s and Kubernetes' terminationGracePeriodSeconds (default 30).
 const SHUTDOWN_TIMEOUT_MS = 8_000;
@@ -15,7 +15,7 @@ let logger: Logger;
 try {
   logger = createLogger(loadLogConfig());
 } catch (error) {
-  console.error("outbox publisher failed to create its logger", error);
+  console.error("outbox relay failed to create its logger", error);
   process.exit(1);
 }
 
@@ -70,11 +70,9 @@ process.on("uncaughtException", (error: Error) => {
 // Resolution happens under the handlers above, so a startup failure is logged, not printed raw.
 try {
   container = buildContainer(logger);
-  lifecycleLogger.info(
-    container.resolve(outboxPublisherConfigToken),
-    "outbox publisher configuration loaded",
-  );
+  container.resolve(pollerToken).start();
+  lifecycleLogger.info({}, "outbox relay started");
 } catch (error) {
-  lifecycleLogger.fatal({ err: error }, "outbox publisher failed to start");
+  lifecycleLogger.fatal({ err: error }, "outbox relay failed to start");
   process.exit(1);
 }
