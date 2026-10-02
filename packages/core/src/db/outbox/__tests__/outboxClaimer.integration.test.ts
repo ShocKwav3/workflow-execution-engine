@@ -6,20 +6,20 @@ import { InternalValidationError } from "@/errors/index.js";
 import { type TransactionRunner, createTransactionRunner } from "@/db/transaction.js";
 import type { ClaimOutboxMessagesInput } from "@/db/outbox/outboxMessage.schemas.js";
 import { PgOutboxWriter } from "@/db/outbox/PgOutboxWriter.js";
-import { PgOutboxRelay } from "@/db/outbox/PgOutboxRelay.js";
+import { PgOutboxClaimer } from "@/db/outbox/PgOutboxClaimer.js";
 import type { OutboxWriter } from "@/db/outbox/OutboxWriter.js";
 import type { OutboxMessageRow } from "@/db/types.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
 
 const LONG_LEASE_MS = 60_000;
 
-describe("outbox relay", () => {
+describe("outbox claimer", () => {
   let db: TestDatabase;
   let unitOfWork: TransactionRunner<{ outboxMessages: OutboxWriter }>;
-  let relay: PgOutboxRelay;
+  let claimer: PgOutboxClaimer;
 
   const claim = (batchSize: number, leaseMs = LONG_LEASE_MS) =>
-    relay.claimOutboxMessages({ destination: "bullmq", batchSize, leaseMs });
+    claimer.claimOutboxMessages({ destination: "bullmq", batchSize, leaseMs });
 
   async function seedMessages(count: number): Promise<OutboxMessageRow[]> {
     const rows: OutboxMessageRow[] = [];
@@ -45,7 +45,7 @@ describe("outbox relay", () => {
     unitOfWork = createTransactionRunner(db.pool, (client) => ({
       outboxMessages: new PgOutboxWriter(client),
     }));
-    relay = new PgOutboxRelay(db.pool);
+    claimer = new PgOutboxClaimer(db.pool);
   }, 60_000);
 
   afterAll(async () => {
@@ -144,7 +144,7 @@ describe("outbox relay", () => {
       ["a fractional lease", { leaseMs: 1.5 }],
       ["an unknown destination", { destination: "kafka" }],
     ])("rejects %s as an internal validation failure", async (_label, override) => {
-      const claimWith = relay.claimOutboxMessages({
+      const claimWith = claimer.claimOutboxMessages({
         destination: "bullmq",
         batchSize: 1,
         leaseMs: LONG_LEASE_MS,
@@ -158,7 +158,7 @@ describe("outbox relay", () => {
 
   describe("markOutboxMessagePublished", () => {
     const markPublished = (row: OutboxMessageRow) =>
-      relay.markOutboxMessagePublished({ id: row.id, claimToken: row.claim_token! });
+      claimer.markOutboxMessagePublished({ id: row.id, claimToken: row.claim_token });
 
     const readRow = async (id: string) =>
       (await db.pool.query<OutboxMessageRow>("SELECT * FROM outbox_message WHERE id = $1", [id]))
@@ -202,7 +202,7 @@ describe("outbox relay", () => {
       ["a non-UUID id", { id: "row-1" }],
       ["a non-UUID claim token", { claimToken: "token-1" }],
     ])("rejects %s as an internal validation failure", async (_label, override) => {
-      const markWith = relay.markOutboxMessagePublished({
+      const markWith = claimer.markOutboxMessagePublished({
         id: randomUUID(),
         claimToken: randomUUID(),
         ...override,

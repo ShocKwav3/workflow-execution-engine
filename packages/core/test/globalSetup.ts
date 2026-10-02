@@ -1,8 +1,11 @@
 import setupPostgres from "./setupTestcontainersPostgres.js";
+import setupRedis from "./setupTestcontainersRedis.js";
 
-// Used only by the repo-root vitest.config.ts (the full/CI run) — boots the container once,
-// shared across every project in that single invocation. Package-scoped runs (pnpm --filter
-// <pkg> test) use setupTestcontainersPostgres.ts directly instead.
+// Root vitest.config.ts only; package-scoped runs list the setupTestcontainers*.ts files they need.
 export default async function setup() {
-  return setupPostgres();
+  const teardowns = await Promise.all([setupPostgres(), setupRedis()]);
+
+  return async () => {
+    await Promise.all(teardowns.map((teardown) => teardown()));
+  };
 }

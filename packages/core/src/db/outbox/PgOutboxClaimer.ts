@@ -8,8 +8,8 @@ import {
   claimOutboxMessagesInputSchema,
   markOutboxMessagePublishedInputSchema,
 } from "./outboxMessage.schemas.js";
-import type { OutboxRelay } from "./OutboxRelay.js";
-import type { OutboxMessageRow } from "../types.js";
+import type { OutboxClaimer } from "./OutboxClaimer.js";
+import type { ClaimedOutboxMessageRow } from "../types.js";
 
 // MATERIALIZED: as an IN-subquery the planner may re-run the locking SELECT per row and claim past LIMIT.
 const CLAIM_SQL = `
@@ -34,18 +34,18 @@ const CLAIM_SQL = `
   )
   SELECT * FROM claimed ORDER BY created_at`;
 
-export class PgOutboxRelay implements OutboxRelay {
+export class PgOutboxClaimer implements OutboxClaimer {
   constructor(private readonly pool: Pool) {}
 
-  async claimOutboxMessages(input: ClaimOutboxMessagesInput): Promise<OutboxMessageRow[]> {
+  async claimOutboxMessages(input: ClaimOutboxMessagesInput): Promise<ClaimedOutboxMessageRow[]> {
     const { destination, batchSize, leaseMs } = parseInternal(
       claimOutboxMessagesInputSchema,
       input,
-      "PgOutboxRelay.claimOutboxMessages",
+      "PgOutboxClaimer.claimOutboxMessages",
     );
 
     try {
-      const result = await this.pool.query<OutboxMessageRow>(CLAIM_SQL, [
+      const result = await this.pool.query<ClaimedOutboxMessageRow>(CLAIM_SQL, [
         destination,
         batchSize,
         leaseMs,
@@ -61,7 +61,7 @@ export class PgOutboxRelay implements OutboxRelay {
     const { id, claimToken } = parseInternal(
       markOutboxMessagePublishedInputSchema,
       input,
-      "PgOutboxRelay.markOutboxMessagePublished",
+      "PgOutboxClaimer.markOutboxMessagePublished",
     );
 
     try {
