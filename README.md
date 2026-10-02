@@ -22,14 +22,27 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts PostgreSQL and Redis, runs Liquibase migrations, and starts the API on `http://localhost:${PORT}` (default `3000`) with hot reloading from bind-mounted source.
+This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox relay, and starts the API on `http://localhost:${PORT}` (default `3000`) with hot reloading from bind-mounted source.
 
 ```bash
 curl http://localhost:3000/health
 curl http://localhost:3000/ready
 ```
 
-Restarting only the API container (`docker compose restart api`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes both; plain `down`/`up` does not.
+Restarting only the API or relay container (`docker compose restart api`, `docker compose restart outbox-relay`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
+
+## Inspecting the queue
+
+Two optional web UIs run under the `tools` Compose profile, so a plain `docker compose up` does not start them:
+
+```bash
+docker compose --profile tools up
+```
+
+- **Bull Board** at `http://localhost:3001` (login from `BULL_BOARD_USER` / `BULL_BOARD_PASSWORD`): the job queue as BullMQ sees it — waiting, active, completed and failed jobs with their data. Read-only.
+- **Redis Insight** at `http://localhost:5540`: the raw Redis keys BullMQ stores. Accept its terms on first visit; the connection to the Compose Redis is preconfigured.
+
+Both bind to `127.0.0.1` only.
 
 ## Exploring the API
 

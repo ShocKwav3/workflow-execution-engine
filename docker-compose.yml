@@ -73,6 +73,58 @@ services:
     ports:
       - "${PORT}:${PORT}"
 
+  # No Redis dependency on purpose: the relay starts and waits while Redis is down.
+  outbox-relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: outbox-relay-dev
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+    volumes:
+      - ./apps/outbox-relay:/app/apps/outbox-relay
+      - ./packages/core:/app/packages/core
+      - /app/packages/core/dist
+      - /app/apps/outbox-relay/dist
+    environment:
+      REDIS_URL: redis://redis:6379
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_PRETTY: "true"
+
+  bull-board:
+    image: ghcr.io/felixmosh/bull-board:9.10.2
+    profiles: ["tools"]
+    depends_on:
+      - redis
+    environment:
+      BULL_BOARD_REDIS_URL: redis://redis:6379
+      BULL_BOARD_READ_ONLY: "true"
+      BULL_BOARD_USER: ${BULL_BOARD_USER}
+      BULL_BOARD_PASSWORD: ${BULL_BOARD_PASSWORD}
+    ports:
+      - "127.0.0.1:3001:3000"
+
+  redisinsight:
+    image: redis/redisinsight:3.8.0
+    profiles: ["tools"]
+    depends_on:
+      - redis
+    environment:
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: 6379
+      RI_REDIS_ALIAS: workflow-engine
+    volumes:
+      - redisinsight_data:/data
+    ports:
+      - "127.0.0.1:5540:5540"
+
 volumes:
   postgres_data:
   redis_data:
+  redisinsight_data:
