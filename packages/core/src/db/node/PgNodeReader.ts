@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { parseInternal } from "@/errors/index.js";
+import { nodeSchema } from "@/schemas/node.schemas.js";
 import { classifyPgError } from "../errors/index.js";
-import { nodeIdSchema } from "./node.schemas.js";
 import {
   type WorkflowVersionRef,
   workflowVersionRefSchema,
@@ -13,7 +13,7 @@ export class PgNodeReader implements NodeReader {
   constructor(private readonly pool: Pool) {}
 
   async getNodeById(id: string): Promise<NodeRow | undefined> {
-    const validId = parseInternal(nodeIdSchema, id, "PgNodeReader.getNodeById");
+    const validId = parseInternal(nodeSchema.shape.id, id, "PgNodeReader.getNodeById");
 
     try {
       const result = await this.pool.query<NodeRow>(`SELECT * FROM node WHERE id = $1`, [validId]);

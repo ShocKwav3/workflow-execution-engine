@@ -3,8 +3,6 @@ import { nodeSchema } from "@/schemas/node.schemas.js";
 import { atLeastOneOf } from "@/schemas/refinements.js";
 import { workflowVersionRefSchema } from "../workflowVersion/workflowVersion.schemas.js";
 
-export const nodeIdSchema = nodeSchema.shape.id;
-
 export const createNodeInputSchema = workflowVersionRefSchema.extend({
   ...nodeSchema.pick({ name: true, type: true }).shape,
   config: nodeSchema.shape.config.optional(),

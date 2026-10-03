@@ -1,13 +1,15 @@
 import type { PoolClient } from "pg";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import { ClassifiedError, parseInternal } from "@/errors/index.js";
-import { WORKFLOW_EXECUTION_STATUS } from "@/schemas/workflowExecution.schemas.js";
+import {
+  WORKFLOW_EXECUTION_STATUS,
+  workflowExecutionSchema,
+} from "@/schemas/workflowExecution.schemas.js";
 import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateWorkflowExecutionInput,
   createWorkflowExecutionRefSchema,
-  executionIdSchema,
   idempotencyKeySchema,
 } from "./workflowExecution.schemas.js";
 import type {
@@ -92,7 +94,7 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
   // Matches RUNNING too: a redelivered job must be able to resume an execution a lost worker started.
   async markWorkflowExecutionRunning(id: string): Promise<WorkflowExecutionRow | undefined> {
     const executionId = parseInternal(
-      executionIdSchema,
+      workflowExecutionSchema.shape.id,
       id,
       "PgWorkflowExecutionWriter.markWorkflowExecutionRunning",
     );
@@ -113,7 +115,7 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
 
   async markWorkflowExecutionCompleted(id: string): Promise<boolean> {
     const executionId = parseInternal(
-      executionIdSchema,
+      workflowExecutionSchema.shape.id,
       id,
       "PgWorkflowExecutionWriter.markWorkflowExecutionCompleted",
     );
