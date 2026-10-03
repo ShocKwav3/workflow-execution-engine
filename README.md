@@ -73,6 +73,8 @@ pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres, scoped to apps/api
 pnpm --filter @workflow-engine/outbox-relay test:unit              # no containers
 pnpm --filter @workflow-engine/outbox-relay test:integration       # Postgres + Redis
+pnpm --filter @workflow-engine/executor test:unit                  # no containers
+pnpm --filter @workflow-engine/executor test:integration           # Postgres + Redis
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
@@ -98,6 +100,10 @@ apps/api/         @workflow-engine/api — the HTTP process
 apps/outbox-relay/  @workflow-engine/outbox-relay — drains the transactional outbox into the job
                     queue
   src/            relay, poller, queue adapter, composition root, configuration
+
+apps/executor/    @workflow-engine/executor — will consume workflow execution jobs and run their
+                  nodes; currently only its configuration exists, no runnable process yet
+  src/            configuration
 
 infra/redis/      Redis server configuration mounted by Docker Compose
 
