@@ -63,6 +63,13 @@ export interface NodeExecutionAttemptRow {
   error: string | null;
 }
 
+// A node execution joined to the node fields the executor needs to run it.
+export interface NodeExecutionStepRow extends NodeExecutionRow {
+  name: string;
+  sequence: number;
+  config: NodeConfig;
+}
+
 export interface OutboxMessageRow {
   id: string;
   destination: OutboxDestination;

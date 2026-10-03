@@ -197,4 +197,91 @@ describe("workflow execution persistence", () => {
     await expect(getMalformed).rejects.toBeInstanceOf(InternalValidationError);
     await expect(getMalformed).rejects.toHaveProperty("cause", expect.any(ZodError));
   });
+
+  describe("status transitions", () => {
+    const UNKNOWN_ID = "00000000-0000-0000-0000-000000000000";
+
+    const markRunning = (id: string) =>
+      unitOfWork.run(({ workflowExecutions }) =>
+        workflowExecutions.markWorkflowExecutionRunning(id),
+      );
+
+    const markCompleted = (id: string) =>
+      unitOfWork.run(({ workflowExecutions }) =>
+        workflowExecutions.markWorkflowExecutionCompleted(id),
+      );
+
+    async function seedCreatedExecution() {
+      const { workflow, version } = await seedPublishedVersion(db.pool, [
+        { name: "Reserve Inventory", type: "inventory" },
+      ]);
+      const { execution } = await createExecution({
+        workflowId: workflow.id,
+        workflowVersionId: version.id,
+      });
+
+      return execution;
+    }
+
+    it("moves a CREATED execution to RUNNING", async () => {
+      const execution = await seedCreatedExecution();
+
+      const running = await markRunning(execution.id);
+
+      expect(running?.status).toBe(WORKFLOW_EXECUTION_STATUS.RUNNING);
+      expect(running!.updated_at.getTime()).toBeGreaterThanOrEqual(execution.updated_at.getTime());
+    });
+
+    it("matches an execution that is already RUNNING, so a redelivered job can resume it", async () => {
+      const execution = await seedCreatedExecution();
+
+      await markRunning(execution.id);
+
+      const again = await markRunning(execution.id);
+
+      expect(again?.status).toBe(WORKFLOW_EXECUTION_STATUS.RUNNING);
+    });
+
+    it("does not reopen a COMPLETED execution", async () => {
+      const execution = await seedCreatedExecution();
+
+      await markRunning(execution.id);
+      await markCompleted(execution.id);
+
+      expect(await markRunning(execution.id)).toBeUndefined();
+      expect((await reader.getWorkflowExecutionById(execution.id))?.status).toBe(
+        WORKFLOW_EXECUTION_STATUS.COMPLETED,
+      );
+    });
+
+    it("returns undefined for an execution that doesn't exist", async () => {
+      expect(await markRunning(UNKNOWN_ID)).toBeUndefined();
+    });
+
+    it("completes a RUNNING execution and records completed_at", async () => {
+      const execution = await seedCreatedExecution();
+
+      await markRunning(execution.id);
+
+      expect(await markCompleted(execution.id)).toBe(true);
+
+      const completed = await reader.getWorkflowExecutionById(execution.id);
+
+      expect(completed?.status).toBe(WORKFLOW_EXECUTION_STATUS.COMPLETED);
+      expect(completed?.completed_at).toBeInstanceOf(Date);
+    });
+
+    it("refuses to complete an execution that is not RUNNING", async () => {
+      const execution = await seedCreatedExecution();
+
+      expect(await markCompleted(execution.id)).toBe(false);
+      expect((await reader.getWorkflowExecutionById(execution.id))?.status).toBe(
+        WORKFLOW_EXECUTION_STATUS.CREATED,
+      );
+    });
+
+    it("rejects a malformed execution id", async () => {
+      await expect(markRunning("not-a-uuid")).rejects.toBeInstanceOf(InternalValidationError);
+    });
+  });
 });

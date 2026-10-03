@@ -1,5 +1,6 @@
 import type { Pool } from "pg";
 import { parseInternal } from "@/errors/index.js";
+import { workflowExecutionSchema } from "@/schemas/workflowExecution.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type NodeExecutionHistoryEntry,
@@ -13,7 +14,7 @@ import {
   workflowExecutionRefSchema,
 } from "./nodeExecution.schemas.js";
 import type { NodeExecutionReader } from "./NodeExecutionReader.js";
-import type { NodeExecutionRow } from "../types.js";
+import type { NodeExecutionRow, NodeExecutionStepRow } from "../types.js";
 
 const NODE_EXECUTION_HISTORY_QUERY = `
   SELECT
@@ -108,6 +109,30 @@ export class PgNodeExecutionReader implements NodeExecutionReader {
       );
 
       return groupNodeHistoryRows(result.rows)[0];
+    } catch (error) {
+      throw classifyPgError(error);
+    }
+  }
+
+  // Executor-facing: no parent-workflow check, since the job carries only the execution id.
+  async getNodeExecutionSteps(workflowExecutionId: string): Promise<NodeExecutionStepRow[]> {
+    const id = parseInternal(
+      workflowExecutionSchema.shape.id,
+      workflowExecutionId,
+      "PgNodeExecutionReader.getNodeExecutionSteps",
+    );
+
+    try {
+      const result = await this.pool.query<NodeExecutionStepRow>(
+        `SELECT ne.*, n.name, n.sequence, n.config
+         FROM node_execution ne
+         JOIN node n ON n.id = ne.node_id
+         WHERE ne.workflow_execution_id = $1
+         ORDER BY n.sequence`,
+        [id],
+      );
+
+      return result.rows;
     } catch (error) {
       throw classifyPgError(error);
     }

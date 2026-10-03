@@ -1,6 +1,6 @@
 import type { NodeExecutionHistoryEntry } from "./executionHistoryGrouping.js";
 import type { GetNodeExecutionInput, WorkflowExecutionRef } from "./nodeExecution.schemas.js";
-import type { NodeExecutionRow } from "../types.js";
+import type { NodeExecutionRow, NodeExecutionStepRow } from "../types.js";
 
 export interface NodeExecutionReader {
   getNodeExecutionsForWorkflowExecution(input: WorkflowExecutionRef): Promise<NodeExecutionRow[]>;
@@ -8,4 +8,5 @@ export interface NodeExecutionReader {
   getNodeExecutionByNodeAndExecution(
     input: GetNodeExecutionInput,
   ): Promise<NodeExecutionHistoryEntry | undefined>;
+  getNodeExecutionSteps(workflowExecutionId: string): Promise<NodeExecutionStepRow[]>;
 }

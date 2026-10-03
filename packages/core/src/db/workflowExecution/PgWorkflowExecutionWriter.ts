@@ -1,11 +1,13 @@
 import type { PoolClient } from "pg";
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import { ClassifiedError, parseInternal } from "@/errors/index.js";
+import { WORKFLOW_EXECUTION_STATUS } from "@/schemas/workflowExecution.schemas.js";
 import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
   type CreateWorkflowExecutionInput,
   createWorkflowExecutionRefSchema,
+  executionIdSchema,
   idempotencyKeySchema,
 } from "./workflowExecution.schemas.js";
 import type {
@@ -83,6 +85,48 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
         throw error;
       }
 
+      throw classifyPgError(error);
+    }
+  }
+
+  // Matches RUNNING too: a redelivered job must be able to resume an execution a lost worker started.
+  async markWorkflowExecutionRunning(id: string): Promise<WorkflowExecutionRow | undefined> {
+    const executionId = parseInternal(
+      executionIdSchema,
+      id,
+      "PgWorkflowExecutionWriter.markWorkflowExecutionRunning",
+    );
+
+    try {
+      const result = await this.client.query<WorkflowExecutionRow>(
+        `UPDATE workflow_execution SET status = $2, updated_at = now()
+         WHERE id = $1 AND status IN ($3, $2)
+         RETURNING *`,
+        [executionId, WORKFLOW_EXECUTION_STATUS.RUNNING, WORKFLOW_EXECUTION_STATUS.CREATED],
+      );
+
+      return result.rows[0];
+    } catch (error) {
+      throw classifyPgError(error);
+    }
+  }
+
+  async markWorkflowExecutionCompleted(id: string): Promise<boolean> {
+    const executionId = parseInternal(
+      executionIdSchema,
+      id,
+      "PgWorkflowExecutionWriter.markWorkflowExecutionCompleted",
+    );
+
+    try {
+      const result = await this.client.query(
+        `UPDATE workflow_execution SET status = $2, completed_at = now(), updated_at = now()
+         WHERE id = $1 AND status = $3`,
+        [executionId, WORKFLOW_EXECUTION_STATUS.COMPLETED, WORKFLOW_EXECUTION_STATUS.RUNNING],
+      );
+
+      return result.rowCount === 1;
+    } catch (error) {
       throw classifyPgError(error);
     }
   }
