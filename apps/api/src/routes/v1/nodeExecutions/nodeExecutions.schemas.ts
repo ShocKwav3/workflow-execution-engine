@@ -29,7 +29,7 @@ const nodeExecutionAttemptResponseSchema = z.object({
   id: attempt.id.max(36).describe("Attempt ID."),
   nodeExecutionId: attempt.nodeExecutionId.max(36).describe("ID of the parent node execution."),
   attemptNumber: attemptNumberSchema,
-  status: z.string().max(50).describe("Outcome of this attempt."),
+  status: attempt.status.describe("Current attempt status."),
   startedAt: z.iso
     .datetime()
     .max(35)

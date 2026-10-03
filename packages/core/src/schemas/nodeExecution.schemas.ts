@@ -9,6 +9,13 @@ export const NODE_EXECUTION_STATUS = nodeExecutionStatusSchema.enum;
 
 export type NodeExecutionStatus = z.infer<typeof nodeExecutionStatusSchema>;
 
+// ABANDONED marks an attempt whose worker was lost; FAILED arrives with failure handling.
+export const nodeExecutionAttemptStatusSchema = z.enum(["RUNNING", "COMPLETED", "ABANDONED"]);
+
+export const NODE_EXECUTION_ATTEMPT_STATUS = nodeExecutionAttemptStatusSchema.enum;
+
+export type NodeExecutionAttemptStatus = z.infer<typeof nodeExecutionAttemptStatusSchema>;
+
 export const nodeExecutionSchema = z.object({
   id: z.uuid(),
   workflowExecutionId: workflowExecutionSchema.shape.id,
@@ -20,4 +27,5 @@ export const nodeExecutionAttemptSchema = z.object({
   id: z.uuid(),
   nodeExecutionId: nodeExecutionSchema.shape.id,
   attemptNumber: z.int32(),
+  status: nodeExecutionAttemptStatusSchema,
 });

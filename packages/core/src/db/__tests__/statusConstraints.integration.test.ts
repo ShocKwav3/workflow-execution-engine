@@ -3,6 +3,7 @@ import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-te
 import { seedPublishedVersion, workflowExecutionUnitOfWorkFor } from "@core-test/fixtures.js";
 
 const CHECK_VIOLATION = "23514";
+const UNIQUE_VIOLATION = "23505";
 
 describe("status check constraints", () => {
   let db: TestDatabase;
@@ -90,6 +91,52 @@ describe("status check constraints", () => {
       "UPDATE node_execution SET status = 'COMPLETED' WHERE workflow_execution_id = $1",
       [execution.id],
     );
+  });
+
+  async function insertAttempt(nodeExecutionId: string, attemptNumber: number, status: string) {
+    return db.pool.query(
+      `INSERT INTO node_execution_attempt (node_execution_id, attempt_number, status)
+       VALUES ($1, $2, $3)`,
+      [nodeExecutionId, attemptNumber, status],
+    );
+  }
+
+  async function seedNodeExecutionId() {
+    const { execution } = await seedExecution();
+    const { rows } = await db.pool.query<{ id: string }>(
+      "SELECT id FROM node_execution WHERE workflow_execution_id = $1",
+      [execution.id],
+    );
+
+    return rows[0].id;
+  }
+
+  it("rejects an unknown node execution attempt status", async () => {
+    const nodeExecutionId = await seedNodeExecutionId();
+
+    await expect(insertAttempt(nodeExecutionId, 1, "FAILED")).rejects.toMatchObject({
+      code: CHECK_VIOLATION,
+      constraint: "node_execution_attempt_status_check",
+    });
+  });
+
+  it("accepts every known node execution attempt status", async () => {
+    const nodeExecutionId = await seedNodeExecutionId();
+
+    await insertAttempt(nodeExecutionId, 1, "ABANDONED");
+    await insertAttempt(nodeExecutionId, 2, "COMPLETED");
+    await insertAttempt(nodeExecutionId, 3, "RUNNING");
+  });
+
+  it("rejects a duplicate attempt number for the same node execution", async () => {
+    const nodeExecutionId = await seedNodeExecutionId();
+
+    await insertAttempt(nodeExecutionId, 1, "ABANDONED");
+
+    await expect(insertAttempt(nodeExecutionId, 1, "RUNNING")).rejects.toMatchObject({
+      code: UNIQUE_VIOLATION,
+      constraint: "node_execution_attempt_number_unique",
+    });
   });
 
   it("rejects an unknown outbox message status", async () => {
