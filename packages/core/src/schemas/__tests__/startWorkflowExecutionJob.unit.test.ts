@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { startWorkflowExecutionJobSchema } from "@/schemas/startWorkflowExecutionJob.schemas.js";
+import {
+  startWorkflowExecutionJobContract,
+  startWorkflowExecutionJobSchema,
+} from "@/schemas/startWorkflowExecutionJob.schemas.js";
 
 const validJob = {
   schemaVersion: 1,
@@ -33,5 +36,23 @@ describe("startWorkflowExecutionJobSchema", () => {
     expect(startWorkflowExecutionJobSchema.safeParse({ ...validJob, ...override }).success).toBe(
       false,
     );
+  });
+});
+
+describe("startWorkflowExecutionJobContract", () => {
+  it("returns the parsed data for a valid job", () => {
+    expect(startWorkflowExecutionJobContract.parse(validJob)).toEqual({
+      success: true,
+      data: validJob,
+    });
+  });
+
+  it("returns each issue's path and message, without exposing the schema library", () => {
+    const result = startWorkflowExecutionJobContract.parse({ ...validJob, executionId: "x" });
+
+    expect(result.success).toBe(false);
+    expect(!result.success && result.issues).toEqual([
+      { path: ["executionId"], message: expect.any(String) },
+    ]);
   });
 });

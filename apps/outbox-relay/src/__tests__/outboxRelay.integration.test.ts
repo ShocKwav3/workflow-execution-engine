@@ -12,10 +12,7 @@ import { PgOutboxWriter } from "@workflow-engine/core/db/outbox/PgOutboxWriter.j
 import type { OutboxMessageRow } from "@workflow-engine/core/db/types.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
-import {
-  START_WORKFLOW_EXECUTION,
-  WORKFLOW_EXECUTIONS_QUEUE,
-} from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
+import { startWorkflowExecutionJobContract } from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
 import {
   type TestDatabase,
   startTestDatabase,
@@ -65,7 +62,7 @@ describe("OutboxRelay", () => {
     return unitOfWork.run(({ outboxMessages }) =>
       outboxMessages.createOutboxMessage({
         destination: "bullmq",
-        messageType: START_WORKFLOW_EXECUTION,
+        messageType: startWorkflowExecutionJobContract.jobName,
         payload,
         correlationId: randomUUID(),
       }),
@@ -105,7 +102,9 @@ describe("OutboxRelay", () => {
     await db.pool.query("TRUNCATE outbox_message");
     inspectorConnection = new RedisConnection({ url: testRedisUrl() }, silentLogger);
     await inspectorConnection.client.flushdb();
-    inspector = new Queue(WORKFLOW_EXECUTIONS_QUEUE, { connection: inspectorConnection.client });
+    inspector = new Queue(startWorkflowExecutionJobContract.queueName, {
+      connection: inspectorConnection.client,
+    });
     connection = producerConnection(testRedisUrl());
     jobQueue = new BullMqJobQueue(connection);
     await vi.waitFor(() => expect(jobQueue.isReady()).toBe(true));
@@ -127,7 +126,7 @@ describe("OutboxRelay", () => {
     const job = await inspector.getJob(payload.executionId as string);
     const row = await outboxRow(seeded.id);
 
-    expect(job?.name).toBe(START_WORKFLOW_EXECUTION);
+    expect(job?.name).toBe(startWorkflowExecutionJobContract.jobName);
     expect(job?.data).toEqual(payload);
     expect(row).toMatchObject({ status: "PUBLISHED", attempts: 1, lease_until: null });
   });

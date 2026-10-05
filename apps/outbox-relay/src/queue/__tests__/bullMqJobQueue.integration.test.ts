@@ -3,7 +3,7 @@ import { Queue } from "bullmq";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
-import { WORKFLOW_EXECUTIONS_QUEUE } from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
+import { startWorkflowExecutionJobContract } from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
 import { testRedisUrl } from "@workflow-engine/core/test/testRedis.js";
 import { BullMqJobQueue, JOB_RETENTION } from "@/queue/BullMqJobQueue.js";
 
@@ -31,7 +31,9 @@ describe("BullMqJobQueue", () => {
   beforeEach(async () => {
     inspectorConnection = new RedisConnection({ url: testRedisUrl() }, silentLogger);
     await inspectorConnection.client.flushdb();
-    inspector = new Queue(WORKFLOW_EXECUTIONS_QUEUE, { connection: inspectorConnection.client });
+    inspector = new Queue(startWorkflowExecutionJobContract.queueName, {
+      connection: inspectorConnection.client,
+    });
     connection = producerConnection(testRedisUrl());
     jobQueue = new BullMqJobQueue(connection);
   });

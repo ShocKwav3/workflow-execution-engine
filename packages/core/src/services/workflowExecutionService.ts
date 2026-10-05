@@ -5,7 +5,7 @@ import type { WorkflowExecutionRow } from "@/db/types.js";
 import { parseInternal } from "@/errors/index.js";
 import { OUTBOX_DESTINATION } from "@/schemas/outboxMessage.schemas.js";
 import {
-  START_WORKFLOW_EXECUTION,
+  startWorkflowExecutionJobContract,
   startWorkflowExecutionJobSchema,
 } from "@/schemas/startWorkflowExecutionJob.schemas.js";
 
@@ -35,7 +35,7 @@ export class WorkflowExecutionService {
 
       await outboxMessages.createOutboxMessage({
         destination: OUTBOX_DESTINATION.bullmq,
-        messageType: START_WORKFLOW_EXECUTION,
+        messageType: startWorkflowExecutionJobContract.jobName,
         payload,
         correlationId,
       });
