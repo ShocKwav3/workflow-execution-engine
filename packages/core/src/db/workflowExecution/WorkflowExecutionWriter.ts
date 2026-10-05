@@ -10,6 +10,4 @@ export interface WorkflowExecutionWriter {
   createWorkflowExecution(
     input: CreateWorkflowExecutionInput,
   ): Promise<CreateWorkflowExecutionResult>;
-  markWorkflowExecutionRunning(id: string): Promise<WorkflowExecutionRow | undefined>;
-  markWorkflowExecutionCompleted(id: string): Promise<boolean>;
 }

@@ -7,6 +7,7 @@ import { PgNodeExecutionReader } from "@/db/nodeExecution/PgNodeExecutionReader.
 import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
 import type { CreateWorkflowExecutionInput } from "@/db/workflowExecution/workflowExecution.schemas.js";
 import { PgWorkflowExecutionReader } from "@/db/workflowExecution/PgWorkflowExecutionReader.js";
+import { PgWorkflowExecutionStatusWriter } from "@/db/workflowExecution/PgWorkflowExecutionStatusWriter.js";
 import type { CreateWorkflowExecutionResult } from "@/db/workflowExecution/WorkflowExecutionWriter.js";
 import type { WorkflowExecutionUnitOfWork } from "@/db/workflowExecution/WorkflowExecutionUnitOfWork.js";
 import { type TestDatabase, startTestDatabase, stopTestDatabase } from "@core-test/testDatabase.js";
@@ -202,14 +203,10 @@ describe("workflow execution persistence", () => {
     const UNKNOWN_ID = "00000000-0000-0000-0000-000000000000";
 
     const markRunning = (id: string) =>
-      unitOfWork.run(({ workflowExecutions }) =>
-        workflowExecutions.markWorkflowExecutionRunning(id),
-      );
+      new PgWorkflowExecutionStatusWriter(db.pool).markWorkflowExecutionRunning(id);
 
     const markCompleted = (id: string) =>
-      unitOfWork.run(({ workflowExecutions }) =>
-        workflowExecutions.markWorkflowExecutionCompleted(id),
-      );
+      new PgWorkflowExecutionStatusWriter(db.pool).markWorkflowExecutionCompleted(id);
 
     async function seedCreatedExecution() {
       const { workflow, version } = await seedPublishedVersion(db.pool, [

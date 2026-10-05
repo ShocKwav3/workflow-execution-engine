@@ -9,6 +9,7 @@ import type { WorkflowVersionReader } from "./workflowVersion/WorkflowVersionRea
 import type { WorkflowVersionUnitOfWork } from "./workflowVersion/WorkflowVersionUnitOfWork.js";
 import type { WorkflowExecutionReader } from "./workflowExecution/WorkflowExecutionReader.js";
 import type { WorkflowExecutionUnitOfWork } from "./workflowExecution/WorkflowExecutionUnitOfWork.js";
+import type { WorkflowExecutionStatusWriter } from "./workflowExecution/WorkflowExecutionStatusWriter.js";
 import type { NodeExecutionReader } from "./nodeExecution/NodeExecutionReader.js";
 import type { NodeExecutionUnitOfWork } from "./nodeExecution/NodeExecutionUnitOfWork.js";
 import type { OutboxClaimer } from "./outbox/OutboxClaimer.js";
@@ -39,6 +40,10 @@ export const workflowExecutionReaderToken =
 
 export const workflowExecutionUnitOfWorkToken = createToken<WorkflowExecutionUnitOfWork>(
   "workflowExecutionUnitOfWork",
+);
+
+export const workflowExecutionStatusWriterToken = createToken<WorkflowExecutionStatusWriter>(
+  "workflowExecutionStatusWriter",
 );
 
 export const nodeExecutionReaderToken = createToken<NodeExecutionReader>("nodeExecutionReader");
