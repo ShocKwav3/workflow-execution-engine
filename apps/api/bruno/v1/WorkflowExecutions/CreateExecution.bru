@@ -15,7 +15,7 @@ params:path {
 }
 
 headers {
-  Idempotency-Key: example-key-123
+  Idempotency-Key: {{$randomUUID}}
 }
 
 body:json {
@@ -36,18 +36,23 @@ docs {
   Starts one execution and returns immediately with its `executionId`. The execution is
   created as `CREATED`. In the same transaction, one `node_execution` per node in the
   version is snapshotted (all `PENDING`), and one `outbox_message` row (`PENDING`) records
-  the `StartWorkflowExecution` job to dispatch. Nothing publishes that row yet, so the
-  execution stays `CREATED`.
+  the `StartWorkflowExecution` job to dispatch. The outbox relay publishes that row as a
+  BullMQ job, and the executor runs the nodes in order: the execution moves
+  `CREATED → RUNNING → COMPLETED`. Poll **Get Execution** and **Get Execution History** to
+  watch it.
 
   ## x-correlation-id
   Optional. A valid UUID is kept and stored on the outbox row and in the job payload;
   anything else is replaced with a generated UUID. The value used is echoed back in the
   response header.
 
+  The collection sends a new value on each request; read the one used from the
+  `x-correlation-id` response header, then search the API, relay and executor logs for it.
+
   The version must be `PUBLISHED` (`409` if still `DRAFT`).
 
   ## Idempotency-Key
-  Repeated requests with the **same** key return the existing execution instead of
-  creating a new one. Change the header value if you want a genuinely new execution
-  against the same version.
+  Each send generates a new key, so each send creates a new execution. Repeated requests
+  with the **same** key return the existing execution instead: to see that, replace
+  `{{$randomUUID}}` with a fixed value and send twice.
 }

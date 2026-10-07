@@ -1,7 +1,7 @@
 import { Queue } from "bullmq";
 import type { Disposable } from "@workflow-engine/core/di/types.js";
 import type { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
-import { WORKFLOW_EXECUTIONS_QUEUE } from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
+import { startWorkflowExecutionJobContract } from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
 import type { AddJobInput, JobQueue } from "./JobQueue.js";
 
 // Completed jobs bound the jobId dedupe window; failed jobs are kept for inspection.
@@ -15,7 +15,7 @@ export class BullMqJobQueue implements JobQueue, Disposable {
 
   // A passed-in client is shared: BullMQ never closes it, the connection's owner does.
   constructor(private readonly connection: RedisConnection) {
-    this.queue = new Queue(WORKFLOW_EXECUTIONS_QUEUE, {
+    this.queue = new Queue(startWorkflowExecutionJobContract.queueName, {
       connection: connection.client,
       defaultJobOptions: JOB_RETENTION,
     });

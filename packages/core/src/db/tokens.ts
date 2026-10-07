@@ -9,7 +9,9 @@ import type { WorkflowVersionReader } from "./workflowVersion/WorkflowVersionRea
 import type { WorkflowVersionUnitOfWork } from "./workflowVersion/WorkflowVersionUnitOfWork.js";
 import type { WorkflowExecutionReader } from "./workflowExecution/WorkflowExecutionReader.js";
 import type { WorkflowExecutionUnitOfWork } from "./workflowExecution/WorkflowExecutionUnitOfWork.js";
+import type { WorkflowExecutionStatusWriter } from "./workflowExecution/WorkflowExecutionStatusWriter.js";
 import type { NodeExecutionReader } from "./nodeExecution/NodeExecutionReader.js";
+import type { NodeExecutionUnitOfWork } from "./nodeExecution/NodeExecutionUnitOfWork.js";
 import type { OutboxClaimer } from "./outbox/OutboxClaimer.js";
 
 // Ports, not implementations — type-only imports above, so importing a token never pulls pg in.
@@ -40,7 +42,14 @@ export const workflowExecutionUnitOfWorkToken = createToken<WorkflowExecutionUni
   "workflowExecutionUnitOfWork",
 );
 
+export const workflowExecutionStatusWriterToken = createToken<WorkflowExecutionStatusWriter>(
+  "workflowExecutionStatusWriter",
+);
+
 export const nodeExecutionReaderToken = createToken<NodeExecutionReader>("nodeExecutionReader");
+
+export const nodeExecutionUnitOfWorkToken =
+  createToken<NodeExecutionUnitOfWork>("nodeExecutionUnitOfWork");
 
 // Registered only by the outbox relay; the API writes outbox rows but never claims them.
 export const outboxClaimerToken = createToken<OutboxClaimer>("outboxClaimer");

@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 import { NodeOrderingMismatchError, VersionNotDraftError } from "@/errors/domain/index.js";
 import { parseInternal } from "@/errors/index.js";
 import { ClassifiedError } from "@/errors/index.js";
+import { nodeSchema } from "@/schemas/node.schemas.js";
 import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
 import {
@@ -9,7 +10,6 @@ import {
   type ReorderNodesInput,
   type UpdateNodeInput,
   createNodeInputSchema,
-  nodeIdSchema,
   reorderNodesInputSchema,
   updateNodeInputSchema,
 } from "./node.schemas.js";
@@ -63,7 +63,7 @@ export class PgNodeWriter implements NodeWriter {
   }
 
   async updateNode(id: string, input: UpdateNodeInput): Promise<NodeRow | undefined> {
-    const validId = parseInternal(nodeIdSchema, id, "PgNodeWriter.updateNode id");
+    const validId = parseInternal(nodeSchema.shape.id, id, "PgNodeWriter.updateNode id");
     const { name, type } = parseInternal(
       updateNodeInputSchema,
       input,
@@ -87,7 +87,7 @@ export class PgNodeWriter implements NodeWriter {
   }
 
   async deleteNode(id: string): Promise<boolean> {
-    const validId = parseInternal(nodeIdSchema, id, "PgNodeWriter.deleteNode");
+    const validId = parseInternal(nodeSchema.shape.id, id, "PgNodeWriter.deleteNode");
 
     const deleted = await this.onDraftVersion(
       () => this.lockVersionByNodeId(validId),

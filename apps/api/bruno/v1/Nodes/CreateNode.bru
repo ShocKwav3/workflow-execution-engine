@@ -37,13 +37,17 @@ docs {
   Adds a node to a `DRAFT` version (`409` if the version is already `PUBLISHED`).
   `sequence` is server-assigned — appended after any existing nodes, not something you set.
 
-  `type` isn't validated against a real registry yet (`src/nodes/registry.ts` is empty
-  until an executor exists) — any string is currently accepted.
+  `type` isn't validated against a registry — any string is accepted, and every node runs
+  as simulated work driven by `config`.
 
   `config` is optional and stored exactly as sent (`{}` when omitted):
 
   - `durationSeconds` — seconds the node's simulated work takes (treated as `0` when absent)
-  - `crash.duringRetry` — deliberately crash the executor on that attempt (`0` = first)
+  - `crash.duringRetry` — deliberately crash the executor on that attempt (`0` = first).
+    Left out of the body above so a normal node never crashes; add
+    `"crash": { "duringRetry": 0 }` to try crash recovery. A new attempt starts only when a
+    worker is lost, and a job survives one lost worker, so only `0` (first attempt) and `1`
+    (second attempt, after something else ended the first) can fire.
 
   Unknown keys, at either level, are rejected with `400` — try adding `"retries": 3`.
   `config` is set at creation only; **Update Node** doesn't change it.

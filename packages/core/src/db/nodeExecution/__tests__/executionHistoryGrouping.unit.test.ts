@@ -52,7 +52,7 @@ describe("groupNodeHistoryRows", () => {
       row({
         attempt_id: "attempt-1",
         attempt_number: 1,
-        attempt_status: "FAILED",
+        attempt_status: "ABANDONED",
         error: "timeout",
       }),
       row({ attempt_id: "attempt-2", attempt_number: 2, attempt_status: "COMPLETED" }),

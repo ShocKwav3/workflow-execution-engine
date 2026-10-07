@@ -1,13 +1,8 @@
 import type { OutboxClaimer } from "@workflow-engine/core/db/outbox/OutboxClaimer.js";
 import type { ClaimedOutboxMessageRow } from "@workflow-engine/core/db/types.js";
-import { parseInternal } from "@workflow-engine/core/errors/index.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { OUTBOX_DESTINATION } from "@workflow-engine/core/schemas/outboxMessage.schemas.js";
-import {
-  START_WORKFLOW_EXECUTION,
-  type StartWorkflowExecutionJob,
-  startWorkflowExecutionJobSchema,
-} from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
+import { startWorkflowExecutionJobContract } from "@workflow-engine/core/schemas/startWorkflowExecutionJob.schemas.js";
 import type { OutboxRelayConfig } from "./config.js";
 import type { JobQueue } from "./queue/JobQueue.js";
 
@@ -45,7 +40,7 @@ export class OutboxRelay {
       attempts: row.attempts,
     });
 
-    if (row.message_type !== START_WORKFLOW_EXECUTION) {
+    if (row.message_type !== startWorkflowExecutionJobContract.jobName) {
       logger.error(
         { messageType: row.message_type },
         "unsupported outbox message type; left for lease expiry",
@@ -54,15 +49,15 @@ export class OutboxRelay {
       return;
     }
 
-    let job: StartWorkflowExecutionJob;
+    const parsed = startWorkflowExecutionJobContract.parse(row.payload);
 
-    try {
-      job = parseInternal(startWorkflowExecutionJobSchema, row.payload, "OutboxRelay.relayRow");
-    } catch (error) {
-      logger.error({ err: error }, "invalid outbox payload; left for lease expiry");
+    if (!parsed.success) {
+      logger.error({ issues: parsed.issues }, "invalid outbox payload; left for lease expiry");
 
       return;
     }
+
+    const job = parsed.data;
 
     const jobLogger = logger.child({ executionId: job.executionId });
 

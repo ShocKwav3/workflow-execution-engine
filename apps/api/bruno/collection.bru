@@ -1,3 +1,12 @@
 meta {
   name: Workflow Execution Engine API
 }
+
+headers {
+  x-correlation-id: {{$randomUUID}}
+}
+
+docs {
+  Every request sends a fresh `x-correlation-id`; the API echoes the value it used in the
+  response header. Search the API, relay and executor logs for it to follow one request.
+}

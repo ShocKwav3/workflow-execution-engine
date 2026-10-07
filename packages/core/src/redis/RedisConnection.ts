@@ -7,6 +7,7 @@ export interface RedisConnectionOptions {
   url: string;
   enableOfflineQueue?: boolean;
   commandTimeoutMs?: number;
+  maxRetriesPerRequest?: number | null;
 }
 
 export class RedisConnection implements Disposable {
@@ -22,6 +23,9 @@ export class RedisConnection implements Disposable {
         : {}),
       ...(options.commandTimeoutMs !== undefined
         ? { commandTimeout: options.commandTimeoutMs }
+        : {}),
+      ...(options.maxRetriesPerRequest !== undefined
+        ? { maxRetriesPerRequest: options.maxRetriesPerRequest }
         : {}),
     });
     this.redis.on("ready", () => monitor.onReady());

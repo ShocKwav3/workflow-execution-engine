@@ -49,6 +49,20 @@ export default defineConfig({
           include: ["apps/outbox-relay/**/*.integration.test.ts"],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: { label: "executor:unit", color: "cyan" },
+          include: ["apps/executor/**/*.unit.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: { label: "executor:integration", color: "green" },
+          include: ["apps/executor/**/*.integration.test.ts"],
+        },
+      },
     ],
   },
 });

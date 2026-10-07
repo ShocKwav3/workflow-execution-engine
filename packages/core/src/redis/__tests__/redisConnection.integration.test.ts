@@ -30,12 +30,18 @@ describe("RedisConnection", () => {
 
   it("passes the given options to the client", () => {
     connection = new RedisConnection(
-      { url: testRedisUrl(), enableOfflineQueue: false, commandTimeoutMs: 1_234 },
+      {
+        url: testRedisUrl(),
+        enableOfflineQueue: false,
+        commandTimeoutMs: 1_234,
+        maxRetriesPerRequest: null,
+      },
       recordingLogger().logger,
     );
 
     expect(connection.client.options.enableOfflineQueue).toBe(false);
     expect(connection.client.options.commandTimeout).toBe(1_234);
+    expect(connection.client.options.maxRetriesPerRequest).toBeNull();
   });
 
   it("keeps the client defaults for options that were not given", () => {
@@ -43,6 +49,7 @@ describe("RedisConnection", () => {
 
     expect(connection.client.options.enableOfflineQueue).toBe(true);
     expect(connection.client.options.commandTimeout).toBeUndefined();
+    expect(connection.client.options.maxRetriesPerRequest).toBe(20);
   });
 
   it("becomes ready against a running server", async () => {

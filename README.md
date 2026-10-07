@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; nothing consumes the queue yet, so executions stay `CREATED`. Running the queued work, scheduling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; an executor process consumes those jobs and runs each execution's nodes in order, moving it `CREATED → RUNNING → COMPLETED` (the executor is not yet part of Docker Compose). Scheduling, failure handling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -73,6 +73,8 @@ pnpm --filter @workflow-engine/api test:unit            # no containers
 pnpm --filter @workflow-engine/api test:integration     # Postgres, scoped to apps/api
 pnpm --filter @workflow-engine/outbox-relay test:unit              # no containers
 pnpm --filter @workflow-engine/outbox-relay test:integration       # Postgres + Redis
+pnpm --filter @workflow-engine/executor test:unit                  # no containers
+pnpm --filter @workflow-engine/executor test:integration           # Postgres + Redis
 ```
 
 Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
@@ -98,6 +100,11 @@ apps/api/         @workflow-engine/api — the HTTP process
 apps/outbox-relay/  @workflow-engine/outbox-relay — drains the transactional outbox into the job
                     queue
   src/            relay, poller, queue adapter, composition root, configuration
+
+apps/executor/    @workflow-engine/executor — consumes workflow execution jobs and runs each
+                  execution's nodes in order, resuming from Postgres after a crash
+  src/            queue consumer, execution runner, simulated node work, composition root,
+                  configuration
 
 infra/redis/      Redis server configuration mounted by Docker Compose
 
