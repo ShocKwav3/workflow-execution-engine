@@ -16,7 +16,8 @@ params:path {
 
 body:json {
   {
-    "name": "Reserve Stock"
+    "name": "Reserve Stock",
+    "type": "inventory.reserve"
   }
 }
 
@@ -25,4 +26,6 @@ docs {
 
   Edits a node's `name`/`type`. Only works while the parent version is still `DRAFT`
   (`409` once `PUBLISHED`). `config` can't be changed here — delete and recreate the node.
+
+  Send `name`, `type`, or both; at least one is required.
 }

@@ -16,7 +16,6 @@ params:path {
 
 headers {
   Idempotency-Key: {{$randomUUID}}
-  x-correlation-id: {{$randomUUID}}
 }
 
 body:json {
@@ -47,7 +46,7 @@ docs {
   anything else is replaced with a generated UUID. The value used is echoed back in the
   response header.
 
-  Each send generates a new value (`{{$randomUUID}}`); read the one used from the
+  The collection sends a new value on each request; read the one used from the
   `x-correlation-id` response header, then search the API, relay and executor logs for it.
 
   The version must be `PUBLISHED` (`409` if still `DRAFT`).
