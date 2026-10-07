@@ -48,11 +48,12 @@ async function shutdown(reason: string, exitCode: number): Promise<void> {
     process.exit(1);
   }
 
+  lifecycleLogger.info("shutdown complete");
   process.exit(exitCode);
 }
 
-process.once("SIGTERM", () => void shutdown("received SIGTERM", 0));
-process.once("SIGINT", () => void shutdown("received SIGINT", 0));
+process.on("SIGTERM", () => void shutdown("received SIGTERM", 0));
+process.on("SIGINT", () => void shutdown("received SIGINT", 0));
 
 process.on("unhandledRejection", (reason: unknown) => {
   lifecycleLogger.fatal(

@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; an executor process consumes those jobs and runs each execution's nodes in order, moving it `CREATED → RUNNING → COMPLETED` (the executor is not yet part of Docker Compose). Scheduling, failure handling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; an executor process consumes those jobs and runs each execution's nodes in order, moving it `CREATED → RUNNING → COMPLETED`. Scheduling, failure handling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -19,17 +19,24 @@ Current API surface: workflow definitions, versions (draft → published lifecyc
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose up --build --watch
 ```
 
-This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox relay, and starts the API on `http://localhost:${PORT}` (default `3000`) with hot reloading from bind-mounted source.
+This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox relay and the executor, and starts the API on `http://localhost:${API_PORT}` (default `3000`). Every published port is bound to `127.0.0.1` and set in `.env` (`API_PORT`, `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `BULL_BOARD_PORT`, `REDISINSIGHT_PORT`); change one if it is already in use on your machine. Each application service runs one watcher, `nodemon` (configured in the app's `nodemon.json`), under an init process:
+
+- **Source change:** nodemon stops the app gracefully (`SIGTERM`), then `scripts/dev-launch.sh` builds the app and `packages/core` in order and starts Node.
+- **Build error:** the error is printed and the service waits for the next source change; the container keeps running, but the app does not.
+- **Crash:** `--exitcrash` makes the container exit, and `restart: on-failure` starts it again.
+- **Stop** (`Ctrl+C`, `docker compose stop`): the signal reaches the app, which shuts down gracefully and logs `shutdown complete`.
+
+Only `src/` folders and `scripts/` are bind-mounted; each container builds into its own `dist`, separate from the host's. A change to configuration (`tsconfig*.json`, `nodemon.json`, `package.json`, `pnpm-lock.yaml`) rebuilds and replaces the affected services automatically under `--watch` (Compose Watch `rebuild` actions); without `--watch`, run `docker compose up --build`.
 
 ```bash
 curl http://localhost:3000/health
 curl http://localhost:3000/ready
 ```
 
-Restarting only the API or relay container (`docker compose restart api`, `docker compose restart outbox-relay`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
+Restarting only the API, relay or executor container (`docker compose restart api`, `docker compose restart outbox-relay`, `docker compose restart executor`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
 
 ## Inspecting the queue
 
@@ -39,8 +46,8 @@ Two optional web UIs run under the `tools` Compose profile, so a plain `docker c
 docker compose --profile tools up
 ```
 
-- **Bull Board** at `http://localhost:3001` (login from `BULL_BOARD_USER` / `BULL_BOARD_PASSWORD`): the job queue as BullMQ sees it — waiting, active, completed and failed jobs with their data. Read-only.
-- **Redis Insight** at `http://localhost:5540`: the raw Redis keys BullMQ stores. Accept its terms on first visit; the connection to the Compose Redis is preconfigured.
+- **Bull Board** at `http://localhost:${BULL_BOARD_PORT}` (default `3001`) (login from `BULL_BOARD_USER` / `BULL_BOARD_PASSWORD`): the job queue as BullMQ sees it — waiting, active, completed and failed jobs with their data. Read-only.
+- **Redis Insight** at `http://localhost:${REDISINSIGHT_PORT}` (default `5540`): the raw Redis keys BullMQ stores. Accept its terms on first visit; the connection to the Compose Redis is preconfigured.
 
 Both bind to `127.0.0.1` only.
 
@@ -54,8 +61,8 @@ Both bind to `127.0.0.1` only.
 ```bash
 pnpm install
 pnpm build                 # builds every package, in dependency order (packages/core, then the apps)
-pnpm dev                   # workspace-wide watch build (TypeScript project references); compiles on any change
-                           # (containers don't use this — each runs its own app's dev script)
+pnpm dev                   # host watch build (TypeScript project references); compiles on any change
+                           # (containers don't use this — each runs nodemon with its app's nodemon.json)
 pnpm test                  # vitest, full suite, spins up Testcontainers PostgreSQL and Redis
 pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi

@@ -1,0 +1,8 @@
+{
+  "watch": ["src", "../../packages/core/src", "../../scripts"],
+  "ext": "ts,sh",
+  "ignore": ["**/__tests__/**", "**/*.test.ts"],
+  "signal": "SIGTERM",
+  "exec": "exec sh ../../scripts/dev-launch.sh",
+  "env": { "LOG_PRETTY": "true" }
+}
