@@ -43,7 +43,6 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "dev": "tsc-alias -p tsconfig.build.json --watch",
     "clean:bundles": "rm -rf dist",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",

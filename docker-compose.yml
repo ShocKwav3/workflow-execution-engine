@@ -1,3 +1,29 @@
+# Shared by the three application services; each merges it with `<<: *app-env`.
+x-app-env:
+  &app-env # Addresses inside the Compose network (service name, in-container port) are not host settings, so they stay out of .env.
+  PGHOST: postgres
+  PGPORT: 5432
+  PGDATABASE: ${PGDATABASE}
+  PGUSER: ${PGUSER}
+  PGPASSWORD: ${PGPASSWORD}
+  LOG_LEVEL: ${LOG_LEVEL}
+  LOG_PRETTY: "true"
+
+# Compose Watch (`up --watch`): configuration changes rebuild the service; source is bind-mounted and reloaded by nodemon.
+x-watch-core: &watch-core
+  action: rebuild
+  path: ./packages/core
+  ignore: [src/, test/, db/, vitest.config.ts]
+x-watch-root-package: &watch-root-package
+  action: rebuild
+  path: ./package.json
+x-watch-root-lockfile: &watch-root-lockfile
+  action: rebuild
+  path: ./pnpm-lock.yaml
+x-watch-root-tsconfig: &watch-root-tsconfig
+  action: rebuild
+  path: ./tsconfig.base.json
+
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
@@ -8,7 +34,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PGUSER} -d ${PGDATABASE}"]
       interval: 5s
@@ -22,7 +48,7 @@ services:
       - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
       - redis_data:/data
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -45,33 +71,36 @@ services:
       - --username=${PGUSER}
       - --password=${PGPASSWORD}
 
+  # depends_on only orders startup; a database outage after it is handled by the applications.
   api:
     build:
       context: .
       dockerfile: Dockerfile
       target: api-dev
     depends_on:
-      postgres:
-        condition: service_healthy
       liquibase:
         condition: service_completed_successfully
+    restart: on-failure
+    # Only source is live; dist stays in the container, and config changes need --build.
     volumes:
-      - ./apps/api:/app/apps/api
-      - ./packages/core:/app/packages/core
-      - /app/packages/core/dist
-      - /app/apps/api/dist
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/core/src:/app/packages/core/src
+      - ./scripts:/app/scripts
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/api
+          ignore: [src/, test/, bruno/, spec/, scripts/, vitest.config.ts]
+        - *watch-core
+        - *watch-root-package
+        - *watch-root-lockfile
+        - *watch-root-tsconfig
     environment:
+      <<: *app-env
       HOST: 0.0.0.0
-      PORT: ${PORT}
-      PGHOST: postgres
-      PGPORT: 5432
-      PGDATABASE: ${PGDATABASE}
-      PGUSER: ${PGUSER}
-      PGPASSWORD: ${PGPASSWORD}
-      LOG_LEVEL: ${LOG_LEVEL}
-      LOG_PRETTY: "true"
+      PORT: ${API_PORT:-3000}
     ports:
-      - "${PORT}:${PORT}"
+      - "127.0.0.1:${API_PORT:-3000}:${API_PORT:-3000}"
 
   # No Redis dependency on purpose: the relay starts and waits while Redis is down.
   outbox-relay:
@@ -82,39 +111,73 @@ services:
     depends_on:
       liquibase:
         condition: service_completed_successfully
+    restart: on-failure
+    # Only source is live; dist stays in the container, and config changes need --build.
     volumes:
-      - ./apps/outbox-relay:/app/apps/outbox-relay
-      - ./packages/core:/app/packages/core
-      - /app/packages/core/dist
-      - /app/apps/outbox-relay/dist
+      - ./apps/outbox-relay/src:/app/apps/outbox-relay/src
+      - ./packages/core/src:/app/packages/core/src
+      - ./scripts:/app/scripts
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/outbox-relay
+          ignore: [src/, vitest.config.ts]
+        - *watch-core
+        - *watch-root-package
+        - *watch-root-lockfile
+        - *watch-root-tsconfig
     environment:
+      <<: *app-env
       REDIS_URL: redis://redis:6379
-      PGHOST: postgres
-      PGPORT: 5432
-      PGDATABASE: ${PGDATABASE}
-      PGUSER: ${PGUSER}
-      PGPASSWORD: ${PGPASSWORD}
-      LOG_LEVEL: ${LOG_LEVEL}
-      LOG_PRETTY: "true"
+
+  # Same as the relay: the worker waits out a Redis outage. A crash exits the container, so Docker restarts it.
+  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: executor-dev
+    depends_on:
+      liquibase:
+        condition: service_completed_successfully
+    restart: on-failure
+    # Only source is live; dist stays in the container, and config changes need --build.
+    volumes:
+      - ./apps/executor/src:/app/apps/executor/src
+      - ./packages/core/src:/app/packages/core/src
+      - ./scripts:/app/scripts
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/executor
+          ignore: [src/, vitest.config.ts]
+        - *watch-core
+        - *watch-root-package
+        - *watch-root-lockfile
+        - *watch-root-tsconfig
+    environment:
+      <<: *app-env
+      REDIS_URL: redis://redis:6379
 
   bull-board:
     image: ghcr.io/felixmosh/bull-board:9.10.2
     profiles: ["tools"]
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       BULL_BOARD_REDIS_URL: redis://redis:6379
       BULL_BOARD_READ_ONLY: "true"
       BULL_BOARD_USER: ${BULL_BOARD_USER}
       BULL_BOARD_PASSWORD: ${BULL_BOARD_PASSWORD}
     ports:
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:${BULL_BOARD_PORT:-3001}:3000"
 
   redisinsight:
     image: redis/redisinsight:3.8.0
     profiles: ["tools"]
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       RI_REDIS_HOST: redis
       RI_REDIS_PORT: 6379
@@ -122,7 +185,7 @@ services:
     volumes:
       - redisinsight_data:/data
     ports:
-      - "127.0.0.1:5540:5540"
+      - "127.0.0.1:${REDISINSIGHT_PORT:-5540}:5540"
 
 volumes:
   postgres_data:
