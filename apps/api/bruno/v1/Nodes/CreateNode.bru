@@ -37,8 +37,8 @@ docs {
   Adds a node to a `DRAFT` version (`409` if the version is already `PUBLISHED`).
   `sequence` is server-assigned — appended after any existing nodes, not something you set.
 
-  `type` isn't validated against a real registry yet (`src/nodes/registry.ts` is empty
-  until an executor exists) — any string is currently accepted.
+  `type` isn't validated against a registry — any string is accepted, and every node runs
+  as simulated work driven by `config`.
 
   `config` is optional and stored exactly as sent (`{}` when omitted):
 

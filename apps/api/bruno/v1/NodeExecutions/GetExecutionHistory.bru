@@ -19,6 +19,7 @@ docs {
   # Get Execution History
 
   Nested view: each node with its attempts grouped underneath (vs. **Get Workflow
-  Execution Nodes**' flat list). `attempts` stays empty for every node until an
-  executor exists.
+  Execution Nodes**' flat list). Each time the executor starts a node it records an
+  attempt (`RUNNING`, then `COMPLETED`). If a worker is lost mid-node, the node runs again
+  as a new attempt and the interrupted one is marked `ABANDONED`.
 }

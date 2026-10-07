@@ -19,5 +19,6 @@ docs {
   # Get Workflow Execution Nodes
 
   Lists the `node_execution` rows snapshotted for this execution — one per node in the
-  published version, all `PENDING` until an executor exists.
+  published version. Each starts `PENDING`; the executor moves it to `RUNNING` and then
+  `COMPLETED` as it works through the nodes in order.
 }
