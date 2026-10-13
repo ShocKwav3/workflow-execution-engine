@@ -30,3 +30,21 @@ jobs:
       - run: pnpm generate:openapi
 
       - run: pnpm lint:spec
+
+  ci-passed:
+    # always() so the gate fails instead of being skipped when a needed job fails
+    if: always()
+    needs: [build-test-lint]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require every needed job to succeed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          not_passed=$(jq -r 'to_entries[] | select(.value.result != "success") | "\(.key): \(.value.result)"' <<< "$NEEDS")
+          if [ -n "$not_passed" ]; then
+            echo "$not_passed"
+            exit 1
+          fi
+          echo "All needed jobs succeeded."
