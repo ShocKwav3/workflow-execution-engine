@@ -56,3 +56,4 @@ process.on("uncaughtException", (error: Error) => {
 });
 
 await app.listen({ host: config.host, port: config.port });
+export const broken: number = "not a number";
