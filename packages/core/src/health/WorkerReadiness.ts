@@ -1,14 +1,7 @@
-import type { DependencyStatus, DependencyStatusRecord } from "./DependencyStatusRecord.js";
+import type { DependencyStatusRecord } from "./DependencyStatusRecord.js";
+import type { DependencyStatus, ReadinessSource, ReadinessVerdict, WorkerPhase } from "./types.js";
 
-export type WorkerPhase = "starting" | "running" | "stopping";
-
-export interface ReadinessVerdict {
-  ready: boolean;
-  phase: WorkerPhase;
-  dependencies: Record<string, DependencyStatus>;
-}
-
-export class WorkerReadiness {
+export class WorkerReadiness implements ReadinessSource {
   private phase: WorkerPhase = "starting";
 
   constructor(private readonly dependencies: Record<string, DependencyStatusRecord>) {}
@@ -30,6 +23,7 @@ export class WorkerReadiness {
 
     for (const [name, record] of Object.entries(this.dependencies)) {
       const status = record.current();
+
       dependencies[name] = status;
 
       if (status.state !== "available") {

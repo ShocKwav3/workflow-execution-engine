@@ -48,6 +48,7 @@ describe("DependencyStatusRecord", () => {
 
   it("makes a previous success invalid at once when the connection is lost", () => {
     const record = createRecord(new FakeClock());
+
     record.markAvailable(record.generation);
 
     record.connectionLost("connection closed");
@@ -72,6 +73,7 @@ describe("DependencyStatusRecord", () => {
 
   it("becomes available again after a check in the new generation succeeds", () => {
     const record = createRecord(new FakeClock());
+
     record.markAvailable(record.generation);
     record.connectionLost("connection closed");
 
@@ -85,6 +87,7 @@ describe("DependencyStatusRecord", () => {
   it("reports an available result as unavailable after the expiry time", () => {
     const clock = new FakeClock();
     const record = createRecord(clock);
+
     record.markAvailable(record.generation);
 
     clock.time += 12_000;
@@ -98,6 +101,7 @@ describe("DependencyStatusRecord", () => {
     const clock = new FakeClock();
     const unknown = createRecord(clock);
     const unavailable = createRecord(clock);
+
     unavailable.markUnavailable(unavailable.generation, "connection refused");
 
     clock.time += 60_000;

@@ -1,11 +1,4 @@
-export type DependencyState = "unknown" | "available" | "unavailable";
-
-export interface DependencyStatus {
-  state: DependencyState;
-  reason?: string;
-  observedAt: number;
-  generation: number;
-}
+import type { DependencyState, DependencyStatus } from "./types.js";
 
 export interface DependencyStatusRecordOptions {
   expiryMs: number;

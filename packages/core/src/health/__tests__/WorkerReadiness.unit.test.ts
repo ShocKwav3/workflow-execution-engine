@@ -13,6 +13,7 @@ function setup() {
 describe("WorkerReadiness", () => {
   it("is not ready while starting, even when all dependencies are available", () => {
     const { postgres, redis, readiness } = setup();
+
     postgres.markAvailable(postgres.generation);
     redis.markAvailable(redis.generation);
 
@@ -21,6 +22,7 @@ describe("WorkerReadiness", () => {
 
   it("is ready when running and all dependencies are available", () => {
     const { postgres, redis, readiness } = setup();
+
     postgres.markAvailable(postgres.generation);
     redis.markAvailable(redis.generation);
 
@@ -31,6 +33,7 @@ describe("WorkerReadiness", () => {
 
   it("is not ready when running and a dependency is still unknown", () => {
     const { postgres, readiness } = setup();
+
     postgres.markAvailable(postgres.generation);
 
     readiness.markRunning();
@@ -43,6 +46,7 @@ describe("WorkerReadiness", () => {
 
   it("is not ready when running and a dependency is unavailable, and reports the reason", () => {
     const { postgres, redis, readiness } = setup();
+
     postgres.markAvailable(postgres.generation);
     redis.connectionLost("connect ECONNREFUSED 127.0.0.1:6379");
 
@@ -58,6 +62,7 @@ describe("WorkerReadiness", () => {
 
   it("is not ready while stopping", () => {
     const { postgres, redis, readiness } = setup();
+
     postgres.markAvailable(postgres.generation);
     redis.markAvailable(redis.generation);
     readiness.markRunning();

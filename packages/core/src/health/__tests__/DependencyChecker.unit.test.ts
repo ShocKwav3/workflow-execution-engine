@@ -71,6 +71,7 @@ describe("DependencyChecker", () => {
 
   it("does not start a second check while the first one is still in flight", async () => {
     const check = hangingCheck();
+
     checker = new DependencyChecker(record, check, OPTIONS);
 
     checker.start();
@@ -82,6 +83,7 @@ describe("DependencyChecker", () => {
   it("runs one more check after the current one settles when a check is requested meanwhile", async () => {
     const first = deferred();
     const check = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue(undefined);
+
     checker = new DependencyChecker(record, check, OPTIONS);
 
     checker.start();
@@ -98,6 +100,7 @@ describe("DependencyChecker", () => {
 
   it("rejects the result of a check that started before a connection loss", async () => {
     const first = deferred();
+
     checker = new DependencyChecker(record, () => first.promise, OPTIONS);
 
     checker.start();
@@ -114,6 +117,7 @@ describe("DependencyChecker", () => {
 
   it("skips the check and leaves the record unknown while not connected", async () => {
     const check = vi.fn(async () => {});
+
     checker = new DependencyChecker(record, check, { ...OPTIONS, isConnected: () => false });
 
     checker.start();
@@ -125,6 +129,7 @@ describe("DependencyChecker", () => {
 
   it("starts no more checks after dispose", async () => {
     const check = vi.fn(async () => {});
+
     checker = new DependencyChecker(record, check, OPTIONS);
 
     checker.start();

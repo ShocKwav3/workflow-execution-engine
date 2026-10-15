@@ -10,6 +10,7 @@ function setup() {
   const observer = new RedisDependencyObserver(client, record, () => {
     readyCalls += 1;
   });
+
   observer.subscribe();
 
   return { client, record, observer, readyCalls: () => readyCalls };
