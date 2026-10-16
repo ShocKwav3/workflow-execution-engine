@@ -13,6 +13,7 @@ import {
 } from "@workflow-engine/core/db/tokens.js";
 import { createTransactionRunner } from "@workflow-engine/core/db/transaction.js";
 import { PgWorkflowExecutionStatusWriter } from "@workflow-engine/core/db/workflowExecution/PgWorkflowExecutionStatusWriter.js";
+import { registerWorkerHealth } from "@workflow-engine/core/health/registrations.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
@@ -107,6 +108,8 @@ export function buildContainer(logger: Logger): Container {
       ),
     { lifetime: "singleton" },
   );
+
+  registerWorkerHealth(container, redisConnectionToken, logger);
 
   // Resolved last, so disposed first: the worker finishes its active job before the pools close.
   container.register(

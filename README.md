@@ -4,7 +4,7 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; an executor process consumes those jobs and runs each execution's nodes in order, moving it `CREATED → RUNNING → COMPLETED`. Scheduling, failure handling, and Saga orchestration are not yet implemented.
+Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; an executor process consumes those jobs and runs each execution's nodes in order, moving it `CREATED → RUNNING → COMPLETED`. The outbox relay and the executor each serve `GET /health` and `GET /ready` on their own port, like the API. Scheduling, failure handling, and Saga orchestration are not yet implemented.
 
 ## Stack
 
@@ -22,7 +22,7 @@ cp .env.example .env
 docker compose up --build --watch
 ```
 
-This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox relay and the executor, and starts the API on `http://localhost:${API_PORT}` (default `3000`). Every published port is bound to `127.0.0.1` and set in `.env` (`API_PORT`, `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `BULL_BOARD_PORT`, `REDISINSIGHT_PORT`); change one if it is already in use on your machine. Each application service runs one watcher, `nodemon` (configured in the app's `nodemon.json`), under an init process:
+This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox relay and the executor, and starts the API on `http://localhost:${API_PORT}` (default `3000`). Every published port is bound to `127.0.0.1` and set in `.env` (`API_PORT`, `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `RELAY_HEALTH_HOST_PORT`, `EXECUTOR_HEALTH_HOST_PORT`, `BULL_BOARD_PORT`, `REDISINSIGHT_PORT`); change one if it is already in use on your machine. Each application service runs one watcher, `nodemon` (configured in the app's `nodemon.json`), under an init process:
 
 - **Source change:** nodemon stops the app gracefully (`SIGTERM`), then `scripts/dev-launch.sh` builds the app and `packages/core` in order and starts Node.
 - **Build error:** the error is printed and the service waits for the next source change; the container keeps running, but the app does not.
@@ -31,9 +31,23 @@ This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox r
 
 Only `src/` folders and `scripts/` are bind-mounted; each container builds into its own `dist`, separate from the host's. A change to configuration (`tsconfig*.json`, `nodemon.json`, `package.json`, `pnpm-lock.yaml`) rebuilds and replaces the affected services automatically under `--watch` (Compose Watch `rebuild` actions); without `--watch`, run `docker compose up --build`.
 
+Each process answers two health URLs:
+
+| Process | Host port (default) | In-container port |
+|---|---|---|
+| API | `3000` | `3000` (same as the API) |
+| Outbox relay | `9001` | `8081` (`HEALTH_PORT`) |
+| Executor | `9002` | `8081` (`HEALTH_PORT`) |
+
+- `GET /health` (liveness) checks only the process itself. It does not check PostgreSQL or Redis, so an outage of either one does not make it fail. For the relay, it fails if no poll cycle has finished for 60 s. For the executor, it fails if the BullMQ worker has stopped. It stays `200` during a graceful shutdown.
+- `GET /ready` (readiness) returns `200` only when the process has started, its dependencies answer (PostgreSQL for the API; PostgreSQL and Redis for the relay and the executor), and no shutdown has started. Otherwise it returns `503`.
+
+Both return `{"status":"ok"}` or `{"status":"unavailable"}`.
+
 ```bash
-curl http://localhost:3000/health
-curl http://localhost:3000/ready
+curl -i http://localhost:9001/ready
+docker compose stop redis      # /ready → 503 on both workers, /health stays 200
+docker compose start redis     # /ready → 200 again within about a second
 ```
 
 Restarting only the API, relay or executor container (`docker compose restart api`, `docker compose restart outbox-relay`, `docker compose restart executor`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
@@ -94,7 +108,8 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
   db/             Liquibase changelog (shared schema, not API-specific)
   src/            DI container, error types, database pool + readers/writers + outbox claimer, Redis
-                  connection factory, services,
+                  connection factory, health checks and the health listener for the workers,
+                  services,
                   logging, config, shared validation schemas (schemas/) that persistence inputs and
                   API schemas derive from
   test/           shared test harness/fixtures (used across packages, excluded from the build)
