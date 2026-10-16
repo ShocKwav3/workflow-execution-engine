@@ -59,6 +59,7 @@ services:
     build:
       context: ./packages/core/db
       dockerfile: Dockerfile.liquibase
+      target: dev
     depends_on:
       postgres:
         condition: service_healthy
