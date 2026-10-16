@@ -39,6 +39,10 @@
       "types": "./dist/src/redis/*.d.ts",
       "default": "./dist/src/redis/*.js"
     },
+    "./health/*.js": {
+      "types": "./dist/src/health/*.d.ts",
+      "default": "./dist/src/health/*.js"
+    },
     "./test/*.js": "./test/*.ts"
   },
   "scripts": {
