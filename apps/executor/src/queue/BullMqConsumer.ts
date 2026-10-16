@@ -1,6 +1,7 @@
 import { type Job, UnrecoverableError, Worker } from "bullmq";
 import type { Disposable } from "@workflow-engine/core/di/types.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
+import { isConnectionError } from "@workflow-engine/core/redis/isConnectionError.js";
 import type { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
 import type { JobHandler } from "./JobHandler.js";
 
@@ -27,10 +28,14 @@ export class BullMqConsumer<TData, TResult> implements Disposable {
       autorun: false,
     });
 
-    // Also the only place a lost job lock surfaces ("could not renew lock", "Lock mismatch").
-    this.worker.on("error", (error) =>
-      this.logger.error({ queueName, err: error }, "worker error"),
-    );
+    // Also the only place a lost job lock surfaces; connection errors are already logged by the connection.
+    this.worker.on("error", (error) => {
+      if (isConnectionError(error)) {
+        return;
+      }
+
+      this.logger.error({ queueName, err: error }, "worker error");
+    });
   }
 
   // A rejected run() reaches the process's unhandledRejection handler, which shuts down.
