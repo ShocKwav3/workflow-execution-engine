@@ -12,6 +12,7 @@ function stubRequiredEnv(): void {
   for (const [key, value] of Object.entries(requiredEnv)) {
     vi.stubEnv(key, value);
   }
+
   vi.stubEnv("PGSSLMODE", undefined);
   vi.stubEnv("PGSSLROOTCERT", undefined);
 }

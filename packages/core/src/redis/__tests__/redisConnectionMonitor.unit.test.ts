@@ -46,10 +46,7 @@ describe("RedisConnectionMonitor", () => {
     monitor.onClose();
     monitor.onClose();
 
-    expect(lines).toEqual([
-      "info:redis connected",
-      "warn:redis connection lost; reconnecting",
-    ]);
+    expect(lines).toEqual(["info:redis connected", "warn:redis connection lost; reconnecting"]);
   });
 
   it("logs a repeated cause once, even as new error objects", () => {

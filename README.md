@@ -33,11 +33,11 @@ Only `src/` folders and `scripts/` are bind-mounted; each container builds into 
 
 Each process answers two health URLs:
 
-| Process | Host port (default) | In-container port |
-|---|---|---|
-| API | `3000` | `3000` (same as the API) |
-| Outbox relay | `9001` | `8081` (`HEALTH_PORT`) |
-| Executor | `9002` | `8081` (`HEALTH_PORT`) |
+| Process      | Host port (default) | In-container port        |
+| ------------ | ------------------- | ------------------------ |
+| API          | `3000`              | `3000` (same as the API) |
+| Outbox relay | `9001`              | `8081` (`HEALTH_PORT`)   |
+| Executor     | `9002`              | `8081` (`HEALTH_PORT`)   |
 
 - `GET /health` (liveness) checks only the process itself. It does not check PostgreSQL or Redis, so an outage of either one does not make it fail. For the relay, it fails if no poll cycle has finished for 60 s. For the executor, it fails if the BullMQ worker has stopped. It stays `200` during a graceful shutdown.
 - `GET /ready` (readiness) returns `200` only when the process has started, its dependencies answer (PostgreSQL for the API; PostgreSQL and Redis for the relay and the executor), and no shutdown has started. Otherwise it returns `503`.
