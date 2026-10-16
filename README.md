@@ -135,7 +135,7 @@ infra/redis/      Redis server configuration mounted by Docker Compose
 
 docker-compose.yml
 Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,
-                  runs as the non-root node user, UID 1000)
+                  no pnpm, runs as the non-root node user, UID 1000)
 tsconfig.base.json
 pnpm-workspace.yaml
 ```
