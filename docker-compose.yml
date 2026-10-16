@@ -129,6 +129,9 @@ services:
     environment:
       <<: *app-env
       REDIS_URL: redis://redis:6379
+      HEALTH_PORT: 8081
+    ports:
+      - "127.0.0.1:${RELAY_HEALTH_HOST_PORT:-9001}:8081"
 
   # Same as the relay: the worker waits out a Redis outage. A crash exits the container, so Docker restarts it.
   executor:
@@ -157,6 +160,9 @@ services:
     environment:
       <<: *app-env
       REDIS_URL: redis://redis:6379
+      HEALTH_PORT: 8081
+    ports:
+      - "127.0.0.1:${EXECUTOR_HEALTH_HOST_PORT:-9002}:8081"
 
   bull-board:
     image: ghcr.io/felixmosh/bull-board:9.10.2
