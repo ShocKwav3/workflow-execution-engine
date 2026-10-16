@@ -10,7 +10,7 @@ export class RedisConnectionMonitor {
   onReady(): void {
     this.connected = true;
     this.lastErrorKey = undefined;
-    this.logger.info({}, "redis connection ready");
+    this.logger.info({}, "redis connected");
   }
 
   onClose(): void {

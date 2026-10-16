@@ -58,7 +58,7 @@ describe("RedisConnection", () => {
     connection = connect(testRedisUrl(), logger);
 
     await vi.waitFor(() => expect(connection?.isReady()).toBe(true));
-    expect(lines).toEqual(["redis connection ready"]);
+    expect(lines).toEqual(["redis connected"]);
   });
 
   it("reports a lost connection and its recovery", async () => {
@@ -71,9 +71,9 @@ describe("RedisConnection", () => {
 
     await vi.waitFor(() =>
       expect(lines).toEqual([
-        "redis connection ready",
+        "redis connected",
         "redis connection lost; reconnecting",
-        "redis connection ready",
+        "redis connected",
       ]),
     );
   });

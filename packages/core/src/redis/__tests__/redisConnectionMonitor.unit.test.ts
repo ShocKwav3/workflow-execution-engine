@@ -26,7 +26,7 @@ describe("RedisConnectionMonitor", () => {
 
     monitor.onReady();
 
-    expect(lines).toEqual(["info:redis connection ready"]);
+    expect(lines).toEqual(["info:redis connected"]);
   });
 
   it("stays silent on close before the first ready", () => {
@@ -47,7 +47,7 @@ describe("RedisConnectionMonitor", () => {
     monitor.onClose();
 
     expect(lines).toEqual([
-      "info:redis connection ready",
+      "info:redis connected",
       "warn:redis connection lost; reconnecting",
     ]);
   });
@@ -82,7 +82,7 @@ describe("RedisConnectionMonitor", () => {
 
     expect(lines).toEqual([
       "warn:redis unavailable",
-      "info:redis connection ready",
+      "info:redis connected",
       "warn:redis unavailable",
     ]);
   });
