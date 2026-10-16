@@ -43,8 +43,22 @@ export class HealthServer implements Disposable {
     });
   }
 
+  // A throw here would reach uncaughtException and stop the worker, so the listener answers 500 instead.
   private handle(request: IncomingMessage, response: ServerResponse): void {
-    const path = new URL(request.url ?? "/", "http://localhost").pathname;
+    try {
+      this.route(request, response);
+    } catch {
+      if (!response.headersSent) {
+        response.writeHead(500);
+      }
+
+      response.end();
+    }
+  }
+
+  // Split, not parsed: new URL() throws on a target such as "//[".
+  private route(request: IncomingMessage, response: ServerResponse): void {
+    const path = (request.url ?? "/").split("?")[0];
 
     if (path !== "/health" && path !== "/ready") {
       response.writeHead(404).end();

@@ -1,5 +1,20 @@
+import { connect } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import { HealthServer } from "@/health/HealthServer.js";
+
+// fetch() rejects a malformed target before sending it, so the test writes the bytes itself.
+function rawRequest(port: number, raw: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    const socket = connect(port, "127.0.0.1", () => socket.write(raw));
+
+    socket.on("data", (chunk) => {
+      data += chunk.toString();
+    });
+    socket.on("end", () => resolve(data));
+    socket.on("error", reject);
+  });
+}
 
 describe("HealthServer", () => {
   let alive = true;
@@ -108,4 +123,15 @@ describe("HealthServer", () => {
 
     await expect(second.start()).rejects.toMatchObject({ code: "EADDRINUSE" });
   });
+
+  it("answers a malformed request target with 404 and keeps serving", async () => {
+    const url = await startServer();
+    const port = Number(new URL(url).port);
+
+    const response = await rawRequest(port, "GET //[ HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n");
+
+    expect(response.startsWith("HTTP/1.1 404")).toBe(true);
+    expect((await fetch(`${url}/health`)).status).toBe(200);
+  });
 });
+
