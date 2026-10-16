@@ -2,6 +2,8 @@ import { Container } from "@workflow-engine/core/di/container.js";
 import { loadRedisConfig } from "@workflow-engine/core/config/redisConfig.js";
 import { loadPgPoolConfig } from "@workflow-engine/core/db/config.js";
 import { closePgPool, createPgPool } from "@workflow-engine/core/db/pool.js";
+import { Heartbeat } from "@workflow-engine/core/health/Heartbeat.js";
+import { registerWorkerHealth } from "@workflow-engine/core/health/registrations.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import {
@@ -19,6 +21,7 @@ import {
   jobQueueToken,
   outboxRelayConfigToken,
   outboxRelayToken,
+  pollerHeartbeatToken,
   pollerToken,
   redisConfigToken,
   redisConnectionToken,
@@ -79,18 +82,36 @@ export function buildContainer(logger: Logger): Container {
     { lifetime: "singleton" },
   );
 
+  registerWorkerHealth(container, redisConnectionToken);
+
+  // The longest normal gap between ticks is maxBackoffMs plus one tick, so twice that means a hung tick.
+  container.register(
+    pollerHeartbeatToken,
+    (resolver) =>
+      new Heartbeat({ maxSilenceMs: 2 * resolver.resolve(outboxRelayConfigToken).maxBackoffMs }),
+    { lifetime: "singleton" },
+  );
+
   // Resolved last, so disposed first: polling stops before the queue and pools close.
   container.register(
     pollerToken,
     (resolver) => {
       const relay = resolver.resolve(outboxRelayToken);
+      const heartbeat = resolver.resolve(pollerHeartbeatToken);
       const { pollIntervalMs, maxBackoffMs } = resolver.resolve(outboxRelayConfigToken);
 
       return createPoller({
         intervalMs: pollIntervalMs,
         maxBackoffMs,
         logger: createContextLogger(logger, "Poller"),
-        tick: () => relay.relayBatch(),
+        // A failed tick still beats: the loop is alive, only a dependency failed.
+        tick: async () => {
+          try {
+            return await relay.relayBatch();
+          } finally {
+            heartbeat.beat();
+          }
+        },
       });
     },
     { lifetime: "singleton", dispose: (poller) => poller.stop() },

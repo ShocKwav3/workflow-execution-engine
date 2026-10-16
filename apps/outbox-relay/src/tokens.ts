@@ -1,5 +1,6 @@
 import { createToken } from "@workflow-engine/core/di/token.js";
 import type { RedisConfig } from "@workflow-engine/core/config/redisConfig.js";
+import type { Heartbeat } from "@workflow-engine/core/health/Heartbeat.js";
 import type { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
 import type { OutboxRelayConfig } from "./config.js";
 import type { OutboxRelay } from "./OutboxRelay.js";
@@ -17,3 +18,5 @@ export const jobQueueToken = createToken<JobQueue>("jobQueue");
 export const outboxRelayToken = createToken<OutboxRelay>("outboxRelay");
 
 export const pollerToken = createToken<Poller>("poller");
+
+export const pollerHeartbeatToken = createToken<Heartbeat>("pollerHeartbeat");
