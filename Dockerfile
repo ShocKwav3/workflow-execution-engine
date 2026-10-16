@@ -48,6 +48,9 @@ FROM base AS api-runtime
 
 COPY --from=builder /app/deploy/api ./
 
+# The node user, as a number: Kubernetes runAsNonRoot cannot verify a user name.
+USER 1000:1000
+
 CMD ["node", "dist/src/index.js"]
 
 FROM deps AS executor-dev
@@ -65,6 +68,8 @@ FROM base AS executor-runtime
 
 COPY --from=builder /app/deploy/executor ./
 
+USER 1000:1000
+
 CMD ["node", "dist/src/index.js"]
 
 FROM deps AS outbox-relay-dev
@@ -81,5 +86,7 @@ CMD ["nodemon", "--exitcrash"]
 FROM base AS outbox-relay-runtime
 
 COPY --from=builder /app/deploy/outbox-relay ./
+
+USER 1000:1000
 
 CMD ["node", "dist/src/index.js"]
