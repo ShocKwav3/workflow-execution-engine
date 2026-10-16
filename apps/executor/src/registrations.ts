@@ -13,20 +13,7 @@ import {
 } from "@workflow-engine/core/db/tokens.js";
 import { createTransactionRunner } from "@workflow-engine/core/db/transaction.js";
 import { PgWorkflowExecutionStatusWriter } from "@workflow-engine/core/db/workflowExecution/PgWorkflowExecutionStatusWriter.js";
-import { loadHealthConfig } from "@workflow-engine/core/config/healthConfig.js";
-import { DependencyChecker } from "@workflow-engine/core/health/DependencyChecker.js";
-import { DependencyStatusRecord } from "@workflow-engine/core/health/DependencyStatusRecord.js";
-import { RedisDependencyObserver } from "@workflow-engine/core/health/RedisDependencyObserver.js";
-import {
-  healthConfigToken,
-  postgresCheckerToken,
-  postgresStatusToken,
-  redisCheckerToken,
-  redisObserverToken,
-  redisStatusToken,
-  workerReadinessToken,
-} from "@workflow-engine/core/health/tokens.js";
-import { WorkerReadiness } from "@workflow-engine/core/health/WorkerReadiness.js";
+import { registerWorkerHealth } from "@workflow-engine/core/health/registrations.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import type { Logger } from "@workflow-engine/core/logging/types.js";
 import { RedisConnection } from "@workflow-engine/core/redis/RedisConnection.js";
@@ -122,80 +109,7 @@ export function buildContainer(logger: Logger): Container {
     { lifetime: "singleton" },
   );
 
-  container.register(healthConfigToken, loadHealthConfig, { lifetime: "singleton" });
-
-  container.register(
-    postgresStatusToken,
-    (resolver) =>
-      new DependencyStatusRecord({ expiryMs: resolver.resolve(healthConfigToken).resultExpiryMs }),
-    { lifetime: "singleton" },
-  );
-
-  container.register(
-    redisStatusToken,
-    (resolver) =>
-      new DependencyStatusRecord({ expiryMs: resolver.resolve(healthConfigToken).resultExpiryMs }),
-    { lifetime: "singleton" },
-  );
-
-  container.register(
-    postgresCheckerToken,
-    (resolver) => {
-      const pool = resolver.resolve(pgPoolToken);
-      const { checkIntervalMs, checkTimeoutMs } = resolver.resolve(healthConfigToken);
-
-      return new DependencyChecker(
-        resolver.resolve(postgresStatusToken),
-        () => pool.query("SELECT 1"),
-        { intervalMs: checkIntervalMs, timeoutMs: checkTimeoutMs },
-      );
-    },
-    { lifetime: "singleton" },
-  );
-
-  // Skipped while not connected: a PING would wait in ioredis' offline queue until the timeout.
-  container.register(
-    redisCheckerToken,
-    (resolver) => {
-      const connection = resolver.resolve(redisConnectionToken);
-      const { checkIntervalMs, checkTimeoutMs } = resolver.resolve(healthConfigToken);
-
-      return new DependencyChecker(
-        resolver.resolve(redisStatusToken),
-        () => connection.client.ping(),
-        {
-          intervalMs: checkIntervalMs,
-          timeoutMs: checkTimeoutMs,
-          isConnected: () => connection.isReady(),
-        },
-      );
-    },
-    { lifetime: "singleton" },
-  );
-
-  container.register(
-    redisObserverToken,
-    (resolver) => {
-      const checker = resolver.resolve(redisCheckerToken);
-
-      return new RedisDependencyObserver(
-        resolver.resolve(redisConnectionToken).client,
-        resolver.resolve(redisStatusToken),
-        () => checker.requestCheck(),
-      );
-    },
-    { lifetime: "singleton" },
-  );
-
-  container.register(
-    workerReadinessToken,
-    (resolver) =>
-      new WorkerReadiness({
-        postgres: resolver.resolve(postgresStatusToken),
-        redis: resolver.resolve(redisStatusToken),
-      }),
-    { lifetime: "singleton" },
-  );
+  registerWorkerHealth(container, redisConnectionToken);
 
   // Resolved last, so disposed first: the worker finishes its active job before the pools close.
   container.register(

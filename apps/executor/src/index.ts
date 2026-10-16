@@ -1,13 +1,8 @@
 import type { Container } from "@workflow-engine/core/di/container.js";
 import { loadLogConfig } from "@workflow-engine/core/config/logConfig.js";
 import { HealthServer } from "@workflow-engine/core/health/HealthServer.js";
-import {
-  healthConfigToken,
-  postgresCheckerToken,
-  redisCheckerToken,
-  redisObserverToken,
-  workerReadinessToken,
-} from "@workflow-engine/core/health/tokens.js";
+import { startDependencyChecks } from "@workflow-engine/core/health/registrations.js";
+import { healthConfigToken, workerReadinessToken } from "@workflow-engine/core/health/tokens.js";
 import type { WorkerReadiness } from "@workflow-engine/core/health/WorkerReadiness.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import { createLogger } from "@workflow-engine/core/logging/logger.js";
@@ -88,9 +83,7 @@ process.on("uncaughtException", (error: Error) => {
 try {
   container = buildContainer(logger);
   readiness = container.resolve(workerReadinessToken);
-  container.resolve(redisObserverToken).subscribe();
-  container.resolve(postgresCheckerToken).start();
-  container.resolve(redisCheckerToken).start();
+  startDependencyChecks(container);
 
   const consumer = container.resolve(workflowExecutionConsumerToken);
 
