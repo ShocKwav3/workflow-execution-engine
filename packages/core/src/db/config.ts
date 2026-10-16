@@ -1,5 +1,7 @@
 import { optionalIntEnv, requireEnv } from "@/config/env.js";
 
+export type PgSslConfig = { mode: "disable" } | { mode: "verify-full"; rootCertPath: string };
+
 export interface PgPoolConfig {
   host: string;
   port: number;
@@ -11,6 +13,7 @@ export interface PgPoolConfig {
   idleTimeoutMillis: number;
   connectionTimeoutMillis: number;
   maxLifetimeSeconds: number;
+  ssl: PgSslConfig;
 }
 
 export const PG_POOL_DEFAULTS = {
@@ -43,5 +46,30 @@ export function loadPgPoolConfig(): PgPoolConfig {
       "PG_POOL_MAX_LIFETIME_SECONDS",
       PG_POOL_DEFAULTS.maxLifetimeSeconds,
     ),
+    ssl: loadPgSslConfig(),
   };
+}
+
+// libpq names, but only the two modes that map to a pg ssl option: pg itself ignores PGSSLROOTCERT.
+function loadPgSslConfig(): PgSslConfig {
+  const mode = process.env.PGSSLMODE?.trim() || "disable";
+
+  if (mode === "verify-full") {
+    return {
+      mode,
+      rootCertPath: requireEnv("PGSSLROOTCERT", "required when PGSSLMODE=verify-full"),
+    };
+  }
+
+  if (mode !== "disable") {
+    throw new Error(
+      `Environment variable PGSSLMODE must be "disable" or "verify-full", got: ${mode}`,
+    );
+  }
+
+  if (process.env.PGSSLROOTCERT) {
+    throw new Error("PGSSLROOTCERT is set but PGSSLMODE is not verify-full");
+  }
+
+  return { mode };
 }

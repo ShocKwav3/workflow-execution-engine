@@ -128,10 +128,12 @@ describe("HealthServer", () => {
     const url = await startServer();
     const port = Number(new URL(url).port);
 
-    const response = await rawRequest(port, "GET //[ HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n");
+    const response = await rawRequest(
+      port,
+      "GET //[ HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n",
+    );
 
     expect(response.startsWith("HTTP/1.1 404")).toBe(true);
     expect((await fetch(`${url}/health`)).status).toBe(200);
   });
 });
-

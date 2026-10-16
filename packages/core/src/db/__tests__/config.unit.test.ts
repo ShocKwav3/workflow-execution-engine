@@ -12,6 +12,9 @@ function stubRequiredEnv(): void {
   for (const [key, value] of Object.entries(requiredEnv)) {
     vi.stubEnv(key, value);
   }
+
+  vi.stubEnv("PGSSLMODE", undefined);
+  vi.stubEnv("PGSSLROOTCERT", undefined);
 }
 
 afterEach(() => {
@@ -63,5 +66,65 @@ describe("loadPgPoolConfig", () => {
     const load = () => loadPgPoolConfig();
 
     expect(load).toThrow("Environment variable PG_POOL_MAX must be an integer, got: not-a-number");
+  });
+
+  describe("ssl", () => {
+    it("disables TLS when no TLS variable is set", () => {
+      stubRequiredEnv();
+
+      const config = loadPgPoolConfig();
+
+      expect(config.ssl).toEqual({ mode: "disable" });
+    });
+
+    it("disables TLS when PGSSLMODE is disable", () => {
+      stubRequiredEnv();
+      vi.stubEnv("PGSSLMODE", "disable");
+
+      const config = loadPgPoolConfig();
+
+      expect(config.ssl).toEqual({ mode: "disable" });
+    });
+
+    it("loads verify-full with the root certificate path", () => {
+      stubRequiredEnv();
+      vi.stubEnv("PGSSLMODE", "verify-full");
+      vi.stubEnv("PGSSLROOTCERT", "/certs/ca.pem");
+
+      const config = loadPgPoolConfig();
+
+      expect(config.ssl).toEqual({ mode: "verify-full", rootCertPath: "/certs/ca.pem" });
+    });
+
+    it("throws when verify-full has no root certificate path", () => {
+      stubRequiredEnv();
+      vi.stubEnv("PGSSLMODE", "verify-full");
+
+      const load = () => loadPgPoolConfig();
+
+      expect(load).toThrow(
+        "Missing required environment variable: PGSSLROOTCERT — required when PGSSLMODE=verify-full",
+      );
+    });
+
+    it("throws when PGSSLMODE is not a supported mode", () => {
+      stubRequiredEnv();
+      vi.stubEnv("PGSSLMODE", "require");
+
+      const load = () => loadPgPoolConfig();
+
+      expect(load).toThrow(
+        'Environment variable PGSSLMODE must be "disable" or "verify-full", got: require',
+      );
+    });
+
+    it("throws when PGSSLROOTCERT is set without verify-full", () => {
+      stubRequiredEnv();
+      vi.stubEnv("PGSSLROOTCERT", "/certs/ca.pem");
+
+      const load = () => loadPgPoolConfig();
+
+      expect(load).toThrow("PGSSLROOTCERT is set but PGSSLMODE is not verify-full");
+    });
   });
 });

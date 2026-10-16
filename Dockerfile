@@ -1,14 +1,17 @@
-FROM node:26-slim AS base
+FROM node:26-slim AS runtime-base
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends tini \
   && rm -rf /var/lib/apt/lists/*
-RUN npm install -g pnpm@11
 
 # Inherited by every stage: tini is PID 1, forwards signals and reaps orphaned processes.
 ENTRYPOINT ["tini", "--"]
 
 WORKDIR /app
+
+FROM runtime-base AS base
+
+RUN npm install -g pnpm@11
 
 FROM base AS deps
 
@@ -44,9 +47,12 @@ WORKDIR /app/apps/api
 
 CMD ["nodemon", "--exitcrash"]
 
-FROM base AS api-runtime
+FROM runtime-base AS api-runtime
 
 COPY --from=builder /app/deploy/api ./
+
+# The node user, as a number: Kubernetes runAsNonRoot cannot verify a user name.
+USER 1000:1000
 
 CMD ["node", "dist/src/index.js"]
 
@@ -61,9 +67,11 @@ WORKDIR /app/apps/executor
 
 CMD ["nodemon", "--exitcrash"]
 
-FROM base AS executor-runtime
+FROM runtime-base AS executor-runtime
 
 COPY --from=builder /app/deploy/executor ./
+
+USER 1000:1000
 
 CMD ["node", "dist/src/index.js"]
 
@@ -78,8 +86,10 @@ WORKDIR /app/apps/outbox-relay
 
 CMD ["nodemon", "--exitcrash"]
 
-FROM base AS outbox-relay-runtime
+FROM runtime-base AS outbox-relay-runtime
 
 COPY --from=builder /app/deploy/outbox-relay ./
+
+USER 1000:1000
 
 CMD ["node", "dist/src/index.js"]

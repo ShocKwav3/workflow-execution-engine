@@ -33,11 +33,11 @@ Only `src/` folders and `scripts/` are bind-mounted; each container builds into 
 
 Each process answers two health URLs:
 
-| Process | Host port (default) | In-container port |
-|---|---|---|
-| API | `3000` | `3000` (same as the API) |
-| Outbox relay | `9001` | `8081` (`HEALTH_PORT`) |
-| Executor | `9002` | `8081` (`HEALTH_PORT`) |
+| Process      | Host port (default) | In-container port        |
+| ------------ | ------------------- | ------------------------ |
+| API          | `3000`              | `3000` (same as the API) |
+| Outbox relay | `9001`              | `8081` (`HEALTH_PORT`)   |
+| Executor     | `9002`              | `8081` (`HEALTH_PORT`)   |
 
 - `GET /health` (liveness) checks only the process itself. It does not check PostgreSQL or Redis, so an outage of either one does not make it fail. For the relay, it fails if no poll cycle has finished for 60 s. For the executor, it fails if the BullMQ worker has stopped. It stays `200` during a graceful shutdown.
 - `GET /ready` (readiness) returns `200` only when the process has started, its dependencies answer (PostgreSQL for the API; PostgreSQL and Redis for the relay and the executor), and no shutdown has started. Otherwise it returns `503`.
@@ -49,6 +49,8 @@ curl -i http://localhost:9001/ready
 docker compose stop redis      # /ready → 503 on both workers, /health stays 200
 docker compose start redis     # /ready → 200 again within about a second
 ```
+
+TLS to PostgreSQL is off by default, and the local PostgreSQL has no TLS. To use TLS with server verification, set `PGSSLMODE=verify-full` and set `PGSSLROOTCERT` to the path of the CA certificate file. The apps accept only `disable` and `verify-full`, and they stop at startup on any other value or on a `PGSSLROOTCERT` without `verify-full`.
 
 Restarting only the API, relay or executor container (`docker compose restart api`, `docker compose restart outbox-relay`, `docker compose restart executor`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
 
@@ -106,7 +108,8 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
-  db/             Liquibase changelog (shared schema, not API-specific)
+  db/             Liquibase changelog (shared schema, not API-specific) and the migration image:
+                  target dev (Compose mounts the changelog), target runtime (changelog copied in)
   src/            DI container, error types, database pool + readers/writers + outbox claimer, Redis
                   connection factory, health checks and the health listener for the workers,
                   services,
@@ -131,7 +134,8 @@ apps/executor/    @workflow-engine/executor — consumes workflow execution jobs
 infra/redis/      Redis server configuration mounted by Docker Compose
 
 docker-compose.yml
-Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod)
+Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,
+                  no pnpm, runs as the non-root node user, UID 1000)
 tsconfig.base.json
 pnpm-workspace.yaml
 ```
