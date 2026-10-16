@@ -38,6 +38,11 @@ export class BullMqConsumer<TData, TResult> implements Disposable {
     void this.worker.run();
   }
 
+  // True from start() until the worker's main loop ends, for example after close() or a crash.
+  isRunning(): boolean {
+    return this.worker.isRunning();
+  }
+
   async dispose(): Promise<void> {
     await this.worker.close();
   }
