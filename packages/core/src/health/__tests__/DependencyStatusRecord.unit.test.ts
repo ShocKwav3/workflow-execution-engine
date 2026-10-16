@@ -112,4 +112,32 @@ describe("DependencyStatusRecord", () => {
       reason: "connection refused",
     });
   });
+
+  it("calls the state listener on a change of state only", () => {
+    const record = createRecord(new FakeClock());
+    const states: string[] = [];
+
+    record.onStateChange((status) => states.push(status.state));
+
+    record.markAvailable(record.generation);
+    record.markAvailable(record.generation);
+    record.connectionLost("connection closed");
+    record.connectionLost("connect ECONNREFUSED 127.0.0.1:6379");
+    record.markUnavailable(record.generation, "check timed out");
+    record.markAvailable(record.generation);
+
+    expect(states).toEqual(["available", "unavailable", "available"]);
+  });
+
+  it("does not call the state listener for a rejected result", () => {
+    const record = createRecord(new FakeClock());
+    const states: string[] = [];
+    const staleGeneration = record.generation;
+
+    record.connectionLost("connection closed");
+    record.onStateChange((status) => states.push(status.state));
+    record.markAvailable(staleGeneration);
+
+    expect(states).toEqual([]);
+  });
 });

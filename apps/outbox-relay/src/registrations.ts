@@ -82,7 +82,7 @@ export function buildContainer(logger: Logger): Container {
     { lifetime: "singleton" },
   );
 
-  registerWorkerHealth(container, redisConnectionToken);
+  registerWorkerHealth(container, redisConnectionToken, logger);
 
   // The longest normal gap between ticks is maxBackoffMs plus one tick, so twice that means a hung tick.
   container.register(

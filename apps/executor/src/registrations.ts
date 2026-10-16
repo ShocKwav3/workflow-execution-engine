@@ -109,7 +109,7 @@ export function buildContainer(logger: Logger): Container {
     { lifetime: "singleton" },
   );
 
-  registerWorkerHealth(container, redisConnectionToken);
+  registerWorkerHealth(container, redisConnectionToken, logger);
 
   // Resolved last, so disposed first: the worker finishes its active job before the pools close.
   container.register(

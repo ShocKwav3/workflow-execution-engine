@@ -2,6 +2,8 @@ import { loadHealthConfig } from "@/config/healthConfig.js";
 import { pgPoolToken } from "@/db/tokens.js";
 import type { Container } from "@/di/container.js";
 import type { Resolver, Token } from "@/di/types.js";
+import { createContextLogger } from "@/logging/contextLogger.js";
+import type { Logger } from "@/logging/types.js";
 import type { RedisConnection } from "@/redis/RedisConnection.js";
 import { DependencyChecker } from "./DependencyChecker.js";
 import { DependencyStatusRecord } from "./DependencyStatusRecord.js";
@@ -21,6 +23,7 @@ import { WorkerReadiness } from "./WorkerReadiness.js";
 export function registerWorkerHealth(
   container: Container,
   redisConnectionToken: Token<RedisConnection>,
+  logger: Logger,
 ): void {
   container.register(healthConfigToken, loadHealthConfig, { lifetime: "singleton" });
 
@@ -91,10 +94,13 @@ export function registerWorkerHealth(
   container.register(
     workerReadinessToken,
     (resolver) =>
-      new WorkerReadiness({
-        postgres: resolver.resolve(postgresStatusToken),
-        redis: resolver.resolve(redisStatusToken),
-      }),
+      new WorkerReadiness(
+        {
+          postgres: resolver.resolve(postgresStatusToken),
+          redis: resolver.resolve(redisStatusToken),
+        },
+        createContextLogger(logger, "Health"),
+      ),
     { lifetime: "singleton" },
   );
 }

@@ -5,10 +5,13 @@ export interface DependencyStatusRecordOptions {
   now?: () => number;
 }
 
+export type DependencyStateListener = (status: DependencyStatus) => void;
+
 export class DependencyStatusRecord {
   private status: DependencyStatus;
   private readonly expiryMs: number;
   private readonly now: () => number;
+  private listener: DependencyStateListener | undefined;
 
   constructor(options: DependencyStatusRecordOptions) {
     this.expiryMs = options.expiryMs;
@@ -21,6 +24,11 @@ export class DependencyStatusRecord {
     return this.status.generation;
   }
 
+  // Called on a change of state only, not when only the reason or the time changes.
+  onStateChange(listener: DependencyStateListener): void {
+    this.listener = listener;
+  }
+
   markAvailable(generation: number): boolean {
     return this.record(generation, "available");
   }
@@ -30,12 +38,12 @@ export class DependencyStatusRecord {
   }
 
   connectionLost(reason: string): void {
-    this.status = {
+    this.replace({
       state: "unavailable",
       reason,
       observedAt: this.now(),
       generation: this.status.generation + 1,
-    };
+    });
   }
 
   current(): DependencyStatus {
@@ -53,13 +61,23 @@ export class DependencyStatusRecord {
       return false;
     }
 
-    this.status = {
+    this.replace({
       state,
       ...(reason !== undefined ? { reason } : {}),
       observedAt: this.now(),
       generation,
-    };
+    });
 
     return true;
+  }
+
+  private replace(next: DependencyStatus): void {
+    const changed = next.state !== this.status.state;
+
+    this.status = next;
+
+    if (changed) {
+      this.listener?.({ ...next });
+    }
   }
 }
