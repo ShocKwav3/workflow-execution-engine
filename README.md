@@ -50,6 +50,8 @@ docker compose stop redis      # /ready → 503 on both workers, /health stays 2
 docker compose start redis     # /ready → 200 again within about a second
 ```
 
+TLS to PostgreSQL is off by default, and the local PostgreSQL has no TLS. To use TLS with server verification, set `PGSSLMODE=verify-full` and set `PGSSLROOTCERT` to the path of the CA certificate file. The apps accept only `disable` and `verify-full`, and they stop at startup on any other value or on a `PGSSLROOTCERT` without `verify-full`.
+
 Restarting only the API, relay or executor container (`docker compose restart api`, `docker compose restart outbox-relay`, `docker compose restart executor`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
 
 ## Inspecting the queue
@@ -106,7 +108,8 @@ Each package has its own `tsconfig.json` (default, includes tests — what your 
 
 ```text
 packages/core/    @workflow-engine/core — shared library, no entrypoint of its own
-  db/             Liquibase changelog (shared schema, not API-specific)
+  db/             Liquibase changelog (shared schema, not API-specific) and the migration image:
+                  target dev (Compose mounts the changelog), target runtime (changelog copied in)
   src/            DI container, error types, database pool + readers/writers + outbox claimer, Redis
                   connection factory, health checks and the health listener for the workers,
                   services,
@@ -131,7 +134,8 @@ apps/executor/    @workflow-engine/executor — consumes workflow execution jobs
 infra/redis/      Redis server configuration mounted by Docker Compose
 
 docker-compose.yml
-Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod)
+Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,
+                  runs as the non-root node user, UID 1000)
 tsconfig.base.json
 pnpm-workspace.yaml
 ```
