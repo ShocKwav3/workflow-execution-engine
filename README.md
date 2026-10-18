@@ -12,7 +12,10 @@ Current API surface: workflow definitions, versions (draft → published lifecyc
 - PostgreSQL, raw `pg` (no ORM), Liquibase for migrations
 - Zod for runtime validation + OpenAPI generation (`fastify-type-provider-zod`)
 - pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real Postgres in integration tests), ESLint/Prettier
-- BullMQ on Redis (AOF persistence, `noeviction`) as the job queue; Redis is configured by `infra/redis/redis.conf`
+- BullMQ on Redis as the job queue. Redis is configured by `infra/redis/redis.conf`:
+  - `maxmemory-policy noeviction`: BullMQ breaks when Redis evicts its keys, so writes fail at the memory limit instead;
+  - AOF persistence (`appendonly yes`, `appendfsync everysec`): queued jobs survive a restart;
+  - no password: Redis is reachable only on the Compose network and the host's loopback port.
 - Docker Compose for local infrastructure
 
 ## Running locally
@@ -131,7 +134,8 @@ apps/executor/    @workflow-engine/executor — consumes workflow execution jobs
   src/            queue consumer, execution runner, simulated node work, composition root,
                   configuration
 
-infra/redis/      Redis server configuration mounted by Docker Compose
+infra/redis/      Redis server configuration mounted by Docker Compose; the Kubernetes manifests in
+                  workflow-execution-engine-deploy keep an identical copy
 
 docker-compose.yml
 Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,
