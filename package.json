@@ -11,6 +11,7 @@
     "format": "prettier --write . --log-level warn",
     "generate:openapi": "pnpm build && pnpm --filter @workflow-engine/api generate:openapi",
     "lint:spec": "spectral lint apps/api/spec/*/openapi.yaml",
+    "test:load": "bash scripts/load-test.sh",
     "clean:bundles": "pnpm -r clean:bundles",
     "clean:modules": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
   },

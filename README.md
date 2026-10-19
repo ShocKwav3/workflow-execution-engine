@@ -4,58 +4,65 @@ A backend-only distributed workflow execution engine: define workflows as a sequ
 
 ## Status
 
-Current API surface: workflow definitions, versions (draft → published lifecycle), nodes, executions, and execution history — backed by PostgreSQL, exposed over a Fastify + Zod HTTP API with OpenAPI generation and Spectral linting. Creating an execution persists it together with a transactional outbox row describing the work to dispatch, and returns immediately; a separate outbox relay process drains that outbox into a BullMQ job queue on Redis; an executor process consumes those jobs and runs each execution's nodes in order, moving it `CREATED → RUNNING → COMPLETED`. The outbox relay and the executor each serve `GET /health` and `GET /ready` on their own port, like the API. Scheduling, failure handling, and Saga orchestration are not yet implemented.
+Works today:
+
+- Workflow definitions, versions (draft → published), nodes, executions and execution history, over a Fastify HTTP API with a generated OpenAPI document.
+- Asynchronous execution: the API writes each execution with a transactional outbox row. The outbox relay moves the row into a BullMQ queue on Redis. The executor runs the nodes in order (`CREATED → RUNNING → COMPLETED`) and resumes from PostgreSQL after a crash.
+- Health endpoints (`/health`, `/ready`) on all three processes.
+- Container images for each process and for the migrations. Kubernetes manifests are in the deploy repository (see [Deployment](#deployment)).
+
+Not built yet: scheduling, failure handling with retries and compensation (Saga), Kafka.
 
 ## Stack
 
-- Node.js (`^26`) + Fastify, TypeScript (ESM, `nodenext`)
-- PostgreSQL, raw `pg` (no ORM), Liquibase for migrations
-- Zod for runtime validation + OpenAPI generation (`fastify-type-provider-zod`)
-- pnpm workspace (`apps/*`, `packages/*`), Vitest (+ Testcontainers for real Postgres in integration tests), ESLint/Prettier
-- BullMQ on Redis as the job queue. Redis is configured by `infra/redis/redis.conf`:
-  - `maxmemory-policy noeviction`: BullMQ breaks when Redis evicts its keys, so writes fail at the memory limit instead;
-  - AOF persistence (`appendonly yes`, `appendfsync everysec`): queued jobs survive a restart;
-  - no password: Redis is reachable only on the Compose network and the host's loopback port.
-- Docker Compose for local infrastructure
+- Node.js (`^26`), TypeScript (ESM, `nodenext`), Fastify
+- PostgreSQL with raw `pg` (no ORM), Liquibase for migrations
+- Zod for validation and OpenAPI generation (`fastify-type-provider-zod`)
+- BullMQ on Redis for the job queue
+- pnpm workspace, Vitest with Testcontainers, ESLint, Prettier
+- Docker multi-stage images; Docker Compose for local development
+- Kubernetes with Kustomize (minikube locally)
+- k6 for load tests
 
 ## Running locally
+
+Requirements: Docker with Docker Compose.
 
 ```bash
 cp .env.example .env
 docker compose up --build --watch
 ```
 
-This starts PostgreSQL and Redis, runs Liquibase migrations, starts the outbox relay and the executor, and starts the API on `http://localhost:${API_PORT}` (default `3000`). Every published port is bound to `127.0.0.1` and set in `.env` (`API_PORT`, `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `RELAY_HEALTH_HOST_PORT`, `EXECUTOR_HEALTH_HOST_PORT`, `BULL_BOARD_PORT`, `REDISINSIGHT_PORT`); change one if it is already in use on your machine. Each application service runs one watcher, `nodemon` (configured in the app's `nodemon.json`), under an init process:
+This starts PostgreSQL and Redis, runs the migrations, and starts the API, the outbox relay and the executor. A source change rebuilds and restarts the affected app.
 
-- **Source change:** nodemon stops the app gracefully (`SIGTERM`), then `scripts/dev-launch.sh` builds the app and `packages/core` in order and starts Node.
-- **Build error:** the error is printed and the service waits for the next source change; the container keeps running, but the app does not.
-- **Crash:** `--exitcrash` makes the container exit, and `restart: on-failure` starts it again.
-- **Stop** (`Ctrl+C`, `docker compose stop`): the signal reaches the app, which shuts down gracefully and logs `shutdown complete`.
+| Service | URL (default port) |
+| --- | --- |
+| API | `http://localhost:3000` |
+| API docs | `http://localhost:3000/api/v1/docs` |
+| Outbox relay health | `http://localhost:9001/health`, `/ready` |
+| Executor health | `http://localhost:9002/health`, `/ready` |
 
-Only `src/` folders and `scripts/` are bind-mounted; each container builds into its own `dist`, separate from the host's. A change to configuration (`tsconfig*.json`, `nodemon.json`, `package.json`, `pnpm-lock.yaml`) rebuilds and replaces the affected services automatically under `--watch` (Compose Watch `rebuild` actions); without `--watch`, run `docker compose up --build`.
+All ports bind to `127.0.0.1`. If a port is in use, change it in `.env`.
 
-Each process answers two health URLs:
+To stop, press `Ctrl+C` or run `docker compose stop`. The data stays in Docker volumes. `docker compose down -v` deletes it.
 
-| Process      | Host port (default) | In-container port        |
-| ------------ | ------------------- | ------------------------ |
-| API          | `3000`              | `3000` (same as the API) |
-| Outbox relay | `9001`              | `8081` (`HEALTH_PORT`)   |
-| Executor     | `9002`              | `8081` (`HEALTH_PORT`)   |
+### Health endpoints
 
-- `GET /health` (liveness) checks only the process itself. It does not check PostgreSQL or Redis, so an outage of either one does not make it fail. For the relay, it fails if no poll cycle has finished for 60 s. For the executor, it fails if the BullMQ worker has stopped. It stays `200` during a graceful shutdown.
-- `GET /ready` (readiness) returns `200` only when the process has started, its dependencies answer (PostgreSQL for the API; PostgreSQL and Redis for the relay and the executor), and no shutdown has started. Otherwise it returns `503`.
-
-Both return `{"status":"ok"}` or `{"status":"unavailable"}`.
+- `GET /health` (liveness) checks only the process. An outage of PostgreSQL or Redis does not make it fail. It fails if the relay finished no poll cycle for 60 s, or if the executor's BullMQ worker stopped.
+- `GET /ready` (readiness) returns `200` only when the dependencies answer: PostgreSQL for the API, PostgreSQL and Redis for the workers. During a shutdown, it returns `503`.
 
 ```bash
-curl -i http://localhost:9001/ready
 docker compose stop redis      # /ready → 503 on both workers, /health stays 200
 docker compose start redis     # /ready → 200 again within about a second
 ```
 
-TLS to PostgreSQL is off by default, and the local PostgreSQL has no TLS. To use TLS with server verification, set `PGSSLMODE=verify-full` and set `PGSSLROOTCERT` to the path of the CA certificate file. The apps accept only `disable` and `verify-full`, and they stop at startup on any other value or on a `PGSSLROOTCERT` without `verify-full`.
+### Configuration
 
-Restarting only the API, relay or executor container (`docker compose restart api`, `docker compose restart outbox-relay`, `docker compose restart executor`) should not lose any data — state lives exclusively in the named `postgres_data` and `redis_data` volumes. `docker compose down -v` wipes them (and the `redisinsight_data` volume of the optional tools); plain `down`/`up` does not.
+- **Redis** (`infra/redis/redis.conf`):
+  - `maxmemory-policy noeviction`: BullMQ breaks when Redis evicts its keys, so writes fail at the memory limit instead.
+  - AOF persistence (`appendonly yes`, `appendfsync everysec`): queued jobs survive a restart.
+  - No password: Redis is reachable only on the Compose network and the host's loopback port.
+- **PostgreSQL TLS** is off by default. To use TLS with server verification, set `PGSSLMODE=verify-full` and set `PGSSLROOTCERT` to the path of the CA certificate. The apps accept only `disable` and `verify-full`. They stop at startup on any other value, or on `PGSSLROOTCERT` without `verify-full`.
 
 ## Inspecting the queue
 
@@ -107,9 +114,29 @@ Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix 
 
 Each package has its own `tsconfig.json` (default, includes tests — what your editor should pick up) and `tsconfig.build.json` (extends it, excludes tests — what `pnpm build` actually compiles with), both extending the shared `tsconfig.base.json` at the repo root.
 
+### Hot reload in Compose
+
+Each app container runs `nodemon` (configured in the app's `nodemon.json`) under an init process. Only `src/` folders and `scripts/` are bind-mounted, and each container builds into its own `dist`.
+
+- **Source change:** nodemon stops the app with `SIGTERM`, then `scripts/dev-launch.sh` builds `packages/core` and the app and starts Node.
+- **Build error:** the error is printed, and the service waits for the next source change.
+- **Crash:** `--exitcrash` makes the container exit, and `restart: on-failure` starts it again.
+- **Configuration change** (`tsconfig*.json`, `nodemon.json`, `package.json`, `pnpm-lock.yaml`): `--watch` rebuilds and replaces the affected services. Without `--watch`, run `docker compose up --build`.
+
+### Load test
+
+`scripts/load-executions.js` creates one published workflow, then starts 5 executions per second and reads each one back. The test fails if more than 1% of the requests fail. It needs [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) and, for the resource samples, `kubectl` with metrics-server.
+
+```bash
+pnpm test:load                                         # 3 minutes against http://127.0.0.1
+LOAD_TEST_DURATION=10m LOAD_TEST_BASE_URL=http://localhost:3000 pnpm test:load
+```
+
+`pnpm test:load` runs `scripts/load-test.sh`. It samples `kubectl top pods` every `LOAD_TEST_INTERVAL` seconds (default `60`) in the `LOAD_TEST_NAMESPACE` namespace (default `workflow-engine`) while k6 runs. Then it writes the samples and the k6 summary to `LOAD_TEST_OUT` (default `load-test.log`).
+
 ## Deployment
 
-The Kubernetes manifests and the minikube deploy runbook are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy).
+The Kubernetes manifests are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy). Its `k8s/deploy-local.sh` builds the images from a clone of this repository and deploys them to minikube; `k8s/deploy-local.md` explains the setup and each step.
 
 ## Layout
 
@@ -140,6 +167,9 @@ apps/executor/    @workflow-engine/executor — consumes workflow execution jobs
 
 infra/redis/      Redis server configuration mounted by Docker Compose; the Kubernetes manifests keep
                   an identical copy (see Deployment)
+
+scripts/          Compose dev launcher (dev-launch.sh), the k6 load test (load-executions.js) and its
+                  runner with resource samples (load-test.sh)
 
 docker-compose.yml
 Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,

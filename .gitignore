@@ -10,4 +10,5 @@ dist
 .env.*
 !.env.example
 coverage
+/load-test.log
 packages/core/db/drivers
