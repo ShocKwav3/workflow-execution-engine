@@ -107,6 +107,10 @@ Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix 
 
 Each package has its own `tsconfig.json` (default, includes tests — what your editor should pick up) and `tsconfig.build.json` (extends it, excludes tests — what `pnpm build` actually compiles with), both extending the shared `tsconfig.base.json` at the repo root.
 
+## Deployment
+
+The Kubernetes manifests and the minikube deploy runbook are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy).
+
 ## Layout
 
 ```text
@@ -134,8 +138,8 @@ apps/executor/    @workflow-engine/executor — consumes workflow execution jobs
   src/            queue consumer, execution runner, simulated node work, composition root,
                   configuration
 
-infra/redis/      Redis server configuration mounted by Docker Compose; the Kubernetes manifests in
-                  workflow-execution-engine-deploy keep an identical copy
+infra/redis/      Redis server configuration mounted by Docker Compose; the Kubernetes manifests keep
+                  an identical copy (see Deployment)
 
 docker-compose.yml
 Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,
