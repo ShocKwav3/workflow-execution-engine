@@ -35,12 +35,12 @@ docker compose up --build --watch
 
 This starts PostgreSQL and Redis, runs the migrations, and starts the API, the outbox relay and the executor. A source change rebuilds and restarts the affected app.
 
-| Service | URL (default port) |
-| --- | --- |
-| API | `http://localhost:3000` |
-| API docs | `http://localhost:3000/api/v1/docs` |
+| Service             | URL (default port)                       |
+| ------------------- | ---------------------------------------- |
+| API                 | `http://localhost:3000`                  |
+| API docs            | `http://localhost:3000/api/v1/docs`      |
 | Outbox relay health | `http://localhost:9001/health`, `/ready` |
-| Executor health | `http://localhost:9002/health`, `/ready` |
+| Executor health     | `http://localhost:9002/health`, `/ready` |
 
 All ports bind to `127.0.0.1`. If a port is in use, change it in `.env`.
 
@@ -89,7 +89,7 @@ pnpm install
 pnpm build                 # builds every package, in dependency order (packages/core, then the apps)
 pnpm dev                   # host watch build (TypeScript project references); compiles on any change
                            # (containers don't use this — each runs nodemon with its app's nodemon.json)
-pnpm test                  # vitest, full suite, spins up Testcontainers PostgreSQL and Redis
+pnpm test                  # vitest, unit + integration, spins up Testcontainers PostgreSQL and Redis
 pnpm lint                  # eslint, whole workspace
 pnpm generate:openapi
 pnpm lint:spec             # spectral, lints the generated OpenAPI doc
@@ -110,7 +110,7 @@ pnpm --filter @workflow-engine/executor test:unit                  # no containe
 pnpm --filter @workflow-engine/executor test:integration           # Postgres + Redis
 ```
 
-Test files are named `*.unit.test.ts` or `*.integration.test.ts` — the suffix determines which of the above picks them up.
+Test files are named `*.unit.test.ts`, `*.integration.test.ts` or `*.e2e.test.ts` — the suffix determines which of the above picks them up.
 
 Each package has its own `tsconfig.json` (default, includes tests — what your editor should pick up) and `tsconfig.build.json` (extends it, excludes tests — what `pnpm build` actually compiles with), both extending the shared `tsconfig.base.json` at the repo root.
 
@@ -133,6 +133,18 @@ LOAD_TEST_DURATION=10m LOAD_TEST_BASE_URL=http://localhost:3000 pnpm test:load
 ```
 
 `pnpm test:load` runs `scripts/load-test.sh`. It samples `kubectl top pods` every `LOAD_TEST_INTERVAL` seconds (default `60`) in the `LOAD_TEST_NAMESPACE` namespace (default `workflow-engine`) while k6 runs. Then it writes the samples and the k6 summary to `LOAD_TEST_OUT` (default `load-test.log`).
+
+### End-to-end smoke test
+
+`e2e/smoke.e2e.test.ts` uses only the HTTP API. It creates and publishes a workflow with one node, starts an execution, and polls it until `COMPLETED` (30 s timeout). It does not start any service, so the system must already run. `pnpm test` does not include it.
+
+```bash
+docker compose up -d
+pnpm test:e2e                                          # against http://localhost:3000
+E2E_BASE_URL=http://127.0.0.1 pnpm test:e2e            # against minikube, through minikube tunnel
+```
+
+If the test times out, the failure message gives the execution ID and the correlation ID. Search the API, relay and executor logs for the correlation ID.
 
 ## Deployment
 
@@ -164,6 +176,8 @@ apps/executor/    @workflow-engine/executor — consumes workflow execution jobs
                   execution's nodes in order, resuming from Postgres after a crash
   src/            queue consumer, execution runner, simulated node work, composition root,
                   configuration
+
+e2e/              end-to-end smoke test against a running system, over HTTP only
 
 infra/redis/      Redis server configuration mounted by Docker Compose; the Kubernetes manifests keep
                   an identical copy (see Deployment)
