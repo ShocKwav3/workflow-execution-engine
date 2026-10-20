@@ -23,5 +23,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // k6 runtime globals; the script runs in k6, not Node.js.
+    files: ["scripts/load-executions.js"],
+    languageOptions: {
+      globals: { __ENV: "readonly", __VU: "readonly", __ITER: "readonly" },
+    },
+  },
   eslintConfigPrettier,
 );
