@@ -6,7 +6,8 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "test": "vitest run",
+    "test": "vitest run --project '!e2e'",
+    "test:e2e": "vitest run --project e2e",
     "lint": "eslint .",
     "format": "prettier --write . --log-level warn",
     "generate:openapi": "pnpm build && pnpm --filter @workflow-engine/api generate:openapi",

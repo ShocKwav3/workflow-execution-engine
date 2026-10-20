@@ -63,6 +63,13 @@ export default defineConfig({
           include: ["apps/executor/**/*.integration.test.ts"],
         },
       },
+      {
+        test: {
+          name: { label: "e2e", color: "white" },
+          include: ["e2e/**/*.e2e.test.ts"],
+          testTimeout: 60_000,
+        },
+      },
     ],
   },
 });
