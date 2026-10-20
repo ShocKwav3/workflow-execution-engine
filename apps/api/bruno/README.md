@@ -1,6 +1,9 @@
 # Bruno Collection
 
-Select the **Local** environment before sending requests — it supplies `{{baseUrl}}`.
+Select an environment before sending requests — it supplies `{{baseUrl}}`:
+
+- **Local**: the Docker Compose API (`http://localhost:3000`).
+- **Minikube**: the API on minikube through `minikube tunnel` (`http://127.0.0.1`).
 
 Requests that create a resource (`Create Workflow`, `Create Workflow Version`,
 `Create Node`, `Create Execution`) auto-capture the new ID into a runtime variable
