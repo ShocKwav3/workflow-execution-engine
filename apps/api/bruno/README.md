@@ -4,6 +4,9 @@ Select an environment before sending requests — it supplies `{{baseUrl}}`:
 
 - **Local**: the Docker Compose API (`http://localhost:3000`).
 - **Minikube**: the API on minikube through `minikube tunnel` (`http://127.0.0.1`).
+- **AWS**: the API on EKS through its Network Load Balancer. The DNS name changes with each new
+  load balancer, so it is not committed. Copy `.env.example` to `.env` in this folder and set
+  `AWS_API_HOST`. Bruno reads `.env` when it opens the collection; `.gitignore` excludes it.
 
 Requests that create a resource (`Create Workflow`, `Create Workflow Version`,
 `Create Node`, `Create Execution`) auto-capture the new ID into a runtime variable
