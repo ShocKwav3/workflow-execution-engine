@@ -20,10 +20,13 @@ jobs:
     needs: [build]
     uses: ./.github/workflows/ci-openapi.yml
 
+  image:
+    uses: ./.github/workflows/ci-image.yml
+
   ci-passed:
     # always() so the gate fails instead of being skipped when a needed job fails
     if: always()
-    needs: [build, lint, test, openapi]
+    needs: [build, lint, test, openapi, image]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

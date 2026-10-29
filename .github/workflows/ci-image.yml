@@ -1,0 +1,34 @@
+name: Image
+
+on:
+  workflow_call:
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Set the image tag
+        # On pull_request, github.sha is the test merge commit, not the pushed commit
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "TAG=${SHA:0:7}" >> "$GITHUB_ENV"
+
+      - uses: docker/bake-action@v7
+        with:
+          # The default remote Git context ignores the checkout; build the checked-out files
+          source: .
+          files: docker/docker-bake.hcl
+          set: |
+            api.cache-from=type=gha,scope=api
+            api.cache-to=type=gha,scope=api,mode=max
+            outbox-relay.cache-from=type=gha,scope=outbox-relay
+            outbox-relay.cache-to=type=gha,scope=outbox-relay,mode=max
+            executor.cache-from=type=gha,scope=executor
+            executor.cache-to=type=gha,scope=executor,mode=max
+            migrate.cache-from=type=gha,scope=migrate
+            migrate.cache-to=type=gha,scope=migrate,mode=max
