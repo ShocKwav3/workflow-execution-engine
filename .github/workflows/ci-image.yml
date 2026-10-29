@@ -8,9 +8,11 @@ jobs:
     runs-on: ubuntu-24.04-arm
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out the repository
+        uses: actions/checkout@v7
 
-      - uses: docker/setup-buildx-action@v4
+      - name: Set up the Docker image builder
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Set the image tag
         # On pull_request, github.sha is the test merge commit, not the pushed commit
@@ -18,7 +20,8 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: echo "TAG=${SHA:0:7}" >> "$GITHUB_ENV"
 
-      - uses: docker/bake-action@v7
+      - name: Build the four images
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
         with:
           # The default remote Git context ignores the checkout; build the checked-out files
           source: .

@@ -1,0 +1,70 @@
+name: Image scan
+
+on:
+  workflow_call:
+
+jobs:
+  image-scan:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up the Docker image builder
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Set the image tag
+        # On pull_request, github.sha is the test merge commit, not the pushed commit
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "TAG=${SHA:0:7}" >> "$GITHUB_ENV"
+
+      # Rebuilds from the cache that the image job wrote, then loads the images for the scan
+      - name: Rebuild the four images from the cache
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
+        with:
+          source: .
+          files: docker/docker-bake.hcl
+          load: true
+          set: |
+            api.cache-from=type=gha,scope=api
+            outbox-relay.cache-from=type=gha,scope=outbox-relay
+            executor.cache-from=type=gha,scope=executor
+            migrate.cache-from=type=gha,scope=migrate
+
+      - name: Scan api
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: workflow-engine/api:${{ env.TAG }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      # Each scan runs even if an earlier one failed, so one run shows every finding
+      - name: Scan outbox-relay
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: workflow-engine/outbox-relay:${{ env.TAG }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Scan executor
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: workflow-engine/executor:${{ env.TAG }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Scan migrate
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: workflow-engine/migrate:${{ env.TAG }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"

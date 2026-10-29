@@ -23,11 +23,19 @@ jobs:
   image:
     uses: ./.github/workflows/ci-image.yml
 
+  image-scan:
+    # After image, so the rebuild reads the layer cache that image wrote
+    needs: [image]
+    uses: ./.github/workflows/ci-image-scan.yml
+
+  config-scan:
+    uses: ./.github/workflows/ci-config-scan.yml
+
   ci-passed:
     # always() so the gate fails instead of being skipped when a needed job fails
     if: always()
-    needs: [build, lint, test, openapi, image]
-    runs-on: ubuntu-latest
+    needs: [build, lint, test, openapi, image, image-scan, config-scan]
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
 
