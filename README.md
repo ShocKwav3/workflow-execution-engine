@@ -189,6 +189,7 @@ docker/
   app.Dockerfile      multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean,
                       prod, no pnpm, runs as the non-root node user, UID 1000)
   migrate.Dockerfile  Liquibase migration image; the runtime target contains the changelog
+  docker-bake.hcl     the four arm64 runtime images (`docker buildx bake -f docker/docker-bake.hcl`)
 
 compose.yaml
 tsconfig.base.json

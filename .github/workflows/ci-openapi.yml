@@ -1,0 +1,32 @@
+name: OpenAPI
+
+on:
+  workflow_call:
+
+jobs:
+  openapi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+
+      # The root generate:openapi script rebuilds; the build job already did.
+      - run: pnpm --filter @workflow-engine/api generate:openapi
+
+      - name: Require the committed spec to match the code
+        # status, not diff: diff ignores a new untracked file such as spec/v2/openapi.yaml
+        run: |
+          if [ -n "$(git status --porcelain -- apps/api/spec)" ]; then
+            git status --porcelain -- apps/api/spec
+            git diff -- apps/api/spec
+            echo "::error::The OpenAPI spec is out of date. Run 'pnpm generate:openapi' and commit the result."
+            exit 1
+          fi
+
+      - run: pnpm lint:spec
