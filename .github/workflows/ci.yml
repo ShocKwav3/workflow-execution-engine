@@ -6,36 +6,27 @@ on:
   pull_request:
 
 jobs:
-  build-test-lint:
-    runs-on: ubuntu-latest
+  build:
+    uses: ./.github/workflows/ci-build.yml
 
-    steps:
-      - uses: actions/checkout@v7
+  lint:
+    uses: ./.github/workflows/ci-lint.yml
 
-      - uses: pnpm/action-setup@v6
+  test:
+    needs: [build]
+    uses: ./.github/workflows/ci-test.yml
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: ".nvmrc"
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm build
-
-      - run: pnpm lint
-
-      - run: pnpm test
-
-      - run: pnpm generate:openapi
-
-      - run: pnpm lint:spec
+  openapi:
+    needs: [build]
+    uses: ./.github/workflows/ci-openapi.yml
 
   ci-passed:
     # always() so the gate fails instead of being skipped when a needed job fails
     if: always()
-    needs: [build-test-lint]
+    needs: [build, lint, test, openapi]
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
 
     steps:
       - name: Require every needed job to succeed
@@ -48,3 +39,38 @@ jobs:
             exit 1
           fi
           echo "All needed jobs succeeded."
+
+      - name: Report the job results
+        if: always()
+        # A failed report must not block a merge that the gate allows
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const icons = { success: "✅", failure: "❌", cancelled: "⏹️", skipped: "⏭️" };
+            const marker = "<!-- ci-summary -->";
+            const rows = Object.entries(JSON.parse(process.env.NEEDS))
+              .map(([job, { result }]) => `| \`${job}\` | ${icons[result] ?? ""} ${result} |`);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            // On pull_request, context.sha is the test merge commit, not the pushed commit
+            const sha = (context.payload.pull_request?.head.sha ?? context.sha).slice(0, 7);
+            const body = [marker, `### CI results for ${sha}`, "", "| Job | Result |", "|---|---|", ...rows, "", `[Workflow run](${runUrl})`].join("\n");
+
+            await core.summary.addRaw(body).write();
+
+            if (context.eventName !== "pull_request") return;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find((c) => c.user.login === "github-actions[bot]" && c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
