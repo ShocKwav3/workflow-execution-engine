@@ -185,9 +185,12 @@ infra/redis/      Redis server configuration mounted by Docker Compose; the Kube
 scripts/          Compose dev launcher (dev-launch.sh), the k6 load test (load-executions.js) and its
                   runner with resource samples (load-test.sh)
 
-docker-compose.yml
-Dockerfile        multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean, prod,
-                  no pnpm, runs as the non-root node user, UID 1000)
+docker/
+  app.Dockerfile      multi-stage: deps / builder / per-app dev (hot reload) / per-app runtime (lean,
+                      prod, no pnpm, runs as the non-root node user, UID 1000)
+  migrate.Dockerfile  Liquibase migration image; the runtime target contains the changelog
+
+compose.yaml
 tsconfig.base.json
 pnpm-workspace.yaml
 ```
