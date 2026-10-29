@@ -3,4 +3,4 @@ RUN lpm add postgresql --global
 
 # Compose mounts the changelog over this path; a cluster has no mount.
 FROM dev AS runtime
-COPY changelog/ /liquibase/changelog/
+COPY packages/core/db/changelog/ /liquibase/changelog/

@@ -57,8 +57,8 @@ services:
 
   liquibase:
     build:
-      context: ./packages/core/db
-      dockerfile: Dockerfile.liquibase
+      context: .
+      dockerfile: docker/migrate.Dockerfile
       target: dev
     depends_on:
       postgres:
@@ -76,7 +76,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/app.Dockerfile
       target: api-dev
     depends_on:
       liquibase:
@@ -107,7 +107,7 @@ services:
   outbox-relay:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/app.Dockerfile
       target: outbox-relay-dev
     depends_on:
       liquibase:
@@ -138,7 +138,7 @@ services:
   executor:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/app.Dockerfile
       target: executor-dev
     depends_on:
       liquibase:
