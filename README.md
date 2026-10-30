@@ -155,9 +155,22 @@ Every pull request and push to `main` runs `.github/workflows/ci.yml`. Each conc
 - `image`: builds the four runtime images for `linux/arm64` with `docker/docker-bake.hcl`. Nothing is pushed.
 - `image-scan`: scans the four images for known vulnerabilities with a fix available, `HIGH` and `CRITICAL` (Trivy).
 - `config-scan`: a static security scan of the Dockerfiles and the workflows (Checkov).
+- `e2e`: deploys the system into a kind cluster with `k8s/deploy-local.sh` of the deploy repository (the branch with the same name, else `main`). Then it runs `pnpm test:e2e` and Schemathesis against the API, which checks the responses to generated requests against the OpenAPI spec. If the job fails, it prints the Pod state, events and logs, and uploads the cluster logs.
 - `ci-passed`: fails unless every job above succeeded. It is the only required check on `main`. It posts a table of the job results on the pull request, with the findings of both scans in collapsed sections.
 
 The two scans only report: a finding does not fail the job or block the merge. Read the security report in the pull request comment.
+
+#### Changes that need both repositories
+
+The `e2e` job deploys with the manifests of the deploy repository branch that has the same name as this branch. If no such branch exists, it uses `main`.
+
+For a change that needs both repositories, for example a new required environment variable:
+
+1. Create a branch with the same name in both repositories.
+2. Push the deploy repository branch first, so the `e2e` job of this pull request uses it.
+3. Merge the deploy repository pull request first, then this one. Pull requests on other branches then deploy with manifests that already contain the change.
+
+Keep each deploy repository change backward compatible: the current app code on `main` must still deploy and pass with it. An extra variable does no harm to old code. A change that requires new app code makes `e2e` fail on every pull request without that code, until the app change is merged.
 
 ## Deployment
 
