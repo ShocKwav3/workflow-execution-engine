@@ -34,10 +34,15 @@ jobs:
   config-scan:
     uses: ./.github/workflows/ci-config-scan.yml
 
+  e2e:
+    # After image, so the rebuild reads the layer cache that image wrote
+    needs: [image]
+    uses: ./.github/workflows/ci-e2e.yml
+
   ci-passed:
     # always() so the gate fails instead of being skipped when a needed job fails
     if: always()
-    needs: [build, lint, test, openapi, image, image-scan, config-scan]
+    needs: [build, lint, test, openapi, image, image-scan, config-scan, e2e]
     runs-on: ubuntu-24.04
     permissions:
       pull-requests: write

@@ -1,0 +1,116 @@
+name: End-to-end
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up the workspace
+        uses: ./.github/actions/setup
+
+      - name: Set up the Docker image builder
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Set the image tag
+        # On pull_request, github.sha is the test merge commit, not the pushed commit
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "TAG=${SHA:0:7}" >> "$GITHUB_ENV"
+
+      # Rebuilds from the cache that the image job wrote, then loads the images for kind
+      - name: Rebuild the four images from the cache
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
+        with:
+          source: .
+          files: docker/docker-bake.hcl
+          load: true
+          set: |
+            api.cache-from=type=gha,scope=api
+            outbox-relay.cache-from=type=gha,scope=outbox-relay
+            executor.cache-from=type=gha,scope=executor
+            migrate.cache-from=type=gha,scope=migrate
+
+      - name: Choose the branch of the deploy repository
+        id: deploy-ref
+        # A branch with the same name tests a change that needs both repositories
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git ls-remote --exit-code --heads https://github.com/ShocKwav3/workflow-execution-engine-deploy.git "$BRANCH" > /dev/null; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the deploy repository
+        uses: actions/checkout@v7
+        with:
+          repository: ShocKwav3/workflow-execution-engine-deploy
+          ref: ${{ steps.deploy-ref.outputs.ref }}
+          path: deploy
+          persist-credentials: false
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          version: v0.33.0
+          node_image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
+          cluster_name: kind
+
+      - name: Deploy the system to the cluster
+        id: deploy
+        run: |
+          cp deploy/k8s/overlays/local/secret.env.example deploy/k8s/overlays/local/secret.env
+          DEPLOY_TAG="$TAG" deploy/k8s/deploy-local.sh
+
+      - name: Forward port 3000 to the API
+        run: |
+          nohup kubectl port-forward -n workflow-engine svc/api 3000:80 > port-forward.log 2>&1 &
+          curl -fsS --max-time 5 --retry 15 --retry-delay 2 --retry-connrefused http://localhost:3000/health
+
+      - name: Run the end-to-end test
+        run: pnpm test:e2e
+
+      # Runs also when the end-to-end test failed, so one run reports both results
+      - name: Test the API against its OpenAPI spec
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        uses: schemathesis/action@b0cacf86f25caaa79ac110cc2077afd70fdd67ff # v3.1.0
+        with:
+          # The committed spec is the reviewed contract; the openapi job keeps it equal to the served one
+          schema: apps/api/spec/v1/openapi.yaml
+          base-url: http://localhost:3000
+          max-examples: "50"
+          coverage-pr-comment: "false"
+          coverage-report: "false"
+
+      - name: Print the cluster state
+        if: failure()
+        run: |
+          kubectl get pods -n workflow-engine -o wide || true
+          kubectl get events -n workflow-engine --sort-by=.lastTimestamp || true
+          kubectl describe pods -n workflow-engine || true
+          for app in api outbox-relay executor; do
+            echo "::group::$app logs"
+            kubectl logs -n workflow-engine "deploy/$app" --all-containers --prefix || true
+            echo "::endgroup::"
+          done
+          cat port-forward.log || true
+          kind export logs kind-logs || true
+
+      - name: Upload the cluster logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kind-logs
+          path: kind-logs
+          retention-days: 7
