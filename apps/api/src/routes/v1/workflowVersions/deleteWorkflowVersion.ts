@@ -10,7 +10,7 @@ import { workflowVersionParamsSchema } from "./workflowVersions.schemas.js";
 export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "DELETE",
-    url: "/workflows/:workflowId/versions/:version",
+    url: "/workflows/:workflowId/versions/:versionId",
     schema: {
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Delete a draft workflow version",
@@ -23,7 +23,7 @@ export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, cont
       const service = container.resolve(workflowServiceToken);
       const deleted = await service.deleteWorkflowVersion({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
       });
 
       if (!deleted) {

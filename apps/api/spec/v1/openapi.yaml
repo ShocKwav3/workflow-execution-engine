@@ -950,13 +950,13 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-  /api/v1/workflows/{workflowId}/versions/{version}:
+  /api/v1/workflows/{workflowId}/versions/{versionId}:
     get:
       operationId: getWorkflowVersion
       summary: Get a workflow version
       tags:
         - WorkflowVersions
-      description: Returns a single workflow version by workflow ID and version number.
+      description: Returns a single workflow version by workflow ID and version ID.
       parameters:
         - schema:
             type: string
@@ -972,7 +972,7 @@ paths:
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
-          name: version
+          name: versionId
           required: true
       responses:
         "200":
@@ -1027,7 +1027,7 @@ paths:
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
-          name: version
+          name: versionId
           required: true
       responses:
         "204":
@@ -1063,7 +1063,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-  /api/v1/workflows/{workflowId}/versions/{version}/publish:
+  /api/v1/workflows/{workflowId}/versions/{versionId}/publish:
     post:
       operationId: publishWorkflowVersion
       summary: Publish a workflow version
@@ -1087,7 +1087,7 @@ paths:
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
-          name: version
+          name: versionId
           required: true
       responses:
         "200":
@@ -1120,7 +1120,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
-  /api/v1/workflows/{workflowId}/versions/{version}/nodes:
+  /api/v1/workflows/{workflowId}/versions/{versionId}/nodes:
     post:
       operationId: createNode
       summary: Add a node to a draft version
@@ -1182,7 +1182,7 @@ paths:
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
-          name: version
+          name: versionId
           required: true
       responses:
         "201":
@@ -1237,7 +1237,7 @@ paths:
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
-          name: version
+          name: versionId
           required: true
       responses:
         "200":
@@ -1313,7 +1313,7 @@ paths:
             format: uuid
             pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
           in: path
-          name: version
+          name: versionId
           required: true
       responses:
         "200":

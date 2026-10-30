@@ -13,7 +13,7 @@ import { toWorkflowVersionResponse } from "./workflowVersions.serializers.js";
 export function registerPublishWorkflowVersion(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "POST",
-    url: "/workflows/:workflowId/versions/:version/publish",
+    url: "/workflows/:workflowId/versions/:versionId/publish",
     schema: {
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Publish a workflow version",
@@ -28,7 +28,7 @@ export function registerPublishWorkflowVersion(server: TypedFastifyInstance, con
       const service = container.resolve(workflowServiceToken);
       const published = await service.publishWorkflowVersion({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
       });
 
       if (!published) {

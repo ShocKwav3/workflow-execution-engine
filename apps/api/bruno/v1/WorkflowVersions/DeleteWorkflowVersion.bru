@@ -5,14 +5,14 @@ meta {
 }
 
 delete {
-  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:versionId
   body: none
   auth: none
 }
 
 params:path {
   workflowId: {{workflowId}}
-  version: {{versionId}}
+  versionId: {{versionId}}
 }
 
 docs {
