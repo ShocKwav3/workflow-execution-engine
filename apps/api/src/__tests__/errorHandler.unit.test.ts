@@ -19,6 +19,10 @@ async function buildErrorApp() {
     return idSchema.parse("not-a-uuid");
   });
 
+  app.post("/echo", async (request) => {
+    return request.body;
+  });
+
   await app.ready();
 
   return app;
@@ -59,5 +63,54 @@ describe("errorHandler validation failure mapping", () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ status: 400, code: "VALIDATION_ERROR" });
+  });
+});
+
+describe("errorHandler Fastify client error mapping", () => {
+  let app: Awaited<ReturnType<typeof buildErrorApp>>;
+
+  beforeAll(async () => {
+    app = await buildErrorApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it.each([
+    {
+      name: "an invalid JSON body",
+      request: {
+        method: "POST",
+        url: "/echo",
+        headers: { "content-type": "application/json" },
+        payload: "\u0000",
+      },
+      status: 400,
+      code: "FST_ERR_CTP_INVALID_JSON_BODY",
+    },
+    {
+      name: "an unsupported content type",
+      request: {
+        method: "POST",
+        url: "/echo",
+        headers: { "content-type": "multipart/form-data" },
+        payload: "{}",
+      },
+      status: 415,
+      code: "FST_ERR_CTP_INVALID_MEDIA_TYPE",
+    },
+    {
+      name: "a QUERY request without a content type",
+      request: { method: "QUERY", url: "/echo" },
+      status: 400,
+      code: "FST_ERR_ROUTE_MISSING_CONTENT_TYPE",
+    },
+  ] as const)("reports $name as $status", async ({ request, status, code }) => {
+    const response = await app.inject(request);
+
+    expect(response.statusCode).toBe(status);
+    expect(response.headers["content-type"]).toContain("application/problem+json");
+    expect(response.json()).toMatchObject({ status, code });
   });
 });

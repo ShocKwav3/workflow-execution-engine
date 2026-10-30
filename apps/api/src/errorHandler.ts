@@ -1,3 +1,4 @@
+import { STATUS_CODES } from "node:http";
 import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,
@@ -10,6 +11,20 @@ import {
   type ProblemDetails,
 } from "@workflow-engine/core/errors/problemDetails.js";
 
+function isFastifyClientError(
+  error: unknown,
+): error is { code: string; statusCode: number; message: string } {
+  const { code, statusCode } = error as Partial<FastifyError>;
+
+  return (
+    typeof code === "string" &&
+    code.startsWith("FST_ERR_") &&
+    typeof statusCode === "number" &&
+    statusCode >= 400 &&
+    statusCode < 500
+  );
+}
+
 function toAppError(error: unknown): AppError {
   if (error instanceof AppError) {
     return error;
@@ -21,6 +36,16 @@ function toAppError(error: unknown): AppError {
     if (translated) {
       return translated;
     }
+  }
+
+  // A custom error handler must apply the 4xx status of Fastify's own client errors itself
+  if (isFastifyClientError(error)) {
+    return new AppError(
+      error.statusCode,
+      error.code,
+      STATUS_CODES[error.statusCode] ?? "Bad Request",
+      error.message,
+    );
   }
 
   return new AppError(500, "INTERNAL_ERROR", "Internal Server Error", "Something went wrong", {
