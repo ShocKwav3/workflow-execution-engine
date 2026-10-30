@@ -128,8 +128,8 @@ Each app container runs `nodemon` (configured in the app's `nodemon.json`) under
 `scripts/load-executions.js` creates one published workflow, then starts 5 executions per second and reads each one back. The test fails if more than 1% of the requests fail. It needs [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) and, for the resource samples, `kubectl` with metrics-server.
 
 ```bash
-pnpm test:load                                         # 3 minutes against http://127.0.0.1
-LOAD_TEST_DURATION=10m LOAD_TEST_BASE_URL=http://localhost:3000 pnpm test:load
+pnpm test:load                                         # 3 minutes against http://localhost:3000
+LOAD_TEST_DURATION=10m pnpm test:load
 ```
 
 `pnpm test:load` runs `scripts/load-test.sh`. It samples `kubectl top pods` every `LOAD_TEST_INTERVAL` seconds (default `60`) in the `LOAD_TEST_NAMESPACE` namespace (default `workflow-engine`) while k6 runs. Then it writes the samples and the k6 summary to `LOAD_TEST_OUT` (default `load-test.log`).

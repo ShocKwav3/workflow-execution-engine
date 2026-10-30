@@ -2,7 +2,7 @@ import http from "k6/http";
 import { check } from "k6";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.1.0/index.js";
 
-const BASE_URL = __ENV.LOAD_TEST_BASE_URL || "http://127.0.0.1";
+const BASE_URL = __ENV.LOAD_TEST_BASE_URL || "http://localhost:3000";
 const DURATION = __ENV.LOAD_TEST_DURATION || "3m";
 const SUMMARY_FILE = __ENV.LOAD_TEST_SUMMARY_FILE;
 const JSON_HEADERS = { headers: { "Content-Type": "application/json" } };
