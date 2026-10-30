@@ -3,6 +3,9 @@ name: OpenAPI
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   openapi:
     runs-on: ubuntu-24.04

@@ -17,11 +17,11 @@
     "clean:bundles": "rm -rf dist"
   },
   "dependencies": {
-    "@workflow-engine/core": "workspace:*",
     "@fastify/helmet": "^13.1.0",
     "@fastify/swagger": "^9.8.1",
     "@fastify/swagger-ui": "^6.1.1",
-    "fastify": "^5.12.0",
+    "@workflow-engine/core": "workspace:*",
+    "fastify": "^5.12.7",
     "fastify-type-provider-zod": "^7.0.0",
     "zod": "^4.4.3"
   },

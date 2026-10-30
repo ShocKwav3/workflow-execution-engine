@@ -3,6 +3,9 @@ name: Config scan
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   config-scan:
     runs-on: ubuntu-24.04

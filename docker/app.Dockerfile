@@ -1,3 +1,4 @@
+#checkov:skip=CKV_DOCKER_2:Kubernetes probes check health; Kubernetes ignores the Docker HEALTHCHECK
 FROM node:26-slim AS runtime-base
 
 RUN apt-get update \
@@ -8,6 +9,11 @@ RUN apt-get update \
 ENTRYPOINT ["tini", "--"]
 
 WORKDIR /app
+
+# The runtime stages need no package manager; npm's own dependencies carry CVEs.
+FROM runtime-base AS runtime-slim
+
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 FROM runtime-base AS base
 
@@ -47,7 +53,7 @@ WORKDIR /app/apps/api
 
 CMD ["nodemon", "--exitcrash"]
 
-FROM runtime-base AS api-runtime
+FROM runtime-slim AS api-runtime
 
 COPY --from=builder /app/deploy/api ./
 
@@ -67,7 +73,7 @@ WORKDIR /app/apps/executor
 
 CMD ["nodemon", "--exitcrash"]
 
-FROM runtime-base AS executor-runtime
+FROM runtime-slim AS executor-runtime
 
 COPY --from=builder /app/deploy/executor ./
 
@@ -86,7 +92,7 @@ WORKDIR /app/apps/outbox-relay
 
 CMD ["nodemon", "--exitcrash"]
 
-FROM runtime-base AS outbox-relay-runtime
+FROM runtime-slim AS outbox-relay-runtime
 
 COPY --from=builder /app/deploy/outbox-relay ./
 

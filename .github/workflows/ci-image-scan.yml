@@ -3,6 +3,9 @@ name: Image scan
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   image-scan:
     runs-on: ubuntu-24.04-arm
