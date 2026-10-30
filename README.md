@@ -153,9 +153,11 @@ Every pull request and push to `main` runs `.github/workflows/ci.yml`. Each conc
 - `build`, `lint`, `test`: the same commands as above. `test` uses the build output of `build`.
 - `openapi`: regenerates the spec, fails if the committed spec differs, then lints it.
 - `image`: builds the four runtime images for `linux/arm64` with `docker/docker-bake.hcl`. Nothing is pushed.
-- `image-scan`: scans the four images for known vulnerabilities (Trivy; fails on fixable `HIGH` and `CRITICAL`).
+- `image-scan`: scans the four images for known vulnerabilities with a fix available, `HIGH` and `CRITICAL` (Trivy).
 - `config-scan`: a static security scan of the Dockerfiles and the workflows (Checkov).
-- `ci-passed`: fails unless every job above succeeded. It is the only required check on `main`. It posts a table of the job results on the pull request.
+- `ci-passed`: fails unless every job above succeeded. It is the only required check on `main`. It posts a table of the job results on the pull request, with the findings of both scans in collapsed sections.
+
+The two scans only report: a finding does not fail the job or block the merge. Read the security report in the pull request comment.
 
 ## Deployment
 
