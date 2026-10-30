@@ -146,6 +146,19 @@ E2E_BASE_URL=http://127.0.0.1 pnpm test:e2e            # against minikube, throu
 
 If the test times out, the failure message gives the execution ID and the correlation ID. Search the API, relay and executor logs for the correlation ID.
 
+### CI
+
+Every pull request and push to `main` runs `.github/workflows/ci.yml`. Each concern is a separate job:
+
+- `build`, `lint`, `test`: the same commands as above. `test` uses the build output of `build`.
+- `openapi`: regenerates the spec, fails if the committed spec differs, then lints it.
+- `image`: builds the four runtime images for `linux/arm64` with `docker/docker-bake.hcl`. Nothing is pushed.
+- `image-scan`: scans the four images for known vulnerabilities with a fix available, `HIGH` and `CRITICAL` (Trivy).
+- `config-scan`: a static security scan of the Dockerfiles and the workflows (Checkov).
+- `ci-passed`: fails unless every job above succeeded. It is the only required check on `main`. It posts a table of the job results on the pull request, with the findings of both scans in collapsed sections.
+
+The two scans only report: a finding does not fail the job or block the merge. Read the security report in the pull request comment.
+
 ## Deployment
 
 The Kubernetes manifests are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy). Its `k8s/deploy-local.sh` builds the images from a clone of this repository and deploys them to minikube; `k8s/deploy-local.md` explains the setup and each step.

@@ -3,21 +3,28 @@ name: OpenAPI
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   openapi:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out the repository
+        uses: actions/checkout@v7
 
-      - uses: ./.github/actions/setup
+      - name: Install Node.js, pnpm and the dependencies
+        uses: ./.github/actions/setup
 
-      - uses: actions/download-artifact@v8
+      - name: Download the build output
+        uses: actions/download-artifact@v8
         with:
           name: dist
 
       # The root generate:openapi script rebuilds; the build job already did.
-      - run: pnpm --filter @workflow-engine/api generate:openapi
+      - name: Generate the OpenAPI spec
+        run: pnpm --filter @workflow-engine/api generate:openapi
 
       - name: Require the committed spec to match the code
         # status, not diff: diff ignores a new untracked file such as spec/v2/openapi.yaml
@@ -29,4 +36,5 @@ jobs:
             exit 1
           fi
 
-      - run: pnpm lint:spec
+      - name: Lint the OpenAPI spec
+        run: pnpm lint:spec

@@ -30,5 +30,12 @@ export default tseslint.config(
       globals: { __ENV: "readonly", __VU: "readonly", __ITER: "readonly" },
     },
   },
+  {
+    // Node.js globals; CI runs these scripts with plain node.
+    files: [".github/scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { process: "readonly", console: "readonly" },
+    },
+  },
   eslintConfigPrettier,
 );
