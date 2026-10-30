@@ -21,7 +21,7 @@ Not built yet: scheduling, failure handling with retries and compensation (Saga)
 - BullMQ on Redis for the job queue
 - pnpm workspace, Vitest with Testcontainers, ESLint, Prettier
 - Docker multi-stage images; Docker Compose for local development
-- Kubernetes with Kustomize (minikube locally)
+- Kubernetes with Kustomize (kind locally)
 - k6 for load tests
 
 ## Running locally
@@ -141,7 +141,7 @@ LOAD_TEST_DURATION=10m LOAD_TEST_BASE_URL=http://localhost:3000 pnpm test:load
 ```bash
 docker compose up -d
 pnpm test:e2e                                          # against http://localhost:3000
-E2E_BASE_URL=http://127.0.0.1 pnpm test:e2e            # against minikube, through minikube tunnel
+pnpm test:e2e                                          # against kind, through kubectl port-forward svc/api 3000:80
 ```
 
 If the test times out, the failure message gives the execution ID and the correlation ID. Search the API, relay and executor logs for the correlation ID.
@@ -161,7 +161,7 @@ The two scans only report: a finding does not fail the job or block the merge. R
 
 ## Deployment
 
-The Kubernetes manifests are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy). Its `k8s/deploy-local.sh` builds the images from a clone of this repository and deploys them to minikube; `k8s/deploy-local.md` explains the setup and each step.
+The Kubernetes manifests are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy). Its `k8s/deploy-local.sh` builds the images from a clone of this repository and deploys them to a local kind cluster; `k8s/deploy-local.md` explains the setup and each step.
 
 ## Layout
 
