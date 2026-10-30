@@ -54,9 +54,9 @@ describe("node persistence", () => {
     workflow = await workflowUnitOfWorkFor(db.pool).run(({ workflows }) =>
       workflows.createWorkflow({ name: "Order Fulfillment" }),
     );
-    version = await workflowVersionUnitOfWorkFor(db.pool).run(({ workflowVersions }) =>
+    version = (await workflowVersionUnitOfWorkFor(db.pool).run(({ workflowVersions }) =>
       workflowVersions.createWorkflowVersion({ workflowId: workflow.id, version: 1 }),
-    );
+    ))!;
   });
 
   function addNode(name: string, type = "inventory") {

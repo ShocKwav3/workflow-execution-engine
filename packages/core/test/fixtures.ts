@@ -52,9 +52,9 @@ export async function seedDraftVersion(
   const workflow = await workflowUnitOfWorkFor(pool).run((scope) =>
     scope.workflows.createWorkflow({ name: workflowName }),
   );
-  const version = await workflowVersionUnitOfWorkFor(pool).run((scope) =>
+  const version = (await workflowVersionUnitOfWorkFor(pool).run((scope) =>
     scope.workflowVersions.createWorkflowVersion({ workflowId: workflow.id, version: 1 }),
-  );
+  ))!;
 
   for (const node of definition) {
     await nodeUnitOfWorkFor(pool).run((scope) =>

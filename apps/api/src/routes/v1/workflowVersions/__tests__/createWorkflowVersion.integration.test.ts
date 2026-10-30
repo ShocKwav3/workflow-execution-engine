@@ -38,4 +38,15 @@ describe("POST /workflows/{workflowId}/versions", () => {
     expect(response.statusCode).toBe(201);
     expect(response.json()).toMatchObject({ version: 1, status: "DRAFT", publishedAt: null });
   });
+
+  it("returns 404 when the workflow does not exist", async () => {
+    const response = await harness.app.inject({
+      method: "POST",
+      url: "/api/v1/workflows/00000000-0000-4000-8000-000000000000/versions",
+      payload: { version: 1 },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ status: 404, code: "NOT_FOUND" });
+  });
 });

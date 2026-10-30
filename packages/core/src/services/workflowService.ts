@@ -29,7 +29,9 @@ export class WorkflowService {
     return this.workflows.listWorkflows();
   }
 
-  async createWorkflowVersion(input: CreateWorkflowVersionInput): Promise<WorkflowVersionRow> {
+  async createWorkflowVersion(
+    input: CreateWorkflowVersionInput,
+  ): Promise<WorkflowVersionRow | undefined> {
     return this.workflowVersionUnitOfWork.run((scope) =>
       scope.workflowVersions.createWorkflowVersion(input),
     );

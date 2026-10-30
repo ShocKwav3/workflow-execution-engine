@@ -5,7 +5,7 @@ import {
   VersionNotDraftError,
 } from "@/errors/domain/index.js";
 import { ClassifiedError, parseInternal } from "@/errors/index.js";
-import { classifyPgError } from "../errors/index.js";
+import { ForeignKeyViolationError, classifyPgError } from "../errors/index.js";
 import {
   type CreateWorkflowVersionInput,
   type WorkflowVersionRef,
@@ -19,7 +19,9 @@ import type { WorkflowVersionRow } from "../types.js";
 export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
   constructor(private readonly client: PoolClient) {}
 
-  async createWorkflowVersion(input: CreateWorkflowVersionInput): Promise<WorkflowVersionRow> {
+  async createWorkflowVersion(
+    input: CreateWorkflowVersionInput,
+  ): Promise<WorkflowVersionRow | undefined> {
     const { workflowId, version } = parseInternal(
       createWorkflowVersionInputSchema,
       input,
@@ -34,7 +36,14 @@ export class PgWorkflowVersionWriter implements WorkflowVersionWriter {
 
       return result.rows[0]!;
     } catch (error) {
-      throw classifyPgError(error);
+      const classified = classifyPgError(error);
+
+      // workflow_id is the table's only foreign key, so a violation means the workflow is missing
+      if (classified instanceof ForeignKeyViolationError) {
+        return undefined;
+      }
+
+      throw classified;
     }
   }
 
