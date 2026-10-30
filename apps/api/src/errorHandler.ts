@@ -8,6 +8,8 @@ import { AppError } from "@workflow-engine/core/errors/AppError.js";
 import { errorTranslators } from "@workflow-engine/core/errors/errorTranslators.js";
 import {
   PROBLEM_DETAILS_CONTENT_TYPE,
+  PROBLEM_DETAILS_MAX_ERRORS,
+  PROBLEM_DETAILS_MAX_INSTANCE_LENGTH,
   type ProblemDetails,
 } from "@workflow-engine/core/errors/problemDetails.js";
 
@@ -53,15 +55,18 @@ function toAppError(error: unknown): AppError {
   });
 }
 
+// Capped to the response schema's limits; an oversized error body would fail serialization
 function send(reply: FastifyReply, request: FastifyRequest, appError: AppError): void {
   const problem: ProblemDetails = {
     type: "about:blank",
     title: appError.title,
     status: appError.statusCode,
     detail: appError.detail,
-    instance: request.url,
+    instance: request.url.slice(0, PROBLEM_DETAILS_MAX_INSTANCE_LENGTH),
     code: appError.code,
-    ...(appError.errors === undefined ? {} : { errors: appError.errors as unknown[] }),
+    ...(appError.errors === undefined
+      ? {}
+      : { errors: (appError.errors as unknown[]).slice(0, PROBLEM_DETAILS_MAX_ERRORS) }),
   };
 
   reply.status(appError.statusCode).type(PROBLEM_DETAILS_CONTENT_TYPE).send(problem);

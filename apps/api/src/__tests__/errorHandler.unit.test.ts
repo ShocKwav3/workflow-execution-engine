@@ -1,7 +1,12 @@
 import Fastify from "fastify";
 import { z } from "zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { AppError } from "@workflow-engine/core/errors/AppError.js";
 import { parseInternal } from "@workflow-engine/core/errors/index.js";
+import {
+  PROBLEM_DETAILS_MAX_ERRORS,
+  PROBLEM_DETAILS_MAX_INSTANCE_LENGTH,
+} from "@workflow-engine/core/errors/problemDetails.js";
 import { errorHandler } from "@/errorHandler.js";
 
 const idSchema = z.uuid();
@@ -21,6 +26,12 @@ async function buildErrorApp() {
 
   app.post("/echo", async (request) => {
     return request.body;
+  });
+
+  app.get("/many-errors", async () => {
+    throw new AppError(400, "VALIDATION_ERROR", "Bad Request", "Request validation failed", {
+      errors: Array.from({ length: PROBLEM_DETAILS_MAX_ERRORS + 1 }, (_, index) => ({ index })),
+    });
   });
 
   await app.ready();
@@ -112,5 +123,31 @@ describe("errorHandler Fastify client error mapping", () => {
     expect(response.statusCode).toBe(status);
     expect(response.headers["content-type"]).toContain("application/problem+json");
     expect(response.json()).toMatchObject({ status, code });
+  });
+});
+
+describe("errorHandler response limits", () => {
+  let app: Awaited<ReturnType<typeof buildErrorApp>>;
+
+  beforeAll(async () => {
+    app = await buildErrorApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("caps the errors list at the schema limit", async () => {
+    const response = await app.inject({ method: "GET", url: "/many-errors" });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().errors).toHaveLength(PROBLEM_DETAILS_MAX_ERRORS);
+  });
+
+  it("caps the instance at the schema limit", async () => {
+    const url = `/many-errors?q=${"a".repeat(PROBLEM_DETAILS_MAX_INSTANCE_LENGTH)}`;
+    const response = await app.inject({ method: "GET", url });
+
+    expect(response.json().instance).toBe(url.slice(0, PROBLEM_DETAILS_MAX_INSTANCE_LENGTH));
   });
 });
