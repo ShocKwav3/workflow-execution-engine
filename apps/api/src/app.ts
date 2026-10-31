@@ -25,6 +25,9 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
     },
     // Router errors (bad URL, over-long path parameter) never reach setErrorHandler
     frameworkErrors: errorHandler,
+    // Drop the keys instead of a 400: unknown keys are ignored everywhere else too
+    onProtoPoisoning: "remove",
+    onConstructorPoisoning: "remove",
   }).withTypeProvider<ZodTypeProvider>();
 
   app.addHook("onSend", async (request, reply) => {
