@@ -17,7 +17,7 @@ export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, cont
       operationId: "deleteWorkflowVersion",
       description: "Deletes a draft version and its nodes. Published versions cannot be deleted.",
       params: workflowVersionParamsSchema,
-      response: { 204: z.null(), ...ERROR_RESPONSES },
+      response: { 204: z.undefined(), ...ERROR_RESPONSES },
     },
     handler: async (request, reply) => {
       const service = container.resolve(workflowServiceToken);
@@ -30,7 +30,7 @@ export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, cont
         throw new NotFoundError("Workflow version not found");
       }
 
-      return reply.status(204).send(null);
+      return reply.status(204).send();
     },
   });
 }
