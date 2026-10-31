@@ -15,6 +15,9 @@ import {
   type ProblemDetails,
 } from "@workflow-engine/core/errors/problemDetails.js";
 
+// The router rejects these URLs before matching, so their own status is the answer
+const ROUTER_URL_ERRORS = new Set(["FST_ERR_BAD_URL", "FST_ERR_MAX_PARAM_LENGTH"]);
+
 function isFastifyClientError(
   error: unknown,
 ): error is { code: string; statusCode: number; message: string } {
@@ -84,7 +87,7 @@ export function errorHandler(
   reply: FastifyReply,
 ): void {
   // Without a route, the missing route is the answer, not a header or body error before routing
-  if (request.is404) {
+  if (request.is404 && !ROUTER_URL_ERRORS.has(error.code)) {
     sendRouteNotFound(request, reply);
 
     return;

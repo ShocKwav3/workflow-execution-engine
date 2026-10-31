@@ -776,6 +776,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Workflow"
+          links:
+            GetWorkflow:
+              operationId: getWorkflow
+              parameters:
+                workflowId: $response.body#/id
+            CreateWorkflowVersion:
+              operationId: createWorkflowVersion
+              parameters:
+                workflowId: $response.body#/id
         "400":
           description: Default Response
           content:
@@ -962,6 +971,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkflowVersion"
+          links:
+            GetWorkflowVersion:
+              operationId: getWorkflowVersion
+              parameters:
+                workflowId: $response.body#/workflowId
+                versionId: $response.body#/id
+            DeleteWorkflowVersion:
+              operationId: deleteWorkflowVersion
+              parameters:
+                workflowId: $response.body#/workflowId
+                versionId: $response.body#/id
+            PublishWorkflowVersion:
+              operationId: publishWorkflowVersion
+              parameters:
+                workflowId: $response.body#/workflowId
+                versionId: $response.body#/id
+            CreateNode:
+              operationId: createNode
+              parameters:
+                workflowId: $response.body#/workflowId
+                versionId: $response.body#/id
+            ListNodes:
+              operationId: listNodes
+              parameters:
+                workflowId: $response.body#/workflowId
+                versionId: $response.body#/id
+            ReorderNodes:
+              operationId: reorderNodes
+              parameters:
+                workflowId: $response.body#/workflowId
+                versionId: $response.body#/id
         "400":
           description: Default Response
           content:
@@ -1092,13 +1132,6 @@ paths:
       responses:
         "204":
           description: Default Response
-          content:
-            application/json:
-              schema:
-                type: string
-                nullable: true
-                enum:
-                  - null
         "400":
           description: Default Response
           content:
@@ -1168,6 +1201,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkflowVersion"
+          links:
+            CreateWorkflowExecution:
+              operationId: createWorkflowExecution
+              parameters:
+                workflowId: $response.body#/workflowId
+              requestBody:
+                workflowVersionId: $response.body#/id
         "400":
           description: Default Response
           content:
@@ -1275,6 +1315,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Node"
+          links:
+            GetNode:
+              operationId: getNode
+              parameters:
+                nodeId: $response.body#/id
+            UpdateNode:
+              operationId: updateNode
+              parameters:
+                nodeId: $response.body#/id
+            DeleteNode:
+              operationId: deleteNode
+              parameters:
+                nodeId: $response.body#/id
         "400":
           description: Default Response
           content:
@@ -1625,13 +1678,6 @@ paths:
       responses:
         "204":
           description: Default Response
-          content:
-            application/json:
-              schema:
-                type: string
-                nullable: true
-                enum:
-                  - null
         "400":
           description: Default Response
           content:
@@ -1717,6 +1763,22 @@ paths:
                 required:
                   - executionId
                 additionalProperties: false
+          links:
+            GetWorkflowExecution:
+              operationId: getWorkflowExecution
+              parameters:
+                workflowId: $request.path.workflowId
+                executionId: $response.body#/executionId
+            GetWorkflowExecutionHistory:
+              operationId: getWorkflowExecutionHistory
+              parameters:
+                workflowId: $request.path.workflowId
+                executionId: $response.body#/executionId
+            GetWorkflowExecutionNodes:
+              operationId: getWorkflowExecutionNodes
+              parameters:
+                workflowId: $request.path.workflowId
+                executionId: $response.body#/executionId
         "400":
           description: Default Response
           content:

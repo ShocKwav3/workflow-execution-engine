@@ -24,6 +24,15 @@ export function registerPublishWorkflowVersion(server: TypedFastifyInstance, con
       params: workflowVersionParamsSchema,
       response: { 200: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },
+    links: {
+      200: {
+        CreateWorkflowExecution: {
+          operationId: "createWorkflowExecution",
+          parameters: { workflowId: "$response.body#/workflowId" },
+          requestBody: { workflowVersionId: "$response.body#/id" },
+        },
+      },
+    },
     handler: async (request) => {
       const service = container.resolve(workflowServiceToken);
       const published = await service.publishWorkflowVersion({

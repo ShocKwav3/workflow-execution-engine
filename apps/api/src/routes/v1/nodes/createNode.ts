@@ -22,6 +22,22 @@ export function registerCreateNode(server: TypedFastifyInstance, container: Reso
       body: createNodeBodySchema,
       response: { 201: nodeResponseSchema, ...ERROR_RESPONSES },
     },
+    links: {
+      201: {
+        GetNode: {
+          operationId: "getNode",
+          parameters: { nodeId: "$response.body#/id" },
+        },
+        UpdateNode: {
+          operationId: "updateNode",
+          parameters: { nodeId: "$response.body#/id" },
+        },
+        DeleteNode: {
+          operationId: "deleteNode",
+          parameters: { nodeId: "$response.body#/id" },
+        },
+      },
+    },
     handler: async (request, reply) => {
       const service = container.resolve(nodeServiceToken);
       const node = await service.createNode({
