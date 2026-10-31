@@ -22,6 +22,8 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
 
       return incoming.success ? incoming.data : randomUUID();
     },
+    // Router errors (bad URL, over-long path parameter) never reach setErrorHandler
+    frameworkErrors: errorHandler,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.addHook("onSend", async (request, reply) => {

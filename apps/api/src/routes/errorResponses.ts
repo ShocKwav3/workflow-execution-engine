@@ -11,6 +11,7 @@ export const ERROR_RESPONSES = {
   400: problemDetailsResponse,
   404: problemDetailsResponse,
   409: problemDetailsResponse,
+  414: problemDetailsResponse,
   422: problemDetailsResponse,
   503: problemDetailsResponse,
 };

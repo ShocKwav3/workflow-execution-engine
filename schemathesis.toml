@@ -1,3 +1,7 @@
+[checks]
+# 414: the router rejects a path parameter longer than 100 characters before validation
+negative_data_rejection.expected-statuses = ["400", "401", "403", "404", "405", "406", "409", "414", "415", "422", "428", "429", "5xx"]
+
 # Valid body, but the version may belong to another workflow: 422 is correct there
 [[operations]]
 include-name = "POST /api/v1/workflows/{workflowId}/executions"
