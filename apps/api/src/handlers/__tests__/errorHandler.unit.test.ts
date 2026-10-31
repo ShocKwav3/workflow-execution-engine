@@ -28,6 +28,8 @@ async function buildErrorApp() {
     return request.body;
   });
 
+  app.route({ method: "QUERY", url: "/echo", handler: async (request) => request.body });
+
   app.get("/many-errors", async () => {
     throw new AppError(400, "VALIDATION_ERROR", "Bad Request", "Request validation failed", {
       errors: Array.from({ length: PROBLEM_DETAILS_MAX_ERRORS + 1 }, (_, index) => ({ index })),
@@ -112,7 +114,7 @@ describe("errorHandler Fastify client error mapping", () => {
       code: "FST_ERR_CTP_INVALID_MEDIA_TYPE",
     },
     {
-      name: "a QUERY request without a content type",
+      name: "a QUERY request to a QUERY route without a content type",
       request: { method: "QUERY", url: "/echo" },
       status: 400,
       code: "FST_ERR_ROUTE_MISSING_CONTENT_TYPE",

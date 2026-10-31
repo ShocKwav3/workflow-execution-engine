@@ -5,6 +5,7 @@ import {
   isResponseSerializationError,
 } from "fastify-type-provider-zod";
 import { AppError } from "@workflow-engine/core/errors/AppError.js";
+import { sendRouteNotFound } from "./notFoundHandler.js";
 import { errorTranslators } from "@workflow-engine/core/errors/errorTranslators.js";
 import {
   PROBLEM_DETAILS_CONTENT_TYPE,
@@ -82,6 +83,13 @@ export function errorHandler(
   request: FastifyRequest,
   reply: FastifyReply,
 ): void {
+  // Without a route, the missing route is the answer, not a header or body error before routing
+  if (request.is404) {
+    sendRouteNotFound(request, reply);
+
+    return;
+  }
+
   if (hasZodFastifySchemaValidationErrors(error)) {
     sendProblem(
       reply,

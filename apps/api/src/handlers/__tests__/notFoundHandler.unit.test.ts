@@ -29,6 +29,14 @@ describe("notFoundHandler", () => {
     expect(response.json()).toMatchObject({ status: 405, code: "METHOD_NOT_ALLOWED" });
   });
 
+  it("answers 405 for a QUERY without a content type, not the content-type error", async () => {
+    const response = await app.inject({ method: "QUERY", url: "/items/abc" });
+
+    expect(response.statusCode).toBe(405);
+    expect(response.headers.allow).toContain("GET");
+    expect(response.json()).toMatchObject({ status: 405, code: "METHOD_NOT_ALLOWED" });
+  });
+
   it("answers 404 for an unknown path", async () => {
     const response = await app.inject({ method: "GET", url: "/unknown" });
 
