@@ -57,7 +57,11 @@ function toAppError(error: unknown): AppError {
 }
 
 // Capped to the response schema's limits; an oversized error body would fail serialization
-function send(reply: FastifyReply, request: FastifyRequest, appError: AppError): void {
+export function sendProblem(
+  reply: FastifyReply,
+  request: FastifyRequest,
+  appError: AppError,
+): void {
   const problem: ProblemDetails = {
     type: "about:blank",
     title: appError.title,
@@ -79,7 +83,7 @@ export function errorHandler(
   reply: FastifyReply,
 ): void {
   if (hasZodFastifySchemaValidationErrors(error)) {
-    send(
+    sendProblem(
       reply,
       request,
       new AppError(400, "VALIDATION_ERROR", "Bad Request", "Request validation failed", {
@@ -92,7 +96,7 @@ export function errorHandler(
 
   if (isResponseSerializationError(error)) {
     request.log.error({ err: error }, "response serialization failed");
-    send(
+    sendProblem(
       reply,
       request,
       new AppError(500, "INTERNAL_ERROR", "Internal Server Error", "Something went wrong", {
@@ -112,5 +116,5 @@ export function errorHandler(
     request.log.warn({ err: appError, ...appError.context }, "request failed");
   }
 
-  send(reply, request, appError);
+  sendProblem(reply, request, appError);
 }

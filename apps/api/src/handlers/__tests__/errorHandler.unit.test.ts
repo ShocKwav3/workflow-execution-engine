@@ -7,7 +7,7 @@ import {
   PROBLEM_DETAILS_MAX_ERRORS,
   PROBLEM_DETAILS_MAX_INSTANCE_LENGTH,
 } from "@workflow-engine/core/errors/problemDetails.js";
-import { errorHandler } from "@/errorHandler.js";
+import { errorHandler } from "@/handlers/errorHandler.js";
 
 const idSchema = z.uuid();
 
