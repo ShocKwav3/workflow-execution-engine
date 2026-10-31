@@ -1,4 +1,4 @@
-export type ErrorClassification = "CONFLICT" | "INVALID_REFERENCE" | "UNAVAILABLE";
+export type ErrorClassification = "CONFLICT" | "INVALID_REFERENCE" | "NOT_FOUND" | "UNAVAILABLE";
 
 export type ErrorContext = Record<string, unknown>;
 

@@ -794,6 +794,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -828,6 +834,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -875,6 +887,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -944,6 +962,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -994,6 +1018,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -1057,6 +1087,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1109,6 +1145,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -1209,6 +1251,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1261,6 +1309,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -1342,6 +1396,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1389,6 +1449,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1417,6 +1483,11 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 100
+              anyOf:
+                - required:
+                    - name
+                - required:
+                    - type
       parameters:
         - schema:
             type: string
@@ -1446,6 +1517,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -1496,6 +1573,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -1574,6 +1657,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1624,6 +1713,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:
@@ -1687,6 +1782,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1745,6 +1846,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
+        "422":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
         "503":
           description: Default Response
           content:
@@ -1796,6 +1903,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProblemDetails"
         "409":
+          description: Default Response
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+        "422":
           description: Default Response
           content:
             application/problem+json:

@@ -1,0 +1,4 @@
+# Valid body, but the version may belong to another workflow: 422 is correct there
+[[operations]]
+include-name = "POST /api/v1/workflows/{workflowId}/executions"
+checks.positive_data_acceptance.expected-statuses = ["2xx", "3xx", "401", "403", "404", "409", "422", "429", "5xx"]
