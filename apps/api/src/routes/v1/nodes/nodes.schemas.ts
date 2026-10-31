@@ -57,6 +57,11 @@ export const updateNodeBodySchema = z
   })
   .refine(...atLeastOneOf(["name", "type"]));
 
+// The refine is invisible to the spec; anyOf states the same rule for clients
+v1SchemaRegistry.add(updateNodeBodySchema, {
+  anyOf: [{ required: ["name"] }, { required: ["type"] }],
+});
+
 export const reorderNodesBodySchema = z.object({
   nodeIds: z
     .array(id.max(36))

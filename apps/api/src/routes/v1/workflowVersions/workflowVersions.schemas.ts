@@ -37,5 +37,5 @@ export const workflowVersionParamsSchema = z.object({
   workflowId: workflowId.max(36).describe("ID of the parent workflow."),
   // The version's id, not its sequential number — addressed by id like every other
   // resource; the number stays available as workflowVersionResponseSchema.version.
-  version: id.max(36).describe("Workflow version ID."),
+  versionId: id.max(36).describe("Workflow version ID."),
 });

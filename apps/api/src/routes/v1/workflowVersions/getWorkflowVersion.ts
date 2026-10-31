@@ -13,20 +13,20 @@ import { toWorkflowVersionResponse } from "./workflowVersions.serializers.js";
 export function registerGetWorkflowVersion(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "GET",
-    url: "/workflows/:workflowId/versions/:version",
+    url: "/workflows/:workflowId/versions/:versionId",
     schema: {
       params: workflowVersionParamsSchema,
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Get a workflow version",
       operationId: "getWorkflowVersion",
-      description: "Returns a single workflow version by workflow ID and version number.",
+      description: "Returns a single workflow version by workflow ID and version ID.",
       response: { 200: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },
     handler: async (request) => {
       const service = container.resolve(workflowServiceToken);
       const version = await service.getWorkflowVersion({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
       });
 
       if (!version) {

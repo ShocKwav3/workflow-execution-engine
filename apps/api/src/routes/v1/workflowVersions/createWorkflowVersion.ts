@@ -1,5 +1,6 @@
 import type { Resolver } from "@workflow-engine/core/di/types.js";
 import { TAGS } from "@/routes/v1/config.js";
+import { NotFoundError } from "@workflow-engine/core/errors/NotFoundError.js";
 import { workflowServiceToken } from "@workflow-engine/core/services/tokens.js";
 import type { TypedFastifyInstance } from "@/routes/typedFastify.js";
 import { ERROR_RESPONSES } from "@/routes/errorResponses.js";
@@ -25,12 +26,62 @@ export function registerCreateWorkflowVersion(server: TypedFastifyInstance, cont
       body: createWorkflowVersionBodySchema,
       response: { 201: workflowVersionResponseSchema, ...ERROR_RESPONSES },
     },
+    links: {
+      201: {
+        GetWorkflowVersion: {
+          operationId: "getWorkflowVersion",
+          parameters: {
+            workflowId: "$response.body#/workflowId",
+            versionId: "$response.body#/id",
+          },
+        },
+        DeleteWorkflowVersion: {
+          operationId: "deleteWorkflowVersion",
+          parameters: {
+            workflowId: "$response.body#/workflowId",
+            versionId: "$response.body#/id",
+          },
+        },
+        PublishWorkflowVersion: {
+          operationId: "publishWorkflowVersion",
+          parameters: {
+            workflowId: "$response.body#/workflowId",
+            versionId: "$response.body#/id",
+          },
+        },
+        CreateNode: {
+          operationId: "createNode",
+          parameters: {
+            workflowId: "$response.body#/workflowId",
+            versionId: "$response.body#/id",
+          },
+        },
+        ListNodes: {
+          operationId: "listNodes",
+          parameters: {
+            workflowId: "$response.body#/workflowId",
+            versionId: "$response.body#/id",
+          },
+        },
+        ReorderNodes: {
+          operationId: "reorderNodes",
+          parameters: {
+            workflowId: "$response.body#/workflowId",
+            versionId: "$response.body#/id",
+          },
+        },
+      },
+    },
     handler: async (request, reply) => {
       const service = container.resolve(workflowServiceToken);
       const version = await service.createWorkflowVersion({
         workflowId: request.params.workflowId,
         version: request.body.version,
       });
+
+      if (!version) {
+        throw new NotFoundError("Workflow not found");
+      }
 
       reply.status(201);
 
