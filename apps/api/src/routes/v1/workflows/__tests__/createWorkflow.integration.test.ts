@@ -47,4 +47,26 @@ describe("POST /workflows", () => {
       instance: "/api/v1/workflows",
     });
   });
+
+  it("checks the length before trimming, as the spec states", async () => {
+    const response = await harness.app.inject({
+      method: "POST",
+      url: "/api/v1/workflows",
+      payload: { name: `x${"\r".repeat(255)}` },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ code: "VALIDATION_ERROR" });
+  });
+
+  it("stores the name trimmed", async () => {
+    const response = await harness.app.inject({
+      method: "POST",
+      url: "/api/v1/workflows",
+      payload: { name: "  Order Fulfillment  " },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({ name: "Order Fulfillment" });
+  });
 });

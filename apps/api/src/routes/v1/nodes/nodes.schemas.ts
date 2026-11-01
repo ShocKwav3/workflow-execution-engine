@@ -1,7 +1,7 @@
 import { nodeConfigSchema, nodeSchema } from "@workflow-engine/core/schemas/node.schemas.js";
 import { atLeastOneOf } from "@workflow-engine/core/schemas/refinements.js";
 import { z } from "zod";
-import { v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
+import { requiredText, v1SchemaRegistry, withIntFormat } from "@/routes/v1/registry.js";
 
 const { id, workflowVersionId, name, type, sequence, config } = nodeSchema.shape;
 const { durationSeconds, crash } = nodeConfigSchema.shape;
@@ -43,8 +43,8 @@ export const nodeIdParamsSchema = z.object({
 });
 
 export const createNodeBodySchema = z.object({
-  name: name.max(255).describe("Node name."),
-  type: type.max(100).describe("Node type — determines what the node does when executed."),
+  name: requiredText(255).describe("Node name."),
+  type: requiredText(100).describe("Node type — determines what the node does when executed."),
   config: config
     .optional()
     .describe("Node configuration. Unknown keys are rejected. Stored as {} when omitted."),
@@ -52,8 +52,8 @@ export const createNodeBodySchema = z.object({
 
 export const updateNodeBodySchema = z
   .object({
-    name: name.max(255).optional().describe("New node name."),
-    type: type.max(100).optional().describe("New node type."),
+    name: requiredText(255).optional().describe("New node name."),
+    type: requiredText(100).optional().describe("New node type."),
   })
   .refine(...atLeastOneOf(["name", "type"]));
 

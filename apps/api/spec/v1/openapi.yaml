@@ -767,6 +767,7 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 255
+                  pattern: \S
               required:
                 - name
       responses:
@@ -1263,10 +1264,12 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 255
+                  pattern: \S
                 type:
                   type: string
                   minLength: 1
                   maxLength: 100
+                  pattern: \S
                 config:
                   type: object
                   properties:
@@ -1598,10 +1601,12 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 255
+                  pattern: \S
                 type:
                   type: string
                   minLength: 1
                   maxLength: 100
+                  pattern: \S
               anyOf:
                 - required:
                     - name
