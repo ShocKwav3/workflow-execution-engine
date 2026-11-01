@@ -21,7 +21,7 @@ Not built yet: scheduling, failure handling with retries and compensation (Saga)
 - BullMQ on Redis for the job queue
 - pnpm workspace, Vitest with Testcontainers, ESLint, Prettier
 - Docker multi-stage images; Docker Compose for local development
-- Kubernetes with Kustomize (minikube locally)
+- Kubernetes with Kustomize (kind locally)
 - k6 for load tests
 
 ## Running locally
@@ -128,8 +128,8 @@ Each app container runs `nodemon` (configured in the app's `nodemon.json`) under
 `scripts/load-executions.js` creates one published workflow, then starts 5 executions per second and reads each one back. The test fails if more than 1% of the requests fail. It needs [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) and, for the resource samples, `kubectl` with metrics-server.
 
 ```bash
-pnpm test:load                                         # 3 minutes against http://127.0.0.1
-LOAD_TEST_DURATION=10m LOAD_TEST_BASE_URL=http://localhost:3000 pnpm test:load
+pnpm test:load                                         # 3 minutes against http://localhost:3000
+LOAD_TEST_DURATION=10m pnpm test:load
 ```
 
 `pnpm test:load` runs `scripts/load-test.sh`. It samples `kubectl top pods` every `LOAD_TEST_INTERVAL` seconds (default `60`) in the `LOAD_TEST_NAMESPACE` namespace (default `workflow-engine`) while k6 runs. Then it writes the samples and the k6 summary to `LOAD_TEST_OUT` (default `load-test.log`).
@@ -141,7 +141,7 @@ LOAD_TEST_DURATION=10m LOAD_TEST_BASE_URL=http://localhost:3000 pnpm test:load
 ```bash
 docker compose up -d
 pnpm test:e2e                                          # against http://localhost:3000
-E2E_BASE_URL=http://127.0.0.1 pnpm test:e2e            # against minikube, through minikube tunnel
+pnpm test:e2e                                          # against kind, through kubectl port-forward svc/api 3000:80
 ```
 
 If the test times out, the failure message gives the execution ID and the correlation ID. Search the API, relay and executor logs for the correlation ID.
@@ -155,13 +155,26 @@ Every pull request and push to `main` runs `.github/workflows/ci.yml`. Each conc
 - `image`: builds the four runtime images for `linux/arm64` with `docker/docker-bake.hcl`. Nothing is pushed.
 - `image-scan`: scans the four images for known vulnerabilities with a fix available, `HIGH` and `CRITICAL` (Trivy).
 - `config-scan`: a static security scan of the Dockerfiles and the workflows (Checkov).
+- `e2e`: deploys the system into a kind cluster with `k8s/deploy-local.sh` of the deploy repository (the branch with the same name, else `main`). Then it runs `pnpm test:e2e` and Schemathesis against the API, which checks the responses to generated requests against the OpenAPI spec. If the job fails, it prints the Pod state, events and logs, and uploads the cluster logs.
 - `ci-passed`: fails unless every job above succeeded. It is the only required check on `main`. It posts a table of the job results on the pull request, with the findings of both scans in collapsed sections.
 
 The two scans only report: a finding does not fail the job or block the merge. Read the security report in the pull request comment.
 
+#### Changes that need both repositories
+
+The `e2e` job deploys with the manifests of the deploy repository branch that has the same name as this branch. If no such branch exists, it uses `main`.
+
+For a change that needs both repositories, for example a new required environment variable:
+
+1. Create a branch with the same name in both repositories.
+2. Push the deploy repository branch first, so the `e2e` job of this pull request uses it.
+3. Merge the deploy repository pull request first, then this one. Pull requests on other branches then deploy with manifests that already contain the change.
+
+Keep each deploy repository change backward compatible: the current app code on `main` must still deploy and pass with it. An extra variable does no harm to old code. A change that requires new app code makes `e2e` fail on every pull request without that code, until the app change is merged.
+
 ## Deployment
 
-The Kubernetes manifests are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy). Its `k8s/deploy-local.sh` builds the images from a clone of this repository and deploys them to minikube; `k8s/deploy-local.md` explains the setup and each step.
+The Kubernetes manifests are in [workflow-execution-engine-deploy](https://github.com/ShocKwav3/workflow-execution-engine-deploy). Its `k8s/deploy-local.sh` builds the images from a clone of this repository and deploys them to a local kind cluster; `k8s/deploy-local.md` explains the setup and each step.
 
 ## Layout
 
