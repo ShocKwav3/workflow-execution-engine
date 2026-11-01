@@ -4,3 +4,4 @@ export { VersionHasNoNodesError } from "./VersionHasNoNodesError.js";
 export { VersionNotPublishedError } from "./VersionNotPublishedError.js";
 export { NodeOrderingMismatchError } from "./NodeOrderingMismatchError.js";
 export { WorkflowVersionMismatchError } from "./WorkflowVersionMismatchError.js";
+export { WorkflowNotFoundError } from "./WorkflowNotFoundError.js";

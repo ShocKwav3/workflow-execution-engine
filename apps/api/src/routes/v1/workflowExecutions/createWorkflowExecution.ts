@@ -25,6 +25,31 @@ export function registerCreateWorkflowExecution(server: TypedFastifyInstance, co
       body: createWorkflowExecutionBodySchema,
       response: { 201: createWorkflowExecutionResponseSchema, ...ERROR_RESPONSES },
     },
+    links: {
+      201: {
+        GetWorkflowExecution: {
+          operationId: "getWorkflowExecution",
+          parameters: {
+            workflowId: "$request.path.workflowId",
+            executionId: "$response.body#/executionId",
+          },
+        },
+        GetWorkflowExecutionHistory: {
+          operationId: "getWorkflowExecutionHistory",
+          parameters: {
+            workflowId: "$request.path.workflowId",
+            executionId: "$response.body#/executionId",
+          },
+        },
+        GetWorkflowExecutionNodes: {
+          operationId: "getWorkflowExecutionNodes",
+          parameters: {
+            workflowId: "$request.path.workflowId",
+            executionId: "$response.body#/executionId",
+          },
+        },
+      },
+    },
     handler: async (request, reply) => {
       const service = container.resolve(workflowExecutionServiceToken);
       const idempotencyKeyHeader = request.headers["idempotency-key"];

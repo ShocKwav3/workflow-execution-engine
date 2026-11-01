@@ -31,3 +31,8 @@ export function withIntFormat<T extends z.ZodType>(schema: T, format: "int32" | 
 }
 
 withIntFormat(problemDetailsStatusSchema, "int32");
+
+// Request text that core trims: limits apply to the value as sent, so the spec states them exactly
+export function requiredText(maxLength: number) {
+  return z.string().min(1).max(maxLength).regex(/\S/).trim();
+}

@@ -8,7 +8,8 @@ import {
 import fastifyHelmet from "@fastify/helmet";
 import { loadAppConfig, type AppConfig } from "./config.js";
 import { createPinoOptions } from "@workflow-engine/core/logging/logger.js";
-import { errorHandler } from "./errorHandler.js";
+import { errorHandler } from "./handlers/errorHandler.js";
+import { registerNotFoundHandler } from "./handlers/notFoundHandler.js";
 import { createContextLogger } from "@workflow-engine/core/logging/contextLogger.js";
 import { correlationIdSchema } from "@workflow-engine/core/schemas/correlation.schemas.js";
 
@@ -22,6 +23,11 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
 
       return incoming.success ? incoming.data : randomUUID();
     },
+    // Router errors (bad URL, over-long path parameter) never reach setErrorHandler
+    frameworkErrors: errorHandler,
+    // Drop the keys instead of a 400: unknown keys are ignored everywhere else too
+    onProtoPoisoning: "remove",
+    onConstructorPoisoning: "remove",
   }).withTypeProvider<ZodTypeProvider>();
 
   app.addHook("onSend", async (request, reply) => {
@@ -41,6 +47,7 @@ export async function buildApp(config: AppConfig = loadAppConfig()) {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   app.setErrorHandler(errorHandler);
+  registerNotFoundHandler(app);
 
   await app.register(fastifyHelmet);
 

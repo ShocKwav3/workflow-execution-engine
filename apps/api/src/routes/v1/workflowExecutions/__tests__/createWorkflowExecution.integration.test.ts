@@ -53,6 +53,37 @@ describe("POST /workflows/{workflowId}/executions", () => {
     expect(response.json().code).toBe("VERSION_NOT_PUBLISHED");
   });
 
+  it("refuses a version of another workflow with 422 WORKFLOW_VERSION_MISMATCH", async () => {
+    const { workflow } = await seedPublishedVersion(harness.db.pool, DEFINITION, "First");
+    const { version: foreignVersion } = await seedPublishedVersion(
+      harness.db.pool,
+      DEFINITION,
+      "Second",
+    );
+
+    const response = await harness.app.inject({
+      method: "POST",
+      url: `/api/v1/workflows/${workflow.id}/executions`,
+      payload: { workflowVersionId: foreignVersion.id },
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json().code).toBe("WORKFLOW_VERSION_MISMATCH");
+  });
+
+  it("returns 404 when the workflow does not exist", async () => {
+    const { version } = await seedPublishedVersion(harness.db.pool, DEFINITION);
+
+    const response = await harness.app.inject({
+      method: "POST",
+      url: "/api/v1/workflows/00000000-0000-4000-8000-000000000000/executions",
+      payload: { workflowVersionId: version.id },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe("NOT_FOUND");
+  });
+
   it("returns the same execution for a repeated idempotency key", async () => {
     const { workflow, version } = await seedPublishedVersion(harness.db.pool, DEFINITION);
     const payload = { workflowVersionId: version.id };

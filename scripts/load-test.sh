@@ -2,7 +2,7 @@
 # Runs the k6 load test and samples `kubectl top pods` until it ends; both go into one log file.
 set -euo pipefail
 
-BASE_URL="${LOAD_TEST_BASE_URL:-http://127.0.0.1}"
+BASE_URL="${LOAD_TEST_BASE_URL:-http://localhost:3000}"
 DURATION="${LOAD_TEST_DURATION:-3m}"
 INTERVAL="${LOAD_TEST_INTERVAL:-60}"
 NAMESPACE="${LOAD_TEST_NAMESPACE:-workflow-engine}"

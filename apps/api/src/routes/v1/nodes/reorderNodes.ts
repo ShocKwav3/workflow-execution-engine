@@ -11,7 +11,7 @@ import { toNodeResponse } from "./nodes.serializers.js";
 export function registerReorderNodes(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "PUT",
-    url: "/workflows/:workflowId/versions/:version/nodes",
+    url: "/workflows/:workflowId/versions/:versionId/nodes",
     schema: {
       params: workflowVersionParamsSchema,
       tags: [TAGS.NODES.name],
@@ -27,7 +27,7 @@ export function registerReorderNodes(server: TypedFastifyInstance, container: Re
       const service = container.resolve(nodeServiceToken);
       const nodes = await service.reorderNodes({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
         nodeIds: request.body.nodeIds,
       });
 

@@ -5,14 +5,14 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:version/nodes
+  url: {{baseUrl}}/api/v1/workflows/:workflowId/versions/:versionId/nodes
   body: json
   auth: none
 }
 
 params:path {
   workflowId: {{workflowId}}
-  version: {{versionId}}
+  versionId: {{versionId}}
 }
 
 body:json {

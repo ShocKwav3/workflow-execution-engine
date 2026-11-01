@@ -1,5 +1,9 @@
 import type { PoolClient } from "pg";
-import { VersionNotPublishedError, WorkflowVersionMismatchError } from "@/errors/domain/index.js";
+import {
+  VersionNotPublishedError,
+  WorkflowNotFoundError,
+  WorkflowVersionMismatchError,
+} from "@/errors/domain/index.js";
 import { ClassifiedError, parseInternal } from "@/errors/index.js";
 import { WORKFLOW_VERSION_STATUS } from "@/schemas/workflowVersion.schemas.js";
 import { classifyPgError } from "../errors/index.js";
@@ -36,6 +40,15 @@ export class PgWorkflowExecutionWriter implements WorkflowExecutionWriter {
       const workflowVersion = versionResult.rows[0];
 
       if (!workflowVersion) {
+        // Only on the failure path: tells a missing workflow (404) from a foreign version (422)
+        const workflowResult = await this.client.query(`SELECT 1 FROM workflow WHERE id = $1`, [
+          workflowId,
+        ]);
+
+        if (workflowResult.rowCount === 0) {
+          throw new WorkflowNotFoundError({ workflowId });
+        }
+
         throw new WorkflowVersionMismatchError({ workflowId, workflowVersionId });
       }
 

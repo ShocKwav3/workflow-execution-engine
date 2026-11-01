@@ -10,27 +10,27 @@ import { workflowVersionParamsSchema } from "./workflowVersions.schemas.js";
 export function registerDeleteWorkflowVersion(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "DELETE",
-    url: "/workflows/:workflowId/versions/:version",
+    url: "/workflows/:workflowId/versions/:versionId",
     schema: {
       tags: [TAGS.WORKFLOW_VERSIONS.name],
       summary: "Delete a draft workflow version",
       operationId: "deleteWorkflowVersion",
       description: "Deletes a draft version and its nodes. Published versions cannot be deleted.",
       params: workflowVersionParamsSchema,
-      response: { 204: z.null(), ...ERROR_RESPONSES },
+      response: { 204: z.undefined(), ...ERROR_RESPONSES },
     },
     handler: async (request, reply) => {
       const service = container.resolve(workflowServiceToken);
       const deleted = await service.deleteWorkflowVersion({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
       });
 
       if (!deleted) {
         throw new NotFoundError("Workflow version not found");
       }
 
-      return reply.status(204).send(null);
+      return reply.status(204).send();
     },
   });
 }

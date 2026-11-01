@@ -12,7 +12,9 @@ export function translateClassifiedError(error: unknown): AppError | undefined {
     case "CONFLICT":
       return new AppError(409, error.code, "Conflict", error.message, options);
     case "INVALID_REFERENCE":
-      return new AppError(400, error.code, "Bad Request", error.message, options);
+      return new AppError(422, error.code, "Unprocessable Content", error.message, options);
+    case "NOT_FOUND":
+      return new AppError(404, error.code, "Not Found", error.message, options);
     case "UNAVAILABLE":
       return new AppError(
         503,

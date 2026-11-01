@@ -11,7 +11,7 @@ import { toNodeResponse } from "./nodes.serializers.js";
 export function registerCreateNode(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "POST",
-    url: "/workflows/:workflowId/versions/:version/nodes",
+    url: "/workflows/:workflowId/versions/:versionId/nodes",
     schema: {
       tags: [TAGS.NODES.name],
       summary: "Add a node to a draft version",
@@ -22,11 +22,27 @@ export function registerCreateNode(server: TypedFastifyInstance, container: Reso
       body: createNodeBodySchema,
       response: { 201: nodeResponseSchema, ...ERROR_RESPONSES },
     },
+    links: {
+      201: {
+        GetNode: {
+          operationId: "getNode",
+          parameters: { nodeId: "$response.body#/id" },
+        },
+        UpdateNode: {
+          operationId: "updateNode",
+          parameters: { nodeId: "$response.body#/id" },
+        },
+        DeleteNode: {
+          operationId: "deleteNode",
+          parameters: { nodeId: "$response.body#/id" },
+        },
+      },
+    },
     handler: async (request, reply) => {
       const service = container.resolve(nodeServiceToken);
       const node = await service.createNode({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
         name: request.body.name,
         type: request.body.type,
         config: request.body.config,
