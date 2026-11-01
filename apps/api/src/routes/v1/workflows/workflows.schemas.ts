@@ -1,6 +1,6 @@
 import { workflowSchema } from "@workflow-engine/core/schemas/workflow.schemas.js";
 import { z } from "zod";
-import { v1SchemaRegistry } from "@/routes/v1/registry.js";
+import { requiredText, v1SchemaRegistry } from "@/routes/v1/registry.js";
 
 const { id, name } = workflowSchema.shape;
 
@@ -14,7 +14,7 @@ export const workflowResponseSchema = z.object({
 v1SchemaRegistry.add(workflowResponseSchema, { id: "Workflow" });
 
 export const createWorkflowBodySchema = z.object({
-  name: name.max(255).describe("Human-readable workflow name."),
+  name: requiredText(255).describe("Human-readable workflow name."),
 });
 
 export const workflowIdParamsSchema = z.object({

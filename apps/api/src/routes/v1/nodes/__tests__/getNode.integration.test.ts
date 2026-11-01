@@ -48,4 +48,15 @@ describe("GET /nodes/{nodeId}", () => {
 
     expect(response.statusCode).toBe(404);
   });
+
+  it("returns 414 as problem details for a path parameter over the router limit", async () => {
+    const response = await harness.app.inject({
+      method: "GET",
+      url: `/api/v1/nodes/${"a".repeat(101)}`,
+    });
+
+    expect(response.statusCode).toBe(414);
+    expect(response.headers["content-type"]).toContain("application/problem+json");
+    expect(response.json()).toMatchObject({ status: 414, code: "FST_ERR_MAX_PARAM_LENGTH" });
+  });
 });

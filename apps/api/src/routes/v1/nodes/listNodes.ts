@@ -11,7 +11,7 @@ import { toNodeResponse } from "./nodes.serializers.js";
 export function registerListNodes(server: TypedFastifyInstance, container: Resolver) {
   server.route({
     method: "GET",
-    url: "/workflows/:workflowId/versions/:version/nodes",
+    url: "/workflows/:workflowId/versions/:versionId/nodes",
     schema: {
       params: workflowVersionParamsSchema,
       tags: [TAGS.NODES.name],
@@ -24,7 +24,7 @@ export function registerListNodes(server: TypedFastifyInstance, container: Resol
       const service = container.resolve(nodeServiceToken);
       const nodes = await service.listNodesForVersion({
         workflowId: request.params.workflowId,
-        version: request.params.version,
+        version: request.params.versionId,
       });
 
       if (!nodes) {

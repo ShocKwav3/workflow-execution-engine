@@ -18,7 +18,7 @@ export function registerDeleteNode(server: TypedFastifyInstance, container: Reso
       description:
         "Removes a node from its draft version. Fails if the parent version is already published.",
       params: nodeIdParamsSchema,
-      response: { 204: z.null(), ...ERROR_RESPONSES },
+      response: { 204: z.undefined(), ...ERROR_RESPONSES },
     },
     handler: async (request, reply) => {
       const service = container.resolve(nodeServiceToken);
@@ -28,7 +28,7 @@ export function registerDeleteNode(server: TypedFastifyInstance, container: Reso
         throw new NotFoundError("Node not found");
       }
 
-      return reply.status(204).send(null);
+      return reply.status(204).send();
     },
   });
 }

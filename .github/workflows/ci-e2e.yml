@@ -89,6 +89,7 @@ jobs:
           # The committed spec is the reviewed contract; the openapi job keeps it equal to the served one
           schema: apps/api/spec/v1/openapi.yaml
           base-url: http://localhost:3000
+          config-file: schemathesis.toml
           max-examples: "50"
           coverage-pr-comment: "false"
           coverage-report: "false"

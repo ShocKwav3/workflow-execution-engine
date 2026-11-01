@@ -19,6 +19,18 @@ export function registerCreateWorkflow(server: TypedFastifyInstance, container: 
       body: createWorkflowBodySchema,
       response: { 201: workflowResponseSchema, ...ERROR_RESPONSES },
     },
+    links: {
+      201: {
+        GetWorkflow: {
+          operationId: "getWorkflow",
+          parameters: { workflowId: "$response.body#/id" },
+        },
+        CreateWorkflowVersion: {
+          operationId: "createWorkflowVersion",
+          parameters: { workflowId: "$response.body#/id" },
+        },
+      },
+    },
     handler: async (request, reply) => {
       const service = container.resolve(workflowServiceToken);
       const workflow = await service.createWorkflow(request.body);
