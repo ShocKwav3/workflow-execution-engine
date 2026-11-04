@@ -15,6 +15,10 @@ FROM runtime-base AS runtime-slim
 
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
+# UID above 10000, so it matches no user on the host; the passwd entry lets programs look up the name.
+RUN groupadd --system --gid 10001 app \
+  && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
+
 FROM runtime-base AS base
 
 RUN npm install -g pnpm@11
@@ -57,8 +61,8 @@ FROM runtime-slim AS api-runtime
 
 COPY --from=builder /app/deploy/api ./
 
-# The node user, as a number: Kubernetes runAsNonRoot cannot verify a user name.
-USER 1000:1000
+# As a number: Kubernetes runAsNonRoot cannot verify a user name.
+USER 10001:10001
 
 CMD ["node", "dist/src/index.js"]
 
@@ -77,7 +81,7 @@ FROM runtime-slim AS executor-runtime
 
 COPY --from=builder /app/deploy/executor ./
 
-USER 1000:1000
+USER 10001:10001
 
 CMD ["node", "dist/src/index.js"]
 
@@ -96,6 +100,6 @@ FROM runtime-slim AS outbox-relay-runtime
 
 COPY --from=builder /app/deploy/outbox-relay ./
 
-USER 1000:1000
+USER 10001:10001
 
 CMD ["node", "dist/src/index.js"]
