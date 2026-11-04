@@ -28,7 +28,9 @@ describe("workflow version persistence", () => {
     workflowUnitOfWorkFor(db.pool).run(({ workflows }) => workflows.createWorkflow({ name }));
 
   const createVersion = async (input: CreateWorkflowVersionInput): Promise<WorkflowVersionRow> =>
-    (await unitOfWork.run(({ workflowVersions }) => workflowVersions.createWorkflowVersion(input)))!;
+    (await unitOfWork.run(({ workflowVersions }) =>
+      workflowVersions.createWorkflowVersion(input),
+    ))!;
 
   const publishVersion = (input: WorkflowVersionRef): Promise<WorkflowVersionRow | undefined> =>
     unitOfWork.run(({ workflowVersions }) => workflowVersions.publishWorkflowVersion(input));

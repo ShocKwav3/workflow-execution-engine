@@ -63,6 +63,7 @@ docker compose start redis     # /ready → 200 again within about a second
   - AOF persistence (`appendonly yes`, `appendfsync everysec`): queued jobs survive a restart.
   - No password: Redis is reachable only on the Compose network and the host's loopback port.
 - **PostgreSQL TLS** is off by default. To use TLS with server verification, set `PGSSLMODE=verify-full` and set `PGSSLROOTCERT` to the path of the CA certificate. The apps accept only `disable` and `verify-full`. They stop at startup on any other value, or on `PGSSLROOTCERT` without `verify-full`.
+- **Settings from files:** the apps read the database password only from a file: set `PGPASSWORD_FILE` to its path. `PGHOST` and `REDIS_URL` can also come from a file, through `PGHOST_FILE` and `REDIS_URL_FILE`; if the `_FILE` variable is set, it wins. The apps strip one trailing newline. Compose passes the password as the secret `pgpassword`, at `/run/secrets/pgpassword`; its value comes from `PGPASSWORD` in `.env`. Liquibase cannot read a password file, so it gets `LIQUIBASE_COMMAND_PASSWORD`, which keeps the password out of its process arguments.
 
 ## Inspecting the queue
 

@@ -1,4 +1,4 @@
-import { optionalIntEnv, requireEnv } from "@/config/env.js";
+import { optionalIntEnv, readFileValue, requireEnv } from "@/config/env.js";
 
 export type PgSslConfig = { mode: "disable" } | { mode: "verify-full"; rootCertPath: string };
 
@@ -27,11 +27,13 @@ export const PG_POOL_DEFAULTS = {
 
 export function loadPgPoolConfig(): PgPoolConfig {
   return {
-    host: requireEnv("PGHOST"),
+    // A file when the endpoint comes from a Kubernetes Secret.
+    host: process.env.PGHOST_FILE ? readFileValue(process.env.PGHOST_FILE) : requireEnv("PGHOST"),
     port: optionalIntEnv("PGPORT", PG_POOL_DEFAULTS.port),
     database: requireEnv("PGDATABASE"),
     user: requireEnv("PGUSER"),
-    password: requireEnv("PGPASSWORD"),
+    // Only from a file: an environment variable leaks into child processes and crash output.
+    password: readFileValue(requireEnv("PGPASSWORD_FILE")),
     max: optionalIntEnv("PG_POOL_MAX", PG_POOL_DEFAULTS.max),
     min: optionalIntEnv("PG_POOL_MIN", PG_POOL_DEFAULTS.min),
     idleTimeoutMillis: optionalIntEnv(
