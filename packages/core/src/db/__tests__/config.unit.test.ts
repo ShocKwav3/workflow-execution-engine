@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PG_POOL_DEFAULTS, loadPgPoolConfig } from "@/db/config.js";
 
@@ -5,14 +8,25 @@ const requiredEnv = {
   PGHOST: "localhost",
   PGDATABASE: "workflow_db",
   PGUSER: "workflow",
-  PGPASSWORD: "secret",
 };
+
+const fileDir = mkdtempSync(join(tmpdir(), "db-config-test-"));
+
+function valueFile(name: string, content: string): string {
+  const path = join(fileDir, name);
+
+  writeFileSync(path, content);
+
+  return path;
+}
 
 function stubRequiredEnv(): void {
   for (const [key, value] of Object.entries(requiredEnv)) {
     vi.stubEnv(key, value);
   }
 
+  vi.stubEnv("PGPASSWORD_FILE", valueFile("password", "secret\n"));
+  vi.stubEnv("PGHOST_FILE", undefined);
   vi.stubEnv("PGSSLMODE", undefined);
   vi.stubEnv("PGSSLROOTCERT", undefined);
 }
@@ -46,6 +60,25 @@ describe("loadPgPoolConfig", () => {
     expect(config.idleTimeoutMillis).toBe(PG_POOL_DEFAULTS.idleTimeoutMillis);
     expect(config.connectionTimeoutMillis).toBe(PG_POOL_DEFAULTS.connectionTimeoutMillis);
     expect(config.maxLifetimeSeconds).toBe(PG_POOL_DEFAULTS.maxLifetimeSeconds);
+  });
+
+  it("throws when PGPASSWORD_FILE is missing", () => {
+    stubRequiredEnv();
+    vi.stubEnv("PGPASSWORD_FILE", undefined);
+
+    const load = () => loadPgPoolConfig();
+
+    expect(load).toThrow("Missing required environment variable: PGPASSWORD_FILE");
+  });
+
+  it("reads the host from PGHOST_FILE when it is set", () => {
+    stubRequiredEnv();
+    vi.stubEnv("PGHOST", undefined);
+    vi.stubEnv("PGHOST_FILE", valueFile("host", "db.internal\n"));
+
+    const config = loadPgPoolConfig();
+
+    expect(config.host).toBe("db.internal");
   });
 
   it("respects overridden optional pool settings", () => {

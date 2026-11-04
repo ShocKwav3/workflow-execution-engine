@@ -1,8 +1,21 @@
+import { readFileSync } from "node:fs";
+
 export function requireEnv(name: string, hint?: string): string {
   const value = process.env[name];
 
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}${hint ? ` — ${hint}` : ""}`);
+  }
+
+  return value;
+}
+
+// Strips one trailing newline: tools that write the file often add it.
+export function readFileValue(path: string): string {
+  const value = readFileSync(path, "utf8").replace(/\r?\n$/, "");
+
+  if (!value) {
+    throw new Error(`File is empty: ${path}`);
   }
 
   return value;

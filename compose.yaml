@@ -5,7 +5,7 @@ x-app-env:
   PGPORT: 5432
   PGDATABASE: ${PGDATABASE}
   PGUSER: ${PGUSER}
-  PGPASSWORD: ${PGPASSWORD}
+  PGPASSWORD_FILE: /run/secrets/pgpassword
   LOG_LEVEL: ${LOG_LEVEL}
   LOG_PRETTY: "true"
 
@@ -30,7 +30,8 @@ services:
     environment:
       POSTGRES_DB: ${PGDATABASE}
       POSTGRES_USER: ${PGUSER}
-      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/pgpassword
+    secrets: [pgpassword]
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -70,7 +71,9 @@ services:
       - --changelog-file=db.changelog-master.yaml
       - --url=jdbc:postgresql://postgres:5432/${PGDATABASE}
       - --username=${PGUSER}
-      - --password=${PGPASSWORD}
+    # Liquibase reads no password file; the variable keeps the password out of the process arguments.
+    environment:
+      LIQUIBASE_COMMAND_PASSWORD: ${PGPASSWORD}
 
   # depends_on only orders startup; a database outage after it is handled by the applications.
   api:
@@ -96,6 +99,7 @@ services:
         - *watch-root-package
         - *watch-root-lockfile
         - *watch-root-tsconfig
+    secrets: [pgpassword]
     environment:
       <<: *app-env
       HOST: 0.0.0.0
@@ -127,6 +131,7 @@ services:
         - *watch-root-package
         - *watch-root-lockfile
         - *watch-root-tsconfig
+    secrets: [pgpassword]
     environment:
       <<: *app-env
       REDIS_URL: redis://redis:6379
@@ -158,6 +163,7 @@ services:
         - *watch-root-package
         - *watch-root-lockfile
         - *watch-root-tsconfig
+    secrets: [pgpassword]
     environment:
       <<: *app-env
       REDIS_URL: redis://redis:6379
@@ -193,6 +199,11 @@ services:
       - redisinsight_data:/data
     ports:
       - "127.0.0.1:${REDISINSIGHT_PORT:-5540}:5540"
+
+# The value comes from PGPASSWORD in .env; services read it as the file /run/secrets/pgpassword.
+secrets:
+  pgpassword:
+    environment: PGPASSWORD
 
 volumes:
   postgres_data:
